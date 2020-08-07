@@ -7,5 +7,10 @@ MEMORY
 SECTIONS
 {
 	. = 0x20010000;
-	.text : { .text (hello_world_entry.o); .text* (.o); }
+	
+	.text : {
+		hello_world_entry.o (.text);
+	}
+	
+	/DISCARD/ : { * (.*); }
 }

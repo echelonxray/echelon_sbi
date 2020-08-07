@@ -12,7 +12,13 @@ SECTIONS
 		hello_world_entry.o (.text);
 	}
 	
+	/*
+	
+	Comment Out
+	
 	/DISCARD/ : {
 		* (.*);
 	}
+	
+	*/
 }

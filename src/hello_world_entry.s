@@ -1,4 +1,4 @@
-.section .text_test
+.section .text
 
 .globl my_entry_pt
 

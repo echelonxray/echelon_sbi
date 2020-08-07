@@ -12,5 +12,7 @@ SECTIONS
 		hello_world_entry.o (.text);
 	}
 	
-	/DISCARD/ : { * (.*); }
+	/DISCARD/ : {
+		* (.*);
+	}
 }

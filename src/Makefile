@@ -1,5 +1,5 @@
 CC      := riscv32-unknown-elf-gcc
-CFLAGS  := -Wall -Wextra -std=c99 -O2 -march=rv32imac -mabi=ilp32 -ffreestanding -nostdlib -nostartfiles -Wno-unused-parameter
+CFLAGS  := -Wall -Wextra -std=c99 -O2 -march=rv32ima -mabi=ilp32 -ffreestanding -nostdlib -nostartfiles -Wno-unused-parameter
 LDFLAGS := -T ./hello_world.ld
 FILES   := hello_world.o hello_world_entry.o
 
@@ -10,7 +10,7 @@ all: prog ihex
 rebuild: clean all
 
 clean:
-	rm -f static-program dynamic-program *.o
+	rm -f prog prog.hex *.o
 
 %.o: %.c
 	$(CC) $(CFLAGS) $^ -c -o $@

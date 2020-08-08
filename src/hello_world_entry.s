@@ -3,6 +3,17 @@
 .globl my_entry_pt
 
 my_entry_pt:
+  mv a0, zero
+  lui a0, 0x10012
+  ori a1, a0, 0x08
+  ori a2, a0, 0x0C
+  ori a3, zero, 1
+  ori a4, zero, 0x20
+  # slli a4, a3, 4
+  sw a4, (a0)
+  sw a3, (a1)
+  sw a3, (a2)
+  
   mv ra, zero
   mv sp, zero
   mv gp, zero
@@ -35,15 +46,11 @@ my_entry_pt:
   mv t5, zero
   mv t6, zero
   
-  # Load 0x80003FFF into Stack Pointer and Global Pointer
-  ori a0, zero, 0xF
-  slli a0, a0, 8
-  ori a0, a0, 0xFF
+  # Load 0x80003FF0 into Stack Pointer and Global Pointer
+  ori a0, zero, 0xFF
+  slli a0, a0, 4
   lui sp, 0x80003
   or sp, sp, a0
-  mv a0, zero
-  # not sp, zero
-  mv sp, gp
   
   call main
   

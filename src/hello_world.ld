@@ -6,7 +6,7 @@ MEMORY
 
 SECTIONS
 {
-	. = 0x20010000;
+	. = 0x20000000;
 	
 	.text : {
 		hello_world_entry.o (.text);

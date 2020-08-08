@@ -48,7 +48,7 @@ void write(char* str) {
 }
 
 signed int main(unsigned int argc, char* argv[], char* envp[]) {
-	// Enable TX on UART0
+	// Enable TX on UARTs
 	volatile uint32_t* uart_txctrl_reg;
 	uart_txctrl_reg = (uint32_t*)(0x10013000 + 0x08);
 	*uart_txctrl_reg = 0x1;

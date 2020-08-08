@@ -7,10 +7,9 @@ my_entry_pt:
   lui a0, 0x10012
   ori a1, a0, 0x08
   ori a2, a0, 0x0C
-  ori a3, zero, 1
-  ori a4, zero, 0x20
-  # slli a4, a3, 4
-  sw a4, (a0)
+  # not a3, zero
+  ori a3, zero, 0x01
+  slli a3, a3, 5
   sw a3, (a1)
   sw a3, (a2)
   

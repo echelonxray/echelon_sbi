@@ -1,3 +1,5 @@
+ENTRY(my_entry_pt)
+
 MEMORY
 {
 	flash (rx)  : ORIGIN = 0x20000000, LENGTH = 0x1FFFFFFF
@@ -10,7 +12,7 @@ SECTIONS
 	
 	.text : {
 		hello_world_entry.o (.text);
-	}
+	} > flash
 	
 	/*
 	

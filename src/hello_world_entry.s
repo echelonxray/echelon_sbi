@@ -3,15 +3,15 @@
 .globl my_entry_pt
 
 my_entry_pt:
-  mv a0, zero
-  lui a0, 0x10012
-  ori a1, a0, 0x08
-  ori a2, a0, 0x0C
-  # not a3, zero
-  ori a3, zero, 0x01
-  slli a3, a3, 5
-  sw a3, (a1)
-  sw a3, (a2)
+  # mv a0, zero
+  # lui a0, 0x10012
+  # ori a1, a0, 0x08
+  # ori a2, a0, 0x0C
+  # # not a3, zero
+  # ori a3, zero, 0x01
+  # slli a3, a3, 5
+  # sw a3, (a1)
+  # sw a3, (a2)
   
   mv ra, zero
   mv sp, zero

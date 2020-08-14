@@ -1,4 +1,4 @@
-CC      := riscv32-unknown-elf-gcc
+CC      := riscv32-unknown-linux-elf-gcc
 CFLAGS  := -Wall -Wextra -std=c99 -O2 -march=rv32ima -mabi=ilp32 -ffreestanding -nostdlib -nostartfiles -Wno-unused-parameter
 LDFLAGS := -T ./hello_world.ld
 FILES   := hello_world.o hello_world_entry.o
@@ -22,4 +22,4 @@ prog: $(FILES)
 	$(CC) -static $(CFLAGS) $^ $(LDFLAGS) -o $@
 
 ihex:
-	riscv32-unknown-elf-objcopy -O ihex ./prog ./prog.hex
+	riscv32-unknown-linux-elf-objcopy -O ihex ./prog ./prog.hex

@@ -4,16 +4,6 @@
 .globl interrupt_handler
 
 my_entry_pt:
-  # mv a0, zero
-  # lui a0, 0x10012
-  # ori a1, a0, 0x08
-  # ori a2, a0, 0x0C
-  # # not a3, zero
-  # ori a3, zero, 0x01
-  # slli a3, a3, 5
-  # sw a3, (a1)
-  # sw a3, (a2)
-  
   mv ra, zero
   mv sp, zero
   mv gp, zero
@@ -54,6 +44,7 @@ my_entry_pt:
   
   call main
   
+  wfi
   j loop
   
 .align 8, 0
@@ -129,10 +120,9 @@ interrupt_handler:
   lw t4, -0x74(sp)
   lw t5, -0x78(sp)
   lw t6, -0x7C(sp)
-  
   mret
   
-  loop:
+loop:
   nop
   nop
   nop

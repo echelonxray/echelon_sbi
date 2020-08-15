@@ -11,16 +11,14 @@ SECTIONS
 	. = 0x20000000;
 	
 	.text : {
-		hello_world_entry.o (.text);
+		src/hello_world_entry.o (.text);
 	} > flash
 	
 	/*
-	
 	Comment Out
 	
 	/DISCARD/ : {
 		* (.*);
 	}
-	
 	*/
 }

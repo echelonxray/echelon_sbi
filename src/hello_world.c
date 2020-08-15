@@ -1,4 +1,7 @@
-typedef unsigned int uint32_t;
+#include "./inc/types.h"
+#include "./inc/general_oper.h"
+#include "./inc/memmap.h"
+#include "./inc/gpio_oper.h"
 
 #define rck 2
 #define srck 3
@@ -6,40 +9,16 @@ typedef unsigned int uint32_t;
 
 void interrupt_handler();
 
-void cpu_wait() {
-	__asm__ __volatile__ ("wfi");
-	return;
-}
-
-void enable_timer_interrupt() {
-	__asm__ __volatile__ ("csrrs zero, mie, %0" : : "r" (0x00000080));
-	return;
-}
-
-void disable_timer_interrupt() {
-	__asm__ __volatile__ ("csrrc zero, mie, %0" : : "r" (0x00000080));
-	return;
-}
-
-void cpu_relax() {
-	__asm__ __volatile__ ("nop");
-	__asm__ __volatile__ ("nop");
-	__asm__ __volatile__ ("nop");
-	__asm__ __volatile__ ("nop");
-	__asm__ __volatile__ ("nop");
-	return;
-}
-
 void uart_putc(char c, void* uart_loc) {
 	volatile uint32_t* register_state;
-	register_state = (uint32_t*)(uart_loc + 0x00);
+	register_state = (uint32_t*)(uart_loc + UART_TXDATA);
 	while (*register_state & 0x80000000) {
-		cpu_relax();
+		CPU_RELAX();
 	}
 	*register_state = (uint32_t)c;
 	if (c == '\n') {
 		while (*register_state & 0x80000000) {
-			cpu_relax();
+			CPU_RELAX();
 		}
 		*register_state = (uint32_t)'\r';
 	}
@@ -53,8 +32,8 @@ void write(char* str) {
 	unsigned int i;
 	i = 0;
 	while (str[i] != 0) {
-		uart_putc(str[i], (void*)0x10013000);
-		//uart_putc(str[i], (void*)0x10023000);
+		uart_putc(str[i], (void*)UART0_BASE);
+		//uart_putc(str[i], (void*)UART1_BASE);
 		i++;
 	}
 	return;
@@ -173,18 +152,18 @@ void interrupt_chandle() {
 			//write("Bye, world!\n");
 
 			// Disable the timer interrupt to prevent infinite loops
-			disable_timer_interrupt();
+			DISABLE_TIMER_INTERRUPT();
 
 			// mtime
-			ctrl_reg = (uint32_t*)(0x0200BFF8); // Lower-half of 64-bit value
+			ctrl_reg = (uint32_t*)(CLINT_BASE + CLINT_MTIME_LO); // Lower-half of 64-bit value
 			*ctrl_reg = 0;
-			ctrl_reg = (uint32_t*)(0x0200BFFC); // Upper-half of 64-bit value
+			ctrl_reg = (uint32_t*)(CLINT_BASE + CLINT_MTIME_HI); // Upper-half of 64-bit value
 			*ctrl_reg = 0;
 
 			// rtc counter_start
-			ctrl_reg = (uint32_t*)(0x10000000 + 0x48); // Low-Half
+			ctrl_reg = (uint32_t*)(AON_BASE + AON_RTCCOUNTLO); // Low-Half
 			*ctrl_reg = 0;
-			ctrl_reg = (uint32_t*)(0x10000000 + 0x4C); // High-Half
+			ctrl_reg = (uint32_t*)(AON_BASE + AON_RTCCOUNTHI); // High-Half
 			*ctrl_reg = 0;
 		} else if (mcause == 11) {
 			// Machine external interrupt
@@ -200,17 +179,9 @@ void interrupt_chandle() {
 	return;
 }
 
-void low(volatile uint32_t* gpio_pins, unsigned int pin_num) {
-	*gpio_pins = *gpio_pins & ~(1 << pin_num);
-	return;
-}
-void high(volatile uint32_t* gpio_pins, unsigned int pin_num) {
-	*gpio_pins = *gpio_pins | (1 << pin_num);
-	return;
-}
 void pause() {
-	cpu_wait();
-	enable_timer_interrupt();
+	CPU_WAIT();
+	ENABLE_TIMER_INTERRUPT();
 }
 
 void write_shift_regs(volatile uint32_t* gpio_pins, unsigned char* regs, unsigned int len) {
@@ -229,7 +200,7 @@ void write_shift_regs(volatile uint32_t* gpio_pins, unsigned char* regs, unsigne
 	while (i < len) {
 		unsigned char byte_bits;
 		byte_bits = *regs;
-		unsigned int state;
+		//unsigned int state;
 		gpio_state = *gpio_pins;
 		pin = 1 << pin_shft_serial_out;
 		if (byte_bits & (1 << i)) {
@@ -238,14 +209,14 @@ void write_shift_regs(volatile uint32_t* gpio_pins, unsigned char* regs, unsigne
 			gpio_state = gpio_state & ~pin;
 		}
 		*gpio_pins = gpio_state;
-		cpu_wait();
-		enable_timer_interrupt();
+		CPU_WAIT();
+		ENABLE_TIMER_INTERRUPT();
 		//*gpio_pins = (*gpio_pins & (~(1 << pin))) | ((*gpio_pins & (1 << pin)) ^ (1 << pin));
 		pin = 1 << pin_shft_serial_clk;
 		gpio_state = gpio_state | pin;
 		*gpio_pins = gpio_state;
-		cpu_wait();
-		enable_timer_interrupt();
+		CPU_WAIT();
+		ENABLE_TIMER_INTERRUPT();
 		gpio_state = gpio_state & ~pin;
 		*gpio_pins = gpio_state;
 		//*gpio_pins = (*gpio_pins & (~(1 << pin))) | ((*gpio_pins & (1 << pin)) ^ (1 << pin));
@@ -258,12 +229,12 @@ void write_shift_regs(volatile uint32_t* gpio_pins, unsigned char* regs, unsigne
 	}
 
 	pin = 1 << pin_shft_update_out;
-	cpu_wait();
-	enable_timer_interrupt();
+	CPU_WAIT();
+	ENABLE_TIMER_INTERRUPT();
 	gpio_state = gpio_state | pin;
 	*gpio_pins = gpio_state;
-	cpu_wait();
-	enable_timer_interrupt();
+	CPU_WAIT();
+	ENABLE_TIMER_INTERRUPT();
 	gpio_state = gpio_state & ~pin;
 	*gpio_pins = gpio_state;
 
@@ -271,113 +242,98 @@ void write_shift_regs(volatile uint32_t* gpio_pins, unsigned char* regs, unsigne
 }
 
 void write_command(uint32_t* gpio_pins, unsigned char command) {
-	unsigned char regs[2];
-	regs[0] = command;
+	//unsigned char regs[2];
+	//regs[0] = command;
 	//regs[1] = 0b;
 }
 void write_data(uint32_t* gpio_pins, unsigned char data) {
-	unsigned char regs[2];
+	//unsigned char regs[2];
 }
 
 signed int main(unsigned int argc, char* argv[], char* envp[]) {
 	volatile uint32_t* urat_reg;
 	volatile uint32_t* ctrl_reg;
-	volatile uint32_t* outp_reg;
+	//volatile uint32_t* outp_reg;
 	volatile uint32_t* prci_reg;
 
 	// Setup the Clock
-	prci_reg = (uint32_t*)(0x10008000 + 0x00);
+	prci_reg = (uint32_t*)(PRCI_BASE + PRCI_HFROSCCFG);
 	*prci_reg |= (1 << 30);
-	prci_reg = (uint32_t*)(0x10008000 + 0x08);
+	prci_reg = (uint32_t*)(PRCI_BASE + PRCI_PLLCFG);
 	*prci_reg |= (1 << 16) | (1 << 17) | (1 << 18);
 	*prci_reg = (*prci_reg & 0x7FFFF000) | 0x000005F1;
 	*prci_reg &= ~(1 << 18);
-	prci_reg = (uint32_t*)(0x10008000 + 0x00);
+	prci_reg = (uint32_t*)(PRCI_BASE + PRCI_HFROSCCFG);
 	*prci_reg &= ~(1 << 30);
 
 	// Set Div to 16MHz / (138 + 1) = ~115200 Baud
-	urat_reg = (uint32_t*)(0x10013000 + 0x18);
+	urat_reg = (uint32_t*)(UART0_BASE + UART_DIV);
 	*urat_reg = 2221;
-	urat_reg = (uint32_t*)(0x10023000 + 0x18);
+	urat_reg = (uint32_t*)(UART1_BASE + UART_DIV);
 	*urat_reg = 2221;
 
 	// Disable UART Watermark Interrupts
-	ctrl_reg = (uint32_t*)(0x10013000 + 0x10);
+	ctrl_reg = (uint32_t*)(UART0_BASE + UART_IE);
 	*ctrl_reg = 0x0;
-	ctrl_reg = (uint32_t*)(0x10023000 + 0x10);
+	ctrl_reg = (uint32_t*)(UART1_BASE + UART_IE);
 	*ctrl_reg = 0x0;
 
-	// Set GPIO Pins 0, 1, and 5 to output mode and turn them off
-	ctrl_reg = (uint32_t*)(0x10012000 + 0x08);
-	outp_reg = (uint32_t*)(0x10012000 + 0x0C);
-	*ctrl_reg |=  (1 << 5);
-	*ctrl_reg |=  (1 << 4);
-	*ctrl_reg |=  (1 << 3);
-	*ctrl_reg |=  (1 << 2);
-	*outp_reg &= ~(1 << 5);
-	*outp_reg &= ~(1 << 4);
-	*outp_reg &= ~(1 << 3);
-	*outp_reg &= ~(1 << 2);
+	// Set GPIO Pins 0, 1, and 5 to GPIO mode, Output mode, and Turn Them Off
+	IOF_SEL(5, 0);
+	IOF_SEL(4, 0);
+	IOF_SEL(3, 0);
+	IOF_SEL(2, 0);
+	OUTPUT(5);
+	OUTPUT(4);
+	OUTPUT(3);
+	OUTPUT(2);
+	LOW(5);
+	LOW(4);
+	LOW(3);
+	LOW(2);
 
-	// Set HW I/O UART functionality through the GPIO Pins (IOF) [These doesn't seem to be documented in the manual]
-	uint32_t uart0_pins;
-	uint32_t uart1_pins;
-	uart0_pins = 0;
-	uart0_pins |= (1 << 16);
-	uart0_pins |= (1 << 17);
-	uart1_pins = 0;
-	//uart1_pins |= (1 << 23);
-	//uart1_pins |= (1 << 18);
-	ctrl_reg = (uint32_t*)(0x10012000 + 0x3C);
-	*ctrl_reg &= ~(uart0_pins);
-	*ctrl_reg &= ~(uart1_pins);
-	ctrl_reg = (uint32_t*)(0x10012000 + 0x38);
-	*ctrl_reg =  0x00000000;
-	*ctrl_reg |=  (uart0_pins);
-	*ctrl_reg |=  (uart1_pins);
+	// Set HW I/O UART0 functionality through the GPIO Pins (IOF)
+	IOF_SEL(16, 1);
+	IOF_SEL(17, 1);
 
-	// Enable TX on UARTs
-	ctrl_reg = (uint32_t*)(0x10013000 + 0x08);
-	*ctrl_reg = 0x1;
-	ctrl_reg = (uint32_t*)(0x10023000 + 0x08);
+	// Enable TX on UART0
+	ctrl_reg = (uint32_t*)(UART0_BASE + UART_TXCTRL);
 	*ctrl_reg = 0x1;
 
 	// CLINT
 	// mtimecmp
-	ctrl_reg = (uint32_t*)(0x02004000); // Lower-half of 64-bit value
+	ctrl_reg = (uint32_t*)(CLINT_BASE + CLINT_MTIMECMP_LO); // Lower-half of 64-bit value
 	*ctrl_reg = 32768;
 	//*ctrl_reg = 1000;
-	ctrl_reg = (uint32_t*)(0x02004004); // Upper-half of 64-bit value
+	ctrl_reg = (uint32_t*)(CLINT_BASE + CLINT_MTIMECMP_HI); // Upper-half of 64-bit value
 	*ctrl_reg = 0;
 	// mtime
-	ctrl_reg = (uint32_t*)(0x0200BFF8); // Lower-half of 64-bit value
+	ctrl_reg = (uint32_t*)(CLINT_BASE + CLINT_MTIME_LO); // Lower-half of 64-bit value
 	*ctrl_reg = 0;
-	ctrl_reg = (uint32_t*)(0x0200BFFC); // Upper-half of 64-bit value
+	ctrl_reg = (uint32_t*)(CLINT_BASE + CLINT_MTIME_HI); // Upper-half of 64-bit value
 	*ctrl_reg = 0;
 
 	// lfrosc
 	// This has no effect on the Red-V because the lfrosc is driven by an external crystal oscillator @ 32.768khz
-	//ctrl_reg = (uint32_t*)(0x10000000 + 0x70);
-
-	*ctrl_reg = (*ctrl_reg & 0xFFE0FFC0) | 0x00000000;
+	//ctrl_reg = (uint32_t*)(AON_BASE + AON_LFROSCCFG);
 
 	// rtc counter_start
-	ctrl_reg = (uint32_t*)(0x10000000 + 0x48); // Low-Half
+	ctrl_reg = (uint32_t*)(AON_BASE + AON_RTCCOUNTLO); // Low-Half
 	*ctrl_reg = 0x00000000;
-	ctrl_reg = (uint32_t*)(0x10000000 + 0x4C); // High-Half
+	ctrl_reg = (uint32_t*)(AON_BASE + AON_RTCCOUNTHI); // High-Half
 	*ctrl_reg = 0x00000000;
 
 	// rtccmp0
-	ctrl_reg = (uint32_t*)(0x10000000 + 0x60);
+	ctrl_reg = (uint32_t*)(AON_BASE + AON_RTCCMP0);
 	*ctrl_reg = 0xF0000000;
 
-	__asm__ __volatile__ ("csrrw zero, mtvec, %0" : : "r" (((uint32_t)(&interrupt_handler)) & 0xFFFFFFFC));
+	__asm__ __volatile__ ("csrrw zero, mtvec, %0" : : "r" (&interrupt_handler));
 	__asm__ __volatile__ ("csrrw zero, mie, %0" : : "r" (0x00000000));
 	__asm__ __volatile__ ("csrrs zero, mstatus, %0" : : "r" (0x00000008));
-	enable_timer_interrupt();
+	ENABLE_TIMER_INTERRUPT();
 
 	// RTCCFG Enable
-	ctrl_reg = (uint32_t*)(0x10000000 + 0x40);
+	ctrl_reg = (uint32_t*)(AON_BASE + AON_RTCCFG);
 	*ctrl_reg = 0x0000100F;
 
 	//unsigned int outval;
@@ -388,36 +344,36 @@ signed int main(unsigned int argc, char* argv[], char* envp[]) {
 	// Turn ON the blue LED on the RED-V
 	//*outp_reg |=  (1 << 5);
 
-	unsigned int i;
-	i = 0;
+	//unsigned int i;
+	//i = 0;
 
 	//ctrl_reg = (uint32_t*)(0x10008000 + 0x0C);
 	//ctrl_reg = (uint32_t*)(0x0200BFF8); // Lower-half of 64-bit value
 	//ctrl_reg = (uint32_t*)(0x10000000 + 0x48); // Low-Half
 
-	unsigned char shift_regs[2];
-	unsigned int shift_reg_len;
-	shift_reg_len = 16;
-	shift_regs[0] = 0b01010000;
-	shift_regs[1] = 0b00000000;
+	//unsigned char shift_regs[2];
+	//unsigned int shift_reg_len;
+	//shift_reg_len = 16;
+	//shift_regs[0] = 0b01010000;
+	//shift_regs[1] = 0b00000000;
 
 	write("TraceA\n");
-	//write_shift_regs(outp_reg, shift_regs, shift_reg_len);
+	//write_shift_regs(shift_regs, shift_reg_len);
 
-	//high(outp_reg, s_in);
-	//high(outp_reg, srck);
-	//high(outp_reg, 4);
-	//high(outp_reg, 3);
-	//high(outp_reg, 2);
-	//high(outp_reg, 1);
-	//high(outp_reg, 0);
+	//HIGH(s_in);
+	//HIGH(srck);
+	//HIGH(4);
+	//HIGH(3);
+	//HIGH(2);
+	//HIGH(1);
+	//HIGH(0);
 	//write("HereB\n");
 	//pause();
 	//pause();
 	//pause();
-	//high(outp_reg, 22);
-	//high(outp_reg, 4);
-	high(outp_reg, 5);
+	//HIGH(22);
+	//HIGH(4);
+	HIGH(5);
 	//pause();
 	//pause();
 	//pause();
@@ -427,41 +383,41 @@ signed int main(unsigned int argc, char* argv[], char* envp[]) {
 	//goto break_end;
 
 	//pause();
-	low(outp_reg, rck);
+	LOW(rck);
 	pause();
 
-	loop_0:
-	high(outp_reg, s_in);
+	//loop_0:
+	HIGH(s_in);
 	pause();
-	high(outp_reg, srck);
+	HIGH(srck);
 	pause();
-	low(outp_reg, srck);
-	pause();
-
-	low(outp_reg, s_in);
-	pause();
-	high(outp_reg, srck);
-	pause();
-	low(outp_reg, srck);
+	LOW(srck);
 	pause();
 
-	high(outp_reg, s_in);
+	LOW(s_in);
 	pause();
-	high(outp_reg, srck);
+	HIGH(srck);
 	pause();
-	low(outp_reg, srck);
+	LOW(srck);
 	pause();
 
-	low(outp_reg, s_in);
+	HIGH(s_in);
 	pause();
-	//high(outp_reg, srck);
+	HIGH(srck);
+	pause();
+	LOW(srck);
+	pause();
+
+	LOW(s_in);
+	pause();
+	//HIGH(srck);
 	//pause();
-	//low(outp_reg, srck);
+	//LOW(srck);
 	//pause();
 
-	high(outp_reg, rck);
+	HIGH(rck);
 	pause();
-	low(outp_reg, rck);
+	LOW(rck);
 	pause();
 
 	write("TraceB\n");
@@ -481,23 +437,23 @@ signed int main(unsigned int argc, char* argv[], char* envp[]) {
 		////itoa((outval >>  0) & 0xFFFF, tmp_str, 50, 10, 4);
 		//write(tmp_str);
 		write("\n");
-		cpu_wait();
-		enable_timer_interrupt();
+		CPU_WAIT();
+		ENABLE_TIMER_INTERRUPT();
 		// Toggle the blue LED on the RED-V
 		*outp_reg = (*outp_reg & (1 << 5)) ^ (1 << 5);
 		i++;
 	}
 	*/
 
-	break_end:
+	//break_end:
 
-	disable_timer_interrupt();
+	DISABLE_TIMER_INTERRUPT();
 
 	// RTCCFG Disable
 	ctrl_reg = (uint32_t*)(0x10000000 + 0x40);
 	*ctrl_reg = 0x00000000;
 
-	cpu_wait();
+	CPU_WAIT();
 
 	return 0;
 }

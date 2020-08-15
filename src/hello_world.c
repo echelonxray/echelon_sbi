@@ -184,70 +184,55 @@ void pause() {
 	ENABLE_TIMER_INTERRUPT();
 }
 
-void write_shift_regs(volatile uint32_t* gpio_pins, unsigned char* regs, unsigned int len) {
+void write_shift_regs(unsigned char* regs, unsigned int len) {
 	unsigned int pin_shft_serial_out;
 	unsigned int pin_shft_serial_clk;
 	unsigned int pin_shft_update_out;
-	uint32_t gpio_state;
-	uint32_t pin;
 	pin_shft_serial_out = 4;
 	pin_shft_serial_clk = 3;
 	pin_shft_update_out = 2;
-	gpio_state = *gpio_pins;
 
 	unsigned int i;
 	i = 0;
 	while (i < len) {
-		unsigned char byte_bits;
-		byte_bits = *regs;
-		//unsigned int state;
-		gpio_state = *gpio_pins;
-		pin = 1 << pin_shft_serial_out;
-		if (byte_bits & (1 << i)) {
-			gpio_state = gpio_state | pin;
+		if ((*regs) & (1 << i)) {
+			HIGH(pin_shft_serial_out);
 		} else {
-			gpio_state = gpio_state & ~pin;
+			LOW(pin_shft_serial_out);
 		}
-		*gpio_pins = gpio_state;
-		CPU_WAIT();
-		ENABLE_TIMER_INTERRUPT();
-		//*gpio_pins = (*gpio_pins & (~(1 << pin))) | ((*gpio_pins & (1 << pin)) ^ (1 << pin));
-		pin = 1 << pin_shft_serial_clk;
-		gpio_state = gpio_state | pin;
-		*gpio_pins = gpio_state;
-		CPU_WAIT();
-		ENABLE_TIMER_INTERRUPT();
-		gpio_state = gpio_state & ~pin;
-		*gpio_pins = gpio_state;
-		//*gpio_pins = (*gpio_pins & (~(1 << pin))) | ((*gpio_pins & (1 << pin)) ^ (1 << pin));
-		//*gpio_pins = (*gpio_pins & (~(1 << pin))) | ((*gpio_pins & (1 << pin)) ^ (1 << pin));
-		i++;
-		if (i == 8) {
+		pause();
+		
+		HIGH(pin_shft_serial_clk);
+		pause();
+		
+		LOW(pin_shft_serial_clk);
+		if (i == 7) {
 			i = 0;
 			len -= 8;
+		} else {
+			i++;
 		}
 	}
-
-	pin = 1 << pin_shft_update_out;
-	CPU_WAIT();
-	ENABLE_TIMER_INTERRUPT();
-	gpio_state = gpio_state | pin;
-	*gpio_pins = gpio_state;
-	CPU_WAIT();
-	ENABLE_TIMER_INTERRUPT();
-	gpio_state = gpio_state & ~pin;
-	*gpio_pins = gpio_state;
+	
+	HIGH(pin_shft_update_out);
+	pause();
+	LOW(pin_shft_update_out);
+	//pause();
 
 	return;
 }
 
-void write_command(uint32_t* gpio_pins, unsigned char command) {
-	//unsigned char regs[2];
-	//regs[0] = command;
-	//regs[1] = 0b;
+void write_command(unsigned char command) {
+	unsigned char regs[2];
+	regs[0] = command;
+	regs[1] = 0b00000000;
+	return;
 }
-void write_data(uint32_t* gpio_pins, unsigned char data) {
-	//unsigned char regs[2];
+void write_data(unsigned char data) {
+	unsigned char regs[2];
+	regs[0] = data;
+	regs[1] = 0b00000000;
+	return;
 }
 
 signed int main(unsigned int argc, char* argv[], char* envp[]) {
@@ -335,117 +320,42 @@ signed int main(unsigned int argc, char* argv[], char* envp[]) {
 	// RTCCFG Enable
 	ctrl_reg = (uint32_t*)(AON_BASE + AON_RTCCFG);
 	*ctrl_reg = 0x0000100F;
-
-	//unsigned int outval;
-	//outval = 0;
-	//__asm__ __volatile__ ("csrrs %0, mstatus, zero" : "=r" (outval));
-	//__asm__ __volatile__ ("csrrs x0, mstatus, %0" : "=r" (outval));
-
-	// Turn ON the blue LED on the RED-V
-	//*outp_reg |=  (1 << 5);
-
-	//unsigned int i;
-	//i = 0;
-
-	//ctrl_reg = (uint32_t*)(0x10008000 + 0x0C);
-	//ctrl_reg = (uint32_t*)(0x0200BFF8); // Lower-half of 64-bit value
-	//ctrl_reg = (uint32_t*)(0x10000000 + 0x48); // Low-Half
-
-	//unsigned char shift_regs[2];
-	//unsigned int shift_reg_len;
-	//shift_reg_len = 16;
-	//shift_regs[0] = 0b01010000;
-	//shift_regs[1] = 0b00000000;
-
-	write("TraceA\n");
-	//write_shift_regs(shift_regs, shift_reg_len);
-
-	//HIGH(s_in);
-	//HIGH(srck);
-	//HIGH(4);
-	//HIGH(3);
-	//HIGH(2);
-	//HIGH(1);
-	//HIGH(0);
-	//write("HereB\n");
-	//pause();
-	//pause();
-	//pause();
-	//HIGH(22);
-	//HIGH(4);
+	
 	HIGH(5);
-	//pause();
-	//pause();
-	//pause();
-	//write("HereA\n");
-	//write("TraceB\n");
-
-	//goto break_end;
-
-	//pause();
+	
+	LOW(s_in);
+	LOW(srck);
 	LOW(rck);
 	pause();
-
-	//loop_0:
+	
 	HIGH(s_in);
 	pause();
 	HIGH(srck);
 	pause();
 	LOW(srck);
 	pause();
-
+	
 	LOW(s_in);
 	pause();
 	HIGH(srck);
 	pause();
 	LOW(srck);
 	pause();
-
+	
 	HIGH(s_in);
 	pause();
 	HIGH(srck);
 	pause();
 	LOW(srck);
 	pause();
-
+	
 	LOW(s_in);
 	pause();
-	//HIGH(srck);
-	//pause();
-	//LOW(srck);
-	//pause();
 
 	HIGH(rck);
 	pause();
 	LOW(rck);
 	pause();
-
-	write("TraceB\n");
-
-	/*
-	i = 0;
-	while (i < 0) {
-		char tmp_str[50];
-		tmp_str[0] = '0' + i;
-		tmp_str[1] = 0;
-		write("Hello, World! ");
-		write(tmp_str);
-		//write(" ");
-		//outval = *ctrl_reg;
-		//itoa((outval >> 16) & 0xFFFF, tmp_str, 50, 16, 4);
-		//write(tmp_str);
-		////itoa((outval >>  0) & 0xFFFF, tmp_str, 50, 10, 4);
-		//write(tmp_str);
-		write("\n");
-		CPU_WAIT();
-		ENABLE_TIMER_INTERRUPT();
-		// Toggle the blue LED on the RED-V
-		*outp_reg = (*outp_reg & (1 << 5)) ^ (1 << 5);
-		i++;
-	}
-	*/
-
-	//break_end:
 
 	DISABLE_TIMER_INTERRUPT();
 

@@ -238,7 +238,6 @@ void write_data(unsigned char data) {
 signed int main(unsigned int argc, char* argv[], char* envp[]) {
 	volatile uint32_t* urat_reg;
 	volatile uint32_t* ctrl_reg;
-	//volatile uint32_t* outp_reg;
 	volatile uint32_t* prci_reg;
 
 	// Setup the Clock
@@ -360,7 +359,7 @@ signed int main(unsigned int argc, char* argv[], char* envp[]) {
 	DISABLE_TIMER_INTERRUPT();
 
 	// RTCCFG Disable
-	ctrl_reg = (uint32_t*)(0x10000000 + 0x40);
+	ctrl_reg = (uint32_t*)(AON_BASE + AON_RTCCFG);
 	*ctrl_reg = 0x00000000;
 
 	CPU_WAIT();

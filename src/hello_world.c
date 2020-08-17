@@ -3,11 +3,11 @@
 #include "./inc/memmap.h"
 #include "./inc/gpio_oper.h"
 
+void interrupt_handler();
+
 #define rck 2
 #define srck 3
 #define s_in 4
-
-void interrupt_handler();
 
 void uart_putc(char c, void* uart_loc) {
 	volatile uint32_t* register_state;
@@ -191,11 +191,16 @@ void write_shift_regs(unsigned char* regs, unsigned int len) {
 	pin_shft_serial_out = 4;
 	pin_shft_serial_clk = 3;
 	pin_shft_update_out = 2;
-
-	unsigned int i;
-	i = 0;
-	while (i < len) {
-		if ((*regs) & (1 << i)) {
+	
+	// Work backwards through the bits since we are 
+	// putting them into a shift register.
+	unsigned char* working_byte_ptr;
+	unsigned int bit_of_byte;
+	while (len > 0) {
+		len--;
+		working_byte_ptr = regs + (len / 8);
+		bit_of_byte = len % 8;
+		if ((*working_byte_ptr) & (1 << bit_of_byte)) {
 			HIGH(pin_shft_serial_out);
 		} else {
 			LOW(pin_shft_serial_out);
@@ -206,12 +211,6 @@ void write_shift_regs(unsigned char* regs, unsigned int len) {
 		pause();
 		
 		LOW(pin_shft_serial_clk);
-		if (i == 7) {
-			i = 0;
-			len -= 8;
-		} else {
-			i++;
-		}
 	}
 	
 	HIGH(pin_shft_update_out);
@@ -225,13 +224,21 @@ void write_shift_regs(unsigned char* regs, unsigned int len) {
 void write_command(unsigned char command) {
 	unsigned char regs[2];
 	regs[0] = command;
+	regs[1] = 0b00000001;
+	write_shift_regs(regs, 11);
+	regs[0] = 0b00000000;
 	regs[1] = 0b00000000;
+	write_shift_regs(regs, 11);
 	return;
 }
 void write_data(unsigned char data) {
 	unsigned char regs[2];
 	regs[0] = data;
+	regs[1] = 0b00000101;
+	write_shift_regs(regs, 11);
+	regs[0] = 0b00000000;
 	regs[1] = 0b00000000;
+	write_shift_regs(regs, 11);
 	return;
 }
 
@@ -239,13 +246,17 @@ signed int main(unsigned int argc, char* argv[], char* envp[]) {
 	volatile uint32_t* urat_reg;
 	volatile uint32_t* ctrl_reg;
 	volatile uint32_t* prci_reg;
-
-	// Setup the Clock
+	
+	// Setup the Clock to 256MHz by setting up the PLL Frequency Multipiers and Dividers
 	prci_reg = (uint32_t*)(PRCI_BASE + PRCI_HFROSCCFG);
 	*prci_reg |= (1 << 30);
 	prci_reg = (uint32_t*)(PRCI_BASE + PRCI_PLLCFG);
 	*prci_reg |= (1 << 16) | (1 << 17) | (1 << 18);
-	*prci_reg = (*prci_reg & 0x7FFFF000) | 0x000005F1;
+	// The input is 16MHz from the external crystal oscillator HFXOSC on the Redboard Red-V
+	// pllr = 1 Step #1: Divide by [pllr + 1] = 2 [bitshift by 0 to locate in PLLCFG register]
+	// pllf = 31 Step #2: Multiply by [2 * (pllf + 1)] = 64 [bitshift by 4 to locate in PLLCFG register]
+	// pllq = 1 Step #3: Divide by [2 ^ pllq] = 2 [bitshift by 10 to locate in PLLCFG register]
+	*prci_reg = (*prci_reg & 0x7FFFF000) | (1 << 0) | (31 << 4) | (1 << 10);
 	*prci_reg &= ~(1 << 18);
 	prci_reg = (uint32_t*)(PRCI_BASE + PRCI_HFROSCCFG);
 	*prci_reg &= ~(1 << 30);
@@ -262,7 +273,7 @@ signed int main(unsigned int argc, char* argv[], char* envp[]) {
 	ctrl_reg = (uint32_t*)(UART1_BASE + UART_IE);
 	*ctrl_reg = 0x0;
 
-	// Set GPIO Pins 0, 1, and 5 to GPIO mode, Output mode, and Turn Them Off
+	// Set GPIO Pins 2, 3, 4, and 5 to GPIO mode, Output mode, and Turn Them Off
 	IOF_SEL(5, 0);
 	IOF_SEL(4, 0);
 	IOF_SEL(3, 0);
@@ -287,7 +298,7 @@ signed int main(unsigned int argc, char* argv[], char* envp[]) {
 	// CLINT
 	// mtimecmp
 	ctrl_reg = (uint32_t*)(CLINT_BASE + CLINT_MTIMECMP_LO); // Lower-half of 64-bit value
-	*ctrl_reg = 32768;
+	*ctrl_reg = 32768 / 2;
 	//*ctrl_reg = 1000;
 	ctrl_reg = (uint32_t*)(CLINT_BASE + CLINT_MTIMECMP_HI); // Upper-half of 64-bit value
 	*ctrl_reg = 0;

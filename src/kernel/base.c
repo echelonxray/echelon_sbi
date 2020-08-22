@@ -4,19 +4,18 @@
 #include "./inc/memmap.h"
 #include "./inc/gpio_oper.h"
 #include "./drivers/uart.h"
+#include "./interrupts/base.h"
 
 #define rck 2
 #define srck 3
 #define s_in 4
-
-void interrupt_handler();
 
 void write(char* str) {
 	uart_write(str, UART0_BASE);
 	return;
 }
 
-signed int main(unsigned int argc, char* argv[], char* envp[]) {
+signed int kmain(unsigned int argc, char* argv[], char* envp[]) {
 	volatile uint32_t* urat_reg;
 	volatile uint32_t* ctrl_reg;
 	volatile uint32_t* prci_reg;

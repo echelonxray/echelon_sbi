@@ -41,7 +41,7 @@ my_entry_pt:
   lui sp, 0x80003
   or sp, sp, a0
   
-  call main
+  call kmain
   
   wfi
 

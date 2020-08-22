@@ -1,17 +1,35 @@
 CC      := riscv32-unknown-elf-gcc
 OBJCPY  := riscv32-unknown-elf-objcopy
-CFLAGS  := -Wall -Wextra -std=c99 -O2 -march=rv32ima -mabi=ilp32 -ffreestanding -nostdlib -nostartfiles -Wno-unused-parameter
-LDFLAGS := -T ./hello_world.ld
-FILES   := ./src/hello_world.o ./src/hello_world_entry.o
+STRIP   := riscv32-unknown-elf-strip
+CFLAGS  := -Wall -Wextra -std=c99 -O2 -march=rv32imac -mabi=ilp32 -ffreestanding -nostdlib -nostartfiles -Wno-unused-parameter
+LDFLAGS := -T ./linker_script.ld
+GFILES  := 
+KFILES  := 
+UFILES  := 
 
-.PHONY: all rebuild clean ihex
+# Global Library
+GFILES  := $(GFILES) ./src/inc/string.o
 
-all: prog ihex
+# Kernel
+#  - Core (Entry/System Setup)
+KFILES  := $(KFILES) ./src/kernel/base.o ./src/kernel/entry.o ./src/kernel/debug.o
+#  - Drivers
+KFILES  := $(KFILES) ./src/kernel/drivers/uart.o
+#  - Idle Loop
+KFILES  := $(KFILES) ./src/kernel/idle/idle_loop.o
+#  - Interrupt Handler
+KFILES  := $(KFILES) ./src/kernel/interrupts/base.o ./src/kernel/interrupts/entry.o
 
-rebuild: clean all
+# Programs
+#  - Init
+UFILES  := $(UFILES) ./src/init/init.o
+
+.PHONY: all rebuild clean
+
+all: prog.elf prog.bin prog.hex prog-strip.elf prog-strip.bin prog-strip.hex
 
 clean:
-	rm -f ./prog ./prog.hex ./*.o ./src/*.o $(FILES)
+	rm -f *.elf *.bin *.hex $(GFILES) $(KFILES) $(UFILES)
 
 %.o: %.c
 	$(CC) $(CFLAGS) $^ -c -o $@
@@ -19,8 +37,14 @@ clean:
 %.o: %.s
 	$(CC) $(CFLAGS) $^ -c -o $@
 
-prog: $(FILES)
+prog.elf: $(GFILES) $(KFILES) $(UFILES)
 	$(CC) -static $(CFLAGS) $^ $(LDFLAGS) -o $@
 
-ihex:
-	$(OBJCPY) -O ihex ./prog ./prog.hex
+prog-strip.elf: prog.elf
+	$(STRIP) -s -x -R .comment -R .text.startup -R .riscv.attributes $^ -o $@
+
+%.bin: %.elf
+	$(OBJCPY) -O binary $^ $@
+
+%.hex: %.elf
+	$(OBJCPY) -O ihex $^ $@

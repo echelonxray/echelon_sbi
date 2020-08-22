@@ -1,8 +1,8 @@
 #ifndef _insertion_gpio_oper_h
 #define _insertion_gpio_oper_h
 
-#include "types.h"
-#include "memmap.h"
+#include "./../../inc/types.h"
+#include "./memmap.h"
 
 // Set GPIO IOF mode for pin
 //   func == 0: No special IOF mode. Normal GPIO operation.

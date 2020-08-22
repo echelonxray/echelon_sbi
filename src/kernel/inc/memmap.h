@@ -2,7 +2,7 @@
 #define _insertion_gpio_map_h
 
 // GPIO
-#define GPIO_BASE 0x10012000u
+#define GPIO_BASE ((void*)0x10012000u)
 // Offsets
 #define GPIO_INPUT_VAL 0x00u
 #define GPIO_INPUT_EN 0x04u
@@ -23,8 +23,8 @@
 #define GPIO_OUT_XOR 0x40u
 
 // UART
-#define UART0_BASE 0x10013000u
-#define UART1_BASE 0x10023000u
+#define UART0_BASE ((void*)0x10013000u)
+#define UART1_BASE ((void*)0x10023000u)
 // Offsets
 #define UART_TXDATA 0x00u
 #define UART_RXDATA 0x04u
@@ -35,7 +35,7 @@
 #define UART_DIV 0x18u
 
 // AON
-#define AON_BASE 0x10000000u
+#define AON_BASE ((void*)0x10000000u)
 // Offsets
 #define AON_WDOGCFG 0x000u
 #define AON_WDOGCOUNT 0x008u
@@ -90,7 +90,7 @@
 #define AON_AONCFG 0x300u
 
 // CLINT
-#define CLINT_BASE 0x02000000u
+#define CLINT_BASE ((void*)0x02000000u)
 // Offsets
 #define CLINT_MSIP 0x0000u
 #define CLINT_MTIMECMP 0x4000u
@@ -101,7 +101,7 @@
 #define CLINT_MTIME_HI 0xBFFCu
 
 // PRCI
-#define PRCI_BASE 0x10008000u
+#define PRCI_BASE ((void*)0x10008000u)
 // Offsets
 #define PRCI_HFROSCCFG 0x00u
 #define PRCI_HFXOSCCFG 0x04u

@@ -22,7 +22,7 @@ KFILES  := $(KFILES) ./src/kernel/interrupts/base.o ./src/kernel/interrupts/entr
 
 # Programs
 #  - Init
-UFILES  := $(UFILES) ./src/init/init.o
+UFILES  := $(UFILES) ./src/progs/init/init.o
 
 .PHONY: all rebuild clean
 

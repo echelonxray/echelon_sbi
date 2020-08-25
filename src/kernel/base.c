@@ -10,7 +10,7 @@
 #define srck 3
 #define s_in 4
 
-void write(char* str) {
+void kwrite(char* str) {
 	uart_write(str, UART0_BASE);
 	return;
 }
@@ -149,9 +149,9 @@ signed int kmain(unsigned int argc, char* argv[], char* envp[]) {
 	ctrl_reg = (uint32_t*)(AON_BASE + AON_RTCCFG);
 	*ctrl_reg = 0x00000000;
 
-	write("TraceY\n");
+	kwrite("TraceY\n");
 	CPU_WAIT();
-	write("TraceZ\n");
+	kwrite("TraceZ\n");
 
 	return 0;
 }

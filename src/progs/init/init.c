@@ -58,3 +58,10 @@ void write_data(unsigned char data) {
 	return;
 }
 */
+
+signed int init_main(unsigned int argc, char* argv[], char* envp[]) {
+	while (1) {
+		//write(1, "Hello, world!\n", 14);
+	}
+	return 0;
+}

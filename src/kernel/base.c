@@ -10,6 +10,8 @@
 #define srck 3
 #define s_in 4
 
+char* tstr;
+
 void kwrite(char* str) {
 	uart_write(str, UART0_BASE);
 	return;
@@ -19,6 +21,8 @@ signed int kmain(unsigned int argc, char* argv[], char* envp[]) {
 	volatile uint32_t* urat_reg;
 	volatile uint32_t* ctrl_reg;
 	volatile uint32_t* prci_reg;
+	
+	tstr = "Hello, World!\n";
 	
 	// Setup the Clock to 256MHz by setting up the PLL Frequency Multipiers and Dividers
 	prci_reg = (uint32_t*)(PRCI_BASE + PRCI_HFROSCCFG);
@@ -67,6 +71,9 @@ signed int kmain(unsigned int argc, char* argv[], char* envp[]) {
 	// Enable TX on UART0
 	ctrl_reg = (uint32_t*)(UART0_BASE + UART_TXCTRL);
 	*ctrl_reg = 0x1;
+	
+	kwrite(tstr);
+	return 0;
 
 	// CLINT
 	// mtimecmp

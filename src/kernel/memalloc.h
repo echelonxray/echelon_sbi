@@ -5,5 +5,6 @@
 
 void* kmalloc(size_t size);
 void kfree(void* ptr);
+void kallocinit(void* block_start, void* block_end);
 
 #endif

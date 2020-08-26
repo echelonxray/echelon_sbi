@@ -9,21 +9,6 @@ struct alloc_section {
 void* mem_block_start = 0;
 void* mem_block_end = 0;
 
-void kallocinit(void* block_start, void* block_end) {
-	if (block_start > block_end) {
-		return;
-	}
-	if (((uintRL_t)block_end - (uintRL_t)block_start) < sizeof(struct alloc_section)) {
-		return;
-	}
-	mem_block_start = block_start;
-	mem_block_end = block_end;
-	struct alloc_section* section = block_start;
-	section->size = 0;
-	section->next = 0;
-	return;
-}
-
 void* kmalloc(size_t size) {
 	// If allocation size is 0 or if the final size will overflow size_t, return 0
 	if (size == 0 || (size + sizeof(struct alloc_section)) < size) {
@@ -99,5 +84,20 @@ void kfree(void* ptr) {
 		prev_section = section;
 		section = section->next;
 	}
+	return;
+}
+
+void kallocinit(void* block_start, void* block_end) {
+	if (block_start > block_end) {
+		return;
+	}
+	if (((uintRL_t)block_end - (uintRL_t)block_start) < sizeof(struct alloc_section)) {
+		return;
+	}
+	mem_block_start = block_start;
+	mem_block_end = block_end;
+	struct alloc_section* section = block_start;
+	section->size = 0;
+	section->next = 0;
 	return;
 }

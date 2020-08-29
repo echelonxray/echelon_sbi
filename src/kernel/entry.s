@@ -42,8 +42,13 @@ my_entry_pt:
   or sp, sp, a0
   
   call kmain
-  
-  wfi
 
 loop:
+  wfi
   j loop
+
+.section section_KHEAP_START
+
+.globl KHEAP_START
+
+KHEAP_START:

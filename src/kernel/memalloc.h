@@ -2,6 +2,7 @@
 #define _insertion_kernel_lib_memalloc_h
 
 #include "./../inc/types.h"
+#include "./entry.h"
 
 void* kmalloc(size_t size);
 void kfree(void* ptr);

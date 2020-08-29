@@ -5,15 +5,131 @@
 #include "./inc/gpio_oper.h"
 #include "./drivers/uart.h"
 #include "./interrupts/base.h"
+#include "./memalloc.h"
+#include "./globals.h"
 
 #define rck 2
 #define srck 3
 #define s_in 4
 
-char* tstr;
-
 void kwrite(char* str) {
 	uart_write(str, UART0_BASE);
+	return;
+}
+
+void printv(char* str) {
+	kwrite(str);
+	return;
+}
+
+void printh(char* str, uint32_t num, char* str2) {
+	kwrite(str);
+	char buff[50];
+	itoa(num, buff, 50, -16, 8);
+	kwrite(buff);
+	kwrite(str2);
+	return;
+}
+
+void printd(char* str, uint32_t num) {
+	kwrite(str);
+	char buff[50];
+	itoa(num, buff, 50, -10, 0);
+	kwrite(buff);
+	return;
+}
+
+void prints(char* str, char* str2) {
+	kwrite(str);
+	kwrite(str2);
+	return;
+}
+
+void kmemtest() {
+	kallocinit((void*)&KHEAP_START, (void*)0x80003FFF);
+	
+	char* cstr1 = "Hello, World!\n";
+	size_t cstr1_len = strlen(cstr1) + 1;
+	char* cstr2 = "Michael\n";
+	size_t cstr2_len = strlen(cstr2) + 1;
+	char* cstr3 = "Kloos\n";
+	size_t cstr3_len = strlen(cstr3) + 1;
+	char* cstr4 = "Bye, World!\n";
+	size_t cstr4_len = strlen(cstr4) + 1;
+	printd("cstr1_len: ", cstr1_len);
+	prints("\tcstr1: ", cstr1);
+	printd("cstr2_len: ", cstr2_len);
+	prints("\tcstr2: ", cstr2);
+	printd("cstr3_len: ", cstr3_len);
+	prints("\tcstr3: ", cstr3);
+	printd("cstr4_len: ", cstr4_len);
+	prints("\tcstr4: ", cstr4);
+	printv("\n");
+	
+	char* dstr1 = kmalloc(cstr1_len);
+	strcpy(dstr1, cstr1);
+	prints("dstr1: ", dstr1);
+	printh("kmalloc dstr1 @   0x", (long unsigned int)dstr1, "\n");
+	char* dstr2 = kmalloc(cstr2_len);
+	strcpy(dstr2, cstr2);
+	prints("dstr2: ", dstr2);
+	printh("kmalloc dstr2 @   0x", (long unsigned int)dstr2, "\n");
+	char* dstr3 = kmalloc(cstr3_len);
+	strcpy(dstr3, cstr3);
+	prints("dstr3: ", dstr3);
+	printh("kmalloc dstr3 @   0x", (long unsigned int)dstr3, "\n");
+	char* dstr4 = kmalloc(cstr4_len);
+	strcpy(dstr4, cstr4);
+	prints("dstr4: ", dstr4);
+	printh("kmalloc dstr4 @   0x", (long unsigned int)dstr4, "\n");
+	
+	printv("\n");
+	kfree(dstr2);
+	
+	prints("dstr1: ", dstr1);
+	printh("kmalloc dstr1 @   0x", (long unsigned int)dstr1, "\n");
+	prints("dstr2: ", dstr2);
+	printh("kmalloc dstr2 @   0x", (long unsigned int)dstr2, "\n");
+	prints("dstr3: ", dstr3);
+	printh("kmalloc dstr3 @   0x", (long unsigned int)dstr3, "\n");
+	prints("dstr4: ", dstr4);
+	printh("kmalloc dstr4 @   0x", (long unsigned int)dstr4, "\n");
+	
+	printv("\n");
+	dstr2 = kmalloc(cstr2_len);
+	
+	prints("dstr1: ", dstr1);
+	printh("kmalloc dstr1 @   0x", (long unsigned int)dstr1, "\n");
+	prints("dstr2: ", dstr2);
+	printh("kmalloc dstr2 @   0x", (long unsigned int)dstr2, "\n");
+	prints("dstr3: ", dstr3);
+	printh("kmalloc dstr3 @   0x", (long unsigned int)dstr3, "\n");
+	prints("dstr4: ", dstr4);
+	printh("kmalloc dstr4 @   0x", (long unsigned int)dstr4, "\n");
+	
+	printv("\n");
+	strcpy(dstr2, "Hi\n");
+	
+	prints("dstr1: ", dstr1);
+	printh("kmalloc dstr1 @   0x", (long unsigned int)dstr1, "\n");
+	prints("dstr2: ", dstr2);
+	printh("kmalloc dstr2 @   0x", (long unsigned int)dstr2, "\n");
+	prints("dstr3: ", dstr3);
+	printh("kmalloc dstr3 @   0x", (long unsigned int)dstr3, "\n");
+	prints("dstr4: ", dstr4);
+	printh("kmalloc dstr4 @   0x", (long unsigned int)dstr4, "\n");
+	
+	printv("\n");
+	
+	prints("dstr1: ", dstr1);
+	printh("kmalloc dstr1 @   0x", (long unsigned int)dstr1, "\n");
+	prints("dstr2: ", dstr2 + 4);
+	printh("kmalloc dstr2 @   0x", (long unsigned int)dstr2, "\n");
+	prints("dstr3: ", dstr3);
+	printh("kmalloc dstr3 @   0x", (long unsigned int)dstr3, "\n");
+	prints("dstr4: ", dstr4);
+	printh("kmalloc dstr4 @   0x", (long unsigned int)dstr4, "\n");
+	
 	return;
 }
 
@@ -21,8 +137,6 @@ signed int kmain(unsigned int argc, char* argv[], char* envp[]) {
 	volatile uint32_t* urat_reg;
 	volatile uint32_t* ctrl_reg;
 	volatile uint32_t* prci_reg;
-	
-	tstr = "Hello, World!\n";
 	
 	// Setup the Clock to 256MHz by setting up the PLL Frequency Multipiers and Dividers
 	prci_reg = (uint32_t*)(PRCI_BASE + PRCI_HFROSCCFG);
@@ -71,9 +185,6 @@ signed int kmain(unsigned int argc, char* argv[], char* envp[]) {
 	// Enable TX on UART0
 	ctrl_reg = (uint32_t*)(UART0_BASE + UART_TXCTRL);
 	*ctrl_reg = 0x1;
-	
-	kwrite(tstr);
-	return 0;
 
 	// CLINT
 	// mtimecmp
@@ -111,6 +222,10 @@ signed int kmain(unsigned int argc, char* argv[], char* envp[]) {
 	*ctrl_reg = 0x0000100F;
 	
 	HIGH(5);
+	
+	kmemtest();
+	
+	cpu_context_ptr = 0;
 	
 	/*
 	ENABLE_TIMER_INTERRUPT();

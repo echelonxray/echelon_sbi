@@ -1,13 +1,14 @@
 #include "./string.h"
 
 void itoa(register signed int number, register char* buf, register signed int buf_len, register signed int base, register signed int set_width) {
-	register signed long int num;
+	//register signed long int num;
+	register unsigned long int num;
 	num = number;
 	if (base < 0) {
 		base = -base;
-		if(number < 0) {
-			num = -num;
-		}
+		//if(number < 0) {
+		//	num = -num;
+		//}
 	}
 	if (base > 16 || base < 2) {
 		return;
@@ -95,4 +96,24 @@ void itoa(register signed int number, register char* buf, register signed int bu
 		}
 	}
 	return;
+}
+
+size_t strlen(char* str) {
+	size_t i;
+	i = 0;
+	while (str[i] != 0) {
+		i++;
+	}
+	return i;
+}
+
+char* strcpy(char* dest, char* src) {
+	size_t i;
+	i = 0;
+	while (src[i] != 0) {
+		dest[i] = src[i];
+		i++;
+	}
+	dest[i] = src[i];
+	return dest;
 }

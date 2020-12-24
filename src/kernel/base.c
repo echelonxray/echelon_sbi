@@ -133,6 +133,11 @@ void kmemtest() {
 	return;
 }
 
+void test_test() {
+	__asm__ __volatile__ ("ecall");
+	return;
+}
+
 signed int kmain(unsigned int argc, char* argv[], char* envp[]) {
 	volatile uint32_t* urat_reg;
 	volatile uint32_t* ctrl_reg;
@@ -152,7 +157,7 @@ signed int kmain(unsigned int argc, char* argv[], char* envp[]) {
 	prci_reg = (uint32_t*)(PRCI_BASE + PRCI_HFROSCCFG);
 	*prci_reg &= ~(1 << 30);
 
-	// Set Div to 16MHz / (138 + 1) = ~115200 Baud
+	// Set Div to 256MHz / (2221 + 1) = ~115200 Baud
 	urat_reg = (uint32_t*)(UART0_BASE + UART_DIV);
 	*urat_reg = 2221;
 	urat_reg = (uint32_t*)(UART1_BASE + UART_DIV);
@@ -224,6 +229,7 @@ signed int kmain(unsigned int argc, char* argv[], char* envp[]) {
 	HIGH(5);
 	
 	kmemtest();
+	test_test();
 	
 	cpu_context_ptr = 0;
 	

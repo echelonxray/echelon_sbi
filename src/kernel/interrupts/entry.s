@@ -76,6 +76,5 @@ interrupt_handler:
   lw t5, -0x78(sp)
   lw t6, -0x7C(sp)
   mret
-
-loop:
-  j loop
+  
+  j idle_loop

@@ -4,7 +4,7 @@
 
 my_entry_pt:
   mv ra, zero
-  mv sp, zero
+  #mv sp, zero # This is overwritten below
   mv gp, zero
   mv tp, zero
   mv t0, zero
@@ -12,7 +12,7 @@ my_entry_pt:
   mv t2, zero
   mv fp, zero
   mv s1, zero
-  mv a0, zero
+  #mv a0, zero # This is done below
   mv a1, zero
   mv a2, zero
   mv a3, zero
@@ -35,11 +35,12 @@ my_entry_pt:
   mv t5, zero
   mv t6, zero
   
-  # Load 0x80003FF0 into Stack Pointer and Global Pointer
+  # Load 0x80003FF0 into Stack Pointer
   ori a0, zero, 0xFF
   slli a0, a0, 4
   lui sp, 0x80003
   or sp, sp, a0
+  mv a0, zero
   
   call kmain
 

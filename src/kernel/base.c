@@ -19,129 +19,6 @@ void kwrite(char* str) {
 	return;
 }
 
-/*
-void printv(char* str) {
-	kwrite(str);
-	return;
-}
-
-void printh(char* str, uint32_t num, char* str2) {
-	kwrite(str);
-	char buff[50];
-	itoa(num, buff, 50, -16, 8);
-	kwrite(buff);
-	kwrite(str2);
-	return;
-}
-
-void printd(char* str, uint32_t num) {
-	kwrite(str);
-	char buff[50];
-	itoa(num, buff, 50, -10, 0);
-	kwrite(buff);
-	return;
-}
-
-void prints(char* str, char* str2) {
-	kwrite(str);
-	kwrite(str2);
-	return;
-}
-
-void kmemtest() {
-	kallocinit((void*)&KHEAP_START, (void*)0x80003FFF);
-	
-	char* cstr1 = "Hello, World!\n";
-	size_t cstr1_len = strlen(cstr1) + 1;
-	char* cstr2 = "Michael\n";
-	size_t cstr2_len = strlen(cstr2) + 1;
-	char* cstr3 = "Kloos\n";
-	size_t cstr3_len = strlen(cstr3) + 1;
-	char* cstr4 = "Bye, World!\n";
-	size_t cstr4_len = strlen(cstr4) + 1;
-	printd("cstr1_len: ", cstr1_len);
-	prints("\tcstr1: ", cstr1);
-	printd("cstr2_len: ", cstr2_len);
-	prints("\tcstr2: ", cstr2);
-	printd("cstr3_len: ", cstr3_len);
-	prints("\tcstr3: ", cstr3);
-	printd("cstr4_len: ", cstr4_len);
-	prints("\tcstr4: ", cstr4);
-	printv("\n");
-	
-	char* dstr1 = kmalloc(cstr1_len);
-	strcpy(dstr1, cstr1);
-	prints("dstr1: ", dstr1);
-	printh("kmalloc dstr1 @   0x", (long unsigned int)dstr1, "\n");
-	char* dstr2 = kmalloc(cstr2_len);
-	strcpy(dstr2, cstr2);
-	prints("dstr2: ", dstr2);
-	printh("kmalloc dstr2 @   0x", (long unsigned int)dstr2, "\n");
-	char* dstr3 = kmalloc(cstr3_len);
-	strcpy(dstr3, cstr3);
-	prints("dstr3: ", dstr3);
-	printh("kmalloc dstr3 @   0x", (long unsigned int)dstr3, "\n");
-	char* dstr4 = kmalloc(cstr4_len);
-	strcpy(dstr4, cstr4);
-	prints("dstr4: ", dstr4);
-	printh("kmalloc dstr4 @   0x", (long unsigned int)dstr4, "\n");
-	
-	printv("\n");
-	kfree(dstr2);
-	
-	prints("dstr1: ", dstr1);
-	printh("kmalloc dstr1 @   0x", (long unsigned int)dstr1, "\n");
-	prints("dstr2: ", dstr2);
-	printh("kmalloc dstr2 @   0x", (long unsigned int)dstr2, "\n");
-	prints("dstr3: ", dstr3);
-	printh("kmalloc dstr3 @   0x", (long unsigned int)dstr3, "\n");
-	prints("dstr4: ", dstr4);
-	printh("kmalloc dstr4 @   0x", (long unsigned int)dstr4, "\n");
-	
-	printv("\n");
-	dstr2 = kmalloc(cstr2_len);
-	
-	prints("dstr1: ", dstr1);
-	printh("kmalloc dstr1 @   0x", (long unsigned int)dstr1, "\n");
-	prints("dstr2: ", dstr2);
-	printh("kmalloc dstr2 @   0x", (long unsigned int)dstr2, "\n");
-	prints("dstr3: ", dstr3);
-	printh("kmalloc dstr3 @   0x", (long unsigned int)dstr3, "\n");
-	prints("dstr4: ", dstr4);
-	printh("kmalloc dstr4 @   0x", (long unsigned int)dstr4, "\n");
-	
-	printv("\n");
-	strcpy(dstr2, "Hi\n");
-	
-	prints("dstr1: ", dstr1);
-	printh("kmalloc dstr1 @   0x", (long unsigned int)dstr1, "\n");
-	prints("dstr2: ", dstr2);
-	printh("kmalloc dstr2 @   0x", (long unsigned int)dstr2, "\n");
-	prints("dstr3: ", dstr3);
-	printh("kmalloc dstr3 @   0x", (long unsigned int)dstr3, "\n");
-	prints("dstr4: ", dstr4);
-	printh("kmalloc dstr4 @   0x", (long unsigned int)dstr4, "\n");
-	
-	printv("\n");
-	
-	prints("dstr1: ", dstr1);
-	printh("kmalloc dstr1 @   0x", (long unsigned int)dstr1, "\n");
-	prints("dstr2: ", dstr2 + 4);
-	printh("kmalloc dstr2 @   0x", (long unsigned int)dstr2, "\n");
-	prints("dstr3: ", dstr3);
-	printh("kmalloc dstr3 @   0x", (long unsigned int)dstr3, "\n");
-	prints("dstr4: ", dstr4);
-	printh("kmalloc dstr4 @   0x", (long unsigned int)dstr4, "\n");
-	
-	return;
-}
-
-void test_test() {
-	__asm__ __volatile__ ("ecall");
-	return;
-}
-*/
-
 signed int kmain(unsigned int argc, char* argv[], char* envp[]) {
 	// START: CPU Init
 	volatile uint32_t* urat_reg;
@@ -233,6 +110,15 @@ signed int kmain(unsigned int argc, char* argv[], char* envp[]) {
 	
 	// START: Kernel Init
 	kallocinit((void*)&KHEAP_START, (void*)0x80003FFF);
+	kernel_stack_base = (uintRL_t)kmalloc(0x1000);
+	kernel_stack_top = kernel_stack_base + 0x1000;
+	
+	__asm__ __volatile__ ("csrrw zero, pmpcfg0, %0" : : "r" (0x0B080D08));
+	__asm__ __volatile__ ("csrrw zero, pmpcfg1, %0" : : "r" (0x00000008));
+	
+	__asm__ __volatile__ ("csrrw zero, pmpaddr0, %0" : : "r" (0x08000000));
+	__asm__ __volatile__ ("csrrw zero, pmpaddr1, %0" : : "r" (0x10000000));
+	__asm__ __volatile__ ("csrrw zero, pmpaddr4, %0" : : "r" (0x40000000));
 	// END: Kernel Init
 	
 	// START: Userspace Init
@@ -242,7 +128,13 @@ signed int kmain(unsigned int argc, char* argv[], char* envp[]) {
 	test_context_ptr->context_id = 1;
 	test_context_ptr->status_vals = (0 << 0);
 	test_context_ptr->regs[0] = &init_main;
-	test_context_ptr->regs[2] = kmalloc(0x1000) + 0x1000;
+	uintRL_t prog_stack_base;
+	uintRL_t prog_stack_top;
+	prog_stack_base = (uintRL_t)kmalloc(0x1000);
+	prog_stack_top = (uintRL_t)(prog_stack_base + 0x1000);
+	test_context_ptr->regs[2] = prog_stack_top;
+	__asm__ __volatile__ ("csrrw zero, pmpaddr2, %0" : : "r" (prog_stack_base >> 2));
+	__asm__ __volatile__ ("csrrw zero, pmpaddr3, %0" : : "r" (prog_stack_top >> 2));
 	//__asm__ __volatile__ ("csrrs zero, mstatus, %0" : : "r" (0x00001880));
 	//	Start Userspace
 	switch_context(test_context_ptr);
@@ -250,51 +142,6 @@ signed int kmain(unsigned int argc, char* argv[], char* envp[]) {
 	
 	//HIGH(5);
 	
-	//kmemtest();
-	//test_test();
-	
-	//cpu_context_ptr = 0;
-	
-	/*
-	ENABLE_TIMER_INTERRUPT();
-	
-	LOW(s_in);
-	LOW(srck);
-	LOW(rck);
-	pause();
-	
-	HIGH(s_in);
-	pause();
-	HIGH(srck);
-	pause();
-	LOW(srck);
-	pause();
-	
-	LOW(s_in);
-	pause();
-	HIGH(srck);
-	pause();
-	LOW(srck);
-	pause();
-	
-	HIGH(s_in);
-	pause();
-	HIGH(srck);
-	pause();
-	LOW(srck);
-	pause();
-	
-	LOW(s_in);
-	pause();
-
-	HIGH(rck);
-	pause();
-	LOW(rck);
-	pause();
-
-	DISABLE_TIMER_INTERRUPT();
-	*/
-
 	// RTCCFG Disable
 	ctrl_reg = (uint32_t*)(AON_BASE + AON_RTCCFG);
 	*ctrl_reg = 0x00000000;

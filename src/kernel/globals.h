@@ -3,4 +3,7 @@
 
 #include "./../inc/types.h"
 
+extern uintRL_t kernel_stack_base;
+extern uintRL_t kernel_stack_top;
+
 #endif

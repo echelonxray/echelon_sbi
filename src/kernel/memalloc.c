@@ -10,6 +10,9 @@ void* mem_block_start = 0;
 void* mem_block_end = 0;
 
 void* kmalloc(size_t size) {
+	if (size % 4) {
+		size += 4 - (size % 4);
+	}
 	// If allocation size is 0 or if the final size will overflow size_t, return 0
 	if (size == 0 || (size + sizeof(struct alloc_section)) < size) {
 		return 0;

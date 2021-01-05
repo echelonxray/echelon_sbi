@@ -38,6 +38,7 @@ interrupt_handler:
   csrrw a1, mscratch, a0
   sw a1, 0x34(a0)
   
+  lw sp, kernel_stack_top
   call interrupt_chandle
   
   csrrc a0, mscratch, zero

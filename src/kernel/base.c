@@ -1,10 +1,12 @@
 #include "./../inc/types.h"
 #include "./../inc/string.h"
+#include "./../progs/init/init.h"
 #include "./inc/general_oper.h"
 #include "./inc/memmap.h"
 #include "./inc/gpio_oper.h"
 #include "./drivers/uart.h"
 #include "./interrupts/base.h"
+#include "./interrupts/context_switch.h"
 #include "./memalloc.h"
 #include "./globals.h"
 
@@ -17,6 +19,7 @@ void kwrite(char* str) {
 	return;
 }
 
+/*
 void printv(char* str) {
 	kwrite(str);
 	return;
@@ -137,12 +140,13 @@ void test_test() {
 	__asm__ __volatile__ ("ecall");
 	return;
 }
+*/
 
 signed int kmain(unsigned int argc, char* argv[], char* envp[]) {
+	// START: CPU Init
 	volatile uint32_t* urat_reg;
 	volatile uint32_t* ctrl_reg;
 	volatile uint32_t* prci_reg;
-	
 	// Setup the Clock to 256MHz by setting up the PLL Frequency Multipiers and Dividers
 	prci_reg = (uint32_t*)(PRCI_BASE + PRCI_HFROSCCFG);
 	*prci_reg |= (1 << 30);
@@ -220,18 +224,36 @@ signed int kmain(unsigned int argc, char* argv[], char* envp[]) {
 
 	__asm__ __volatile__ ("csrrw zero, mtvec, %0" : : "r" (&interrupt_handler));
 	__asm__ __volatile__ ("csrrw zero, mie, %0" : : "r" (0x00000000));
-	__asm__ __volatile__ ("csrrs zero, mstatus, %0" : : "r" (0x00000008));
+	__asm__ __volatile__ ("csrrc zero, mstatus, %0" : : "r" (0x00000008));
 	
 	// RTCCFG Enable
 	ctrl_reg = (uint32_t*)(AON_BASE + AON_RTCCFG);
 	*ctrl_reg = 0x0000100F;
+	// END: CPU Init
 	
-	HIGH(5);
+	// START: Kernel Init
+	kallocinit((void*)&KHEAP_START, (void*)0x80003FFF);
+	// END: Kernel Init
 	
-	kmemtest();
-	test_test();
+	// START: Userspace Init
+	CPU_Context* test_context_ptr;
+	test_context_ptr = kmalloc(sizeof(CPU_Context));
+	memset(test_context_ptr, 0, sizeof(CPU_Context));
+	test_context_ptr->context_id = 1;
+	test_context_ptr->status_vals = (0 << 0);
+	test_context_ptr->regs[0] = &init_main;
+	test_context_ptr->regs[2] = kmalloc(0x1000) + 0x1000;
+	//__asm__ __volatile__ ("csrrs zero, mstatus, %0" : : "r" (0x00001880));
+	//	Start Userspace
+	switch_context(test_context_ptr);
+	// END: Userspace Init
 	
-	cpu_context_ptr = 0;
+	//HIGH(5);
+	
+	//kmemtest();
+	//test_test();
+	
+	//cpu_context_ptr = 0;
 	
 	/*
 	ENABLE_TIMER_INTERRUPT();

@@ -96,6 +96,20 @@ void itoa(register signed int number, register char* buf, register signed int bu
 		}
 	}
 	return;
+
+}
+void memset(void* s, unsigned int c, size_t n) {
+	unsigned char* ptr;
+	unsigned char* end_addr;
+	unsigned char value;
+	ptr = s;
+	end_addr = s + n;
+	value = (unsigned char)(c & 0xFF);
+	while (ptr < end_addr) {
+		*ptr = value;
+		ptr++;
+	}
+	return;
 }
 
 size_t strlen(char* str) {

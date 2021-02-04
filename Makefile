@@ -3,8 +3,9 @@ CC            := $(TUPLE)-gcc
 OBJCPY        := $(TUPLE)-objcopy
 STRIP         := $(TUPLE)-strip
 CFLAGS        := -Wall -Wextra -std=c99 -O2 -march=rv32imac -mabi=ilp32 -ffreestanding -nostdlib -nostartfiles -Wno-unused-parameter -fno-stack-check -fno-stack-protector
-LDFLAGS       := 
+LDFLAGS       := -static
 FS_MOUNT_PATH := $(PWD)/tmp_mnt_pt
+
 GFILES        := 
 KFILES        := 
 UFILES        := 
@@ -83,7 +84,7 @@ prog-%.elf.strip: prog-%.elf
 	$(OBJCPY) -O ihex $^ $@
 
 userspace:
-	mkdir $(FS_MOUNT_PATH)
+	mkdir -p $(FS_MOUNT_PATH)
 	$(MAKE) -C ./src/progs all
 	$(MAKE) -C $(FS_MOUNT_PATH) -f $(PWD)/Makefile userspace.cpio
 

@@ -54,7 +54,7 @@ rebuild: clean
 clean:
 	rm -f *.elf *.strip *.bin *.hex $(GFILES) $(KFILES) #$(UFILES)
 	$(MAKE) -C ./src/progs clean
-	rm -rf $(FS_MOUNT_PATH) userspace.cpio
+	rm -rf $(FS_MOUNT_PATH)/../userspace.cpio $(FS_MOUNT_PATH) userspace.cpio.elf
 
 %.o: %.c
 	$(CC) $(CFLAGS) $^ -c -o $@
@@ -63,10 +63,10 @@ clean:
 	$(CC) $(CFLAGS) $^ -c -o $@
 
 prog-metal.elf: $(GFILES) $(KFILES) userspace #$(UFILES)
-	$(CC) $(CFLAGS) $(GFILES) $(KFILES) -T ./bare_metal.ld $(LDFLAGS) -o $@
+	$(CC) $(CFLAGS) $(GFILES) $(KFILES) userspace.cpio.elf -T ./bare_metal.ld $(LDFLAGS) -o $@
 
 prog-emu.elf: $(GFILES) $(KFILES) userspace #$(UFILES)
-	$(CC) $(CFLAGS) $(GFILES) $(KFILES) -T ./emulation.ld $(LDFLAGS) -o $@
+	$(CC) $(CFLAGS) $(GFILES) $(KFILES) userspace.cpio.elf -T ./emulation.ld $(LDFLAGS) -o $@
 
 prog-%.elf.strip: prog-%.elf
 	$(STRIP) -s -x -R .comment -R .text.startup -R .riscv.attributes $^ -o $@
@@ -87,6 +87,9 @@ userspace:
 	mkdir -p $(FS_MOUNT_PATH)
 	$(MAKE) -C ./src/progs all
 	$(MAKE) -C $(FS_MOUNT_PATH) -f $(PWD)/Makefile userspace.cpio
+	$(OBJCPY) -I binary -B riscv -O elf32-littleriscv \
+                  --rename-section .data=section_CPIO_ARCHIVE,alloc,load,readonly,data,contents \
+                  $(FS_MOUNT_PATH)/../userspace.cpio userspace.cpio.elf
 
 userspace.cpio:
 	find . | cpio -o -H bin > $(FS_MOUNT_PATH)/../$@

@@ -56,6 +56,10 @@ SECTIONS
 		*.o (.rodata.*);
 	} > flash
 	
+	section_CPIO_ARCHIVE : {
+		userspace.cpio.elf (section_CPIO_ARCHIVE);
+	} > flash
+	
 	/*
 	Make sure that global variables are mapped to reside starting 
 	at the beginning of the actual ram on the SOC.

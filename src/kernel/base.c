@@ -127,7 +127,8 @@ signed int kmain(unsigned int argc, char* argv[], char* envp[]) {
 	memset(test_context_ptr, 0, sizeof(CPU_Context));
 	test_context_ptr->context_id = 1;
 	test_context_ptr->status_vals = (0 << 0);
-	test_context_ptr->regs[0] = &init_main;
+	//test_context_ptr->regs[0] = &init_main;
+	test_context_ptr->regs[0] = 0;
 	uintRL_t prog_stack_base;
 	uintRL_t prog_stack_top;
 	prog_stack_base = (uintRL_t)kmalloc(0x1000);

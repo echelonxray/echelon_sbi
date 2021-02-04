@@ -11,24 +11,24 @@ KFILES        :=
 UFILES        := 
 
 # Global Library
-GFILES        := $(GFILES) ./src/inc/string.o
+GFILES        := $(GFILES) src/inc/string.o
 
 # Kernel
 #  - Core (Entry/System Setup/Globals)
-KFILES        := $(KFILES) ./src/kernel/base.o
-KFILES        := $(KFILES) ./src/kernel/entry.o
-KFILES        := $(KFILES) ./src/kernel/globals.o
-KFILES        := $(KFILES) ./src/kernel/memalloc.o
-KFILES        := $(KFILES) ./src/kernel/debug.o
+KFILES        := $(KFILES) src/kernel/base.o
+KFILES        := $(KFILES) src/kernel/entry.o
+KFILES        := $(KFILES) src/kernel/globals.o
+KFILES        := $(KFILES) src/kernel/memalloc.o
+KFILES        := $(KFILES) src/kernel/debug.o
 #  - Drivers
-KFILES        := $(KFILES) ./src/kernel/drivers/uart.o
+KFILES        := $(KFILES) src/kernel/drivers/uart.o
 #  - Idle Loop
-KFILES        := $(KFILES) ./src/kernel/idle/idle_loop.o
+KFILES        := $(KFILES) src/kernel/idle/idle_loop.o
 #  - Interrupt Handler
-KFILES        := $(KFILES) ./src/kernel/interrupts/base.o
-KFILES        := $(KFILES) ./src/kernel/interrupts/entry.o
-KFILES        := $(KFILES) ./src/kernel/interrupts/context_switch_asm.o
-KFILES        := $(KFILES) ./src/kernel/interrupts/context_switch.o
+KFILES        := $(KFILES) src/kernel/interrupts/base.o
+KFILES        := $(KFILES) src/kernel/interrupts/entry.o
+KFILES        := $(KFILES) src/kernel/interrupts/context_switch_asm.o
+KFILES        := $(KFILES) src/kernel/interrupts/context_switch.o
 
 # Programs
 #  - Init

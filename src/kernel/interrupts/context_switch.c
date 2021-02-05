@@ -113,7 +113,7 @@ uint32_t sanitize_elf(char* elf_data, size_t elf_data_size) {
 	uint32_t i;
 	//uint32_t no_shstrndx = 1;
 	i = 0;
-	struct ELF_SectionHeader32* section = (struct ELF_SectionHeader32*)elf_data + ElfHeader->SectionHeader;
+	struct ELF_SectionHeader32* section = (struct ELF_SectionHeader32*)(elf_data + ElfHeader->SectionHeader);
 	while (i < ElfHeader->SectionHeaderEntryCount) {
 		if (section[i].Offset >= elf_data_size) {
 			return 13;

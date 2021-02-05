@@ -112,6 +112,18 @@ void memset(void* s, unsigned int c, size_t n) {
 	return;
 }
 
+void *memcpy(void *dest, const void *src, size_t n) {
+	const unsigned char* ptr_src = src;
+	unsigned char* ptr_dest = dest;
+	while (n > 0) {
+		*ptr_dest = *ptr_src;
+		ptr_dest++;
+		ptr_src++;
+		n--;
+	}
+	return dest;
+}
+
 size_t strlen(char* str) {
 	size_t i;
 	i = 0;
@@ -130,4 +142,29 @@ char* strcpy(char* dest, char* src) {
 	}
 	dest[i] = src[i];
 	return dest;
+}
+
+signed int strcmp(const char *s1, const char *s2) {
+	unsigned int i = 0;
+	while (s1[i] == s2[i]) {
+		if (s1[i] == 0) {
+			return 0;
+		}
+		i++;
+	}
+	return 1;
+}
+signed int strncmp(const char *s1, const char *s2, size_t n) {
+	size_t i = 0;
+	while (i < n) {
+		if (s1[i] == s2[i]) {
+			if (s1[i] == 0) {
+				return 0;
+			}
+		} else {
+			return 1;
+		}
+		i++;
+	}
+	return 0;
 }

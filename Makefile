@@ -2,7 +2,7 @@ TUPLE         := riscv32-unknown-elf
 CC            := $(TUPLE)-gcc
 OBJCPY        := $(TUPLE)-objcopy
 STRIP         := $(TUPLE)-strip
-CFLAGS        := -Wall -Wextra -std=c99 -O2 -march=rv32imac -mabi=ilp32 -ffreestanding -nostdlib -nostartfiles -Wno-unused-parameter -fno-stack-check -fno-stack-protector
+CFLAGS        := -Wall -Wextra -std=c99 -O2 -march=rv32imac -mabi=ilp32 -ffreestanding -nostdlib -nostartfiles -fno-stack-check -fno-stack-protector
 LDFLAGS       := -static
 FS_MOUNT_PATH := $(PWD)/tmp_mnt_pt
 

@@ -6,11 +6,11 @@
 typedef struct {
 	uint32_t context_id;
 	uint32_t status_vals;
-	uint32_t RESERVED;
+	uint32_t program_memory;
 	uintRL_t regs[32];
 } CPU_Context;
 
-uint32_t load_context_from_function_ptr(void* entry_pt);
+uint32_t load_context_from_elf_data(char* elf_data, unsigned int elf_data_size, CPU_Context* context_ptr, void** stack_base, void** stack_top);
 void switch_context(CPU_Context* cpu_context);
 
 #endif

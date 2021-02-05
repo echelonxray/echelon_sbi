@@ -5,6 +5,14 @@ typedef unsigned int uint32_t;
 typedef signed int sint32_t;
 typedef signed int int32_t;
 
+typedef unsigned short int uint16_t;
+typedef signed short int sint16_t;
+typedef signed short int int16_t;
+
+typedef unsigned char uint8_t;
+typedef signed char sint8_t;
+typedef signed char int8_t;
+
 #if __riscv_xlen == 128
 typedef uint128_t uintRL_t;
 typedef sint128_t sintRL_t;
@@ -17,6 +25,7 @@ typedef sint32_t sintRL_t;
 #endif
 
 typedef uintRL_t size_t;
+typedef uintRL_t usize_t;
 typedef sintRL_t ssize_t;
 
 #endif

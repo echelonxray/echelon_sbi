@@ -47,9 +47,3 @@ my_entry_pt:
 loop:
   wfi
   j loop
-
-.section section_KHEAP_START
-
-.globl KHEAP_START
-
-KHEAP_START:

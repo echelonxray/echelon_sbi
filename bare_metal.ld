@@ -56,7 +56,8 @@ SECTIONS
 		*.o (.rodata.*);
 	} > flash
 	
-	section_CPIO_ARCHIVE : {
+	section_CPIO_ARCHIVE : ALIGN(0x4) {
+		USERSPACE_ARCHIVE_START = .;
 		userspace.cpio.elf (section_CPIO_ARCHIVE);
 	} > flash
 	
@@ -71,7 +72,7 @@ SECTIONS
 	.bss : {
 		*.o (.bss);
 	} > ram
-	section_KHEAP_START (NOLOAD) : {
+	section_KHEAP_START (NOLOAD) : ALIGN(0x4) {
 		/*
 		At the very end of the space reserved for global variables 
 		in the ram, link in this custom section.  This is used to
@@ -79,7 +80,8 @@ SECTIONS
 		inform the C code where the heap can start.  This allows the 
 		heap to start right after the global variables.
 		*/
-		src/kernel/entry.o (section_KHEAP_START);
+		KHEAP_START = .;
+		/* src/kernel/entry.o (section_KHEAP_START); */
 	} > ram
 	
 	/*

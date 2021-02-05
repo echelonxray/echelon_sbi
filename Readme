@@ -1,0 +1,77 @@
+Welcome to my ongoing adventure into learning about bare-metal programming and RISC-V archecture
+
+As it stands right now, this is probably the most complicated "Hello, World!" program you will see.  
+I have begun work on implementing my own kernel and limited userspace to run on a SparkFun Red-V.  The SOC 
+used on that development board is the FE310-G002.  In my opinion it is a fantastic little microcontroller.  
+It is relativly powerful, yet simple, and built on top of a completely open CPU archecture.  However, 
+it is very limited memory and the higher-level abstractions common on modern CPUs.  There is to memory managment 
+unit and, as such, no ability to do virtual memory addressing.  Not that it would make much sense with only 16k 
+of memory.  However, it does still support different executition modes.  It can be dropped into User mode to 
+run programs and then made to induce a trap to escalte to Machine(Kernel) mode to preform privileged operations.
+
+To make all this work, I have written bunch of C and Assembly code, utilizing a custom build system that I have built 
+from scratch.  As of writing this, it uses 3 Makefiles, 3 custom linker scripts, and a whole bunch of other source 
+files.  Building the program will produce 2 sets of binaries derived from the 2 different linker scripts used to 
+build the kernel.  Those are the prog-emu.X set of files and prog-metal.X set of files which will populate the home 
+directory.  The reason for having 2 different sets of output files is that, for some reason, the QEMU emulator expects 
+the reset vector/program entry point to be at memory address 0x2040_0000, while the real hardware expects memory
+address 0x2000_0000.  As such, the kernel binaries must be linked to expect 2 different sets of memory addresses.  
+They are not position independent.  
+
+To understand what the automated build process is doing, the built boils down to a few general steps:
+(The actual order preformed automatically may vary depending on whether each step depends another to have finished)
+1) Compile the userspace programs to get position independent ELF object files
+2) Link the userspace programs to get executable ELF binaries
+3) Copy the userspace programs to a temporary directory
+4) Make a CPIO archive of that directory containing the userspace programs
+5) Convert the CPIO archive into an ELF object file containing a special section with the binary data of the CPIO archive inside
+6) Compile the kernel code into ELF object files
+7) Link the kernel code together with the ELF file containing the CPIO archive
+8) Extract the binary data from the final ELF file for flashing to actual hardware
+
+When run, the kernel sets up the envirorment, parses the embedded CPIO archive, and then loads the init program out 
+of the archive.  When run, the init program will make a call to the kernel to write the string, "Hello, World!\n" to 
+the UART.  The UART is like a very simple serial port, a more general form of the more specific RS-232 protocal.  
+
+Here is what you will need to build the program:
+--A GNU/Linux operating system
+--A RISC-V GCC Compiler (Ether the 32-bit or 64-bit version should work.  The 64-bit version is available in most distro's repos)
+--The Make Program
+--The CPIO archiving Utility
+--A Shell: SH or BASH
+--The rm program
+--The mkdir program
+--The cp program
+
+Additionally, to test the program without actual hardware, you will need:
+--The RISC-V 32-bit QEMU Emulator
+
+And, optionally, for debugging:
+--The GDB program which complements the RISC-V GCC Compiler
+
+To build the program:
+1) Clone this Repo
+2) Change directory into this Repo's home
+3) Using the text editor of your choice, open the Makefile and ensure that the variable TUPLE at the top of the file 
+   is set to the Tuple of your RISC-V GCC Compiler.  If it is not, set it to that and save the file.
+4) Run "make"
+
+To test the program in the QEMU Emulator:
+1) Run: "make emu"
+2) To close the program, you may use the Ctrl+C interrupt sequence
+
+To debug the program using QEMU and GDB:
+1) In one terminal run: "make emu-debug"
+2) In another terminal run: "make debug"
+This will connect GDB to QEMU and allow you to step the emulated CPU one instruction at a time while monitoring it's state.
+
+To clear all the files from a previews build and clean the directory:
+1) Run "make clean"
+
+You can also combine the "make clean" and "make" commands:
+1) Run "make rebuild"
+
+As with most builds using a Makefile, make will attempt to use multiple threads with the -j option.  Also, as with most Makefiles, 
+"make" is a synonym for "make all".
+
+Feel free to poke around.  I hope you find this project interesting and let me know if you have any questions.

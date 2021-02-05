@@ -10,7 +10,7 @@
 #include "./../debug.h"
 
 void interrupt_chandle(CPU_Context* cpu_context) {
-	DEBUG_print("Trap Caught: ");
+	//DEBUG_print("Trap Caught: ");
 	
 	//volatile uint32_t* ctrl_reg;
 	uint32_t mcause;
@@ -26,7 +26,7 @@ void interrupt_chandle(CPU_Context* cpu_context) {
 		//mcause &= 0x7FFFFFFF;
 		if (mcause == 8) {
 			// User Mode Environment Exception
-			DEBUG_print("User Mode Environment Exception!\n");
+			//DEBUG_print("User Mode Environment Exception!\n");
 			uintRL_t Code = cpu_context->regs[10];
 			uintRL_t Param1 = cpu_context->regs[11];
 			uintRL_t Param2 = cpu_context->regs[12];
@@ -36,10 +36,10 @@ void interrupt_chandle(CPU_Context* cpu_context) {
 				size_t count = (size_t)Param3;
 				if (Param1 == 0) {
 					// UART0
-					uart_write2(data, UART0_BASE, count);
+					uart_write(data, UART0_BASE, count);
 				} else if (Param1 == 1) {
 					// UART1
-					uart_write2(data, UART1_BASE, count);
+					uart_write(data, UART1_BASE, count);
 				}
 			}
 		} else {

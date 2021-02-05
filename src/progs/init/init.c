@@ -18,8 +18,8 @@ void uart_write(unsigned int uart_num, unsigned char* buf, size_t count) {
 signed int _start(unsigned int argc, char* argv[], char* envp[]) {
 	//uart_write("Part #1!\n", UART0_BASE);
 	//__asm__ __volatile__ ("ecall");
-	unsigned char* str = "Hello, World!\n";
-	uart_write(0, str, 14);
+	char* str = "Hello, World!\n";
+	uart_write(0, (unsigned char*)str, 14);
 	//uart_write("Part #2!\n", UART0_BASE);
 	while (1) {
 		//write(1, "Hello, world!\n", 14);

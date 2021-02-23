@@ -1,7 +1,7 @@
 UPROGS        := init
 
 CFLAGS        := -Wall -Wextra -std=c99 -O2 -march=rv32imac -mabi=ilp32 -ffreestanding -nostdlib -nostartfiles -fno-stack-check -fno-stack-protector -fpic
-LDFLAGS       := -static
+LDFLAGS       := -T ../nommu.ld -static
 
 .PHONY: all clean build-all-progs clean-all-progs
 

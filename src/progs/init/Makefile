@@ -9,7 +9,7 @@ clean:
 	rm -rf $(BUILDNAME) $(UFILES)
 
 $(BUILDNAME): $(UFILES)
-	$(CC) $(CFLAGS) $^ -T ./../nommu.ld $(LDFLAGS) -o $@
+	$(CC) $(CFLAGS) $(LDFLAGS) $^ -o $@
 	$(STRIP) -s -x -R .comment -R .text.startup -R .riscv.attributes $@
 
 cp_to_fs_mnt: $(BUILDNAME)

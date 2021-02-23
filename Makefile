@@ -43,7 +43,7 @@ export LDFLAGS
 export FS_MOUNT_PATH
 export GFILES
 
-.PHONY: all rebuild clean userspace emu emu-debug debug
+.PHONY: all rebuild clean userspace userspace.cpio emu emu-debug debug
 
 all: prog-metal.elf prog-metal.elf.strip prog-metal.elf.bin prog-metal.elf.hex prog-metal.elf.strip.bin prog-metal.elf.strip.hex \
      prog-emu.elf   prog-emu.elf.strip   prog-emu.elf.bin   prog-emu.elf.hex   prog-emu.elf.strip.bin   prog-emu.elf.strip.hex
@@ -54,7 +54,7 @@ rebuild: clean
 clean:
 	rm -f *.elf *.strip *.bin *.hex $(GFILES) $(KFILES) #$(UFILES)
 	$(MAKE) -C ./src/progs clean
-	rm -rf $(FS_MOUNT_PATH)/../userspace.cpio $(FS_MOUNT_PATH) userspace.cpio.elf
+	rm -rf userspace.cpio $(FS_MOUNT_PATH) userspace.cpio.elf
 
 %.o: %.c
 	$(CC) $(CFLAGS) $^ -c -o $@
@@ -89,10 +89,10 @@ userspace:
 	$(MAKE) -C $(FS_MOUNT_PATH) -f $(PWD)/Makefile userspace.cpio
 	$(OBJCPY) -I binary -B riscv -O elf32-littleriscv \
                   --rename-section .data=section_CPIO_ARCHIVE,alloc,load,readonly,data,contents \
-                  $(FS_MOUNT_PATH)/../userspace.cpio userspace.cpio.elf
+                  userspace.cpio userspace.cpio.elf
 
 userspace.cpio:
-	find . | cpio -o -H bin > $(FS_MOUNT_PATH)/../$@
+	find . | cpio -o -H bin > ../$@
 
 emu:
 	qemu-system-riscv32 -kernel ./prog-emu.elf.strip -M sifive_e -serial stdio -display none

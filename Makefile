@@ -11,7 +11,7 @@ KFILES        :=
 UFILES        := 
 
 # Global Library
-GFILES        := $(GFILES) src/inc/string.o
+GFILES        := $(GFILES) src/inc/string.o src/inc/gcc_supp.o
 
 # Kernel
 #  - Core (Entry/System Setup/Globals)

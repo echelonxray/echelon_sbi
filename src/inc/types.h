@@ -16,7 +16,9 @@ typedef signed char int8_t;
 #if __riscv_xlen == 128
 typedef uint128_t uintRL_t;
 typedef sint128_t sintRL_t;
-#elsif __riscv_flen == 64
+#elif __riscv_xlen == 64
+typedef unsigned long int uint64_t;
+typedef signed long int sint64_t;
 typedef uint64_t uintRL_t;
 typedef sint64_t sintRL_t;
 #else
@@ -29,3 +31,4 @@ typedef uintRL_t usize_t;
 typedef sintRL_t ssize_t;
 
 #endif
+

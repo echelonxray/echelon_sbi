@@ -23,8 +23,8 @@
 #define GPIO_OUT_XOR 0x40u
 
 // UART
-#define UART0_BASE ((void*)0x10013000u)
-#define UART1_BASE ((void*)0x10023000u)
+#define UART0_BASE ((void*)0x10010000u)
+#define UART1_BASE ((void*)0x10011000u)
 // Offsets
 #define UART_TXDATA 0x00u
 #define UART_RXDATA 0x04u

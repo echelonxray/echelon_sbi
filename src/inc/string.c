@@ -1,14 +1,16 @@
 #include "./string.h"
 
-void itoa(register signed int number, register char* buf, register signed int buf_len, register signed int base, register signed int set_width) {
+void itoa(register unsigned int number, register char* buf, register signed int buf_len, register signed int base, register signed int set_width) {
 	//register signed long int num;
-	register unsigned long int num;
+	register unsigned int num;
 	num = number;
 	if (base < 0) {
 		base = -base;
-		//if(number < 0) {
-		//	num = -num;
-		//}
+		/*
+		if(number < 0) {
+			num = -num - 1;
+		}
+		*/
 	}
 	if (base > 16 || base < 2) {
 		return;

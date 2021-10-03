@@ -1,8 +1,8 @@
-TUPLE         := riscv32-unknown-elf
+TUPLE         := riscv64-unknown-elf
 CC            := $(TUPLE)-gcc
 OBJCPY        := $(TUPLE)-objcopy
 STRIP         := $(TUPLE)-strip
-CFLAGS        := -Wall -Wextra -std=c99 -O2 -march=rv32imac -mabi=ilp32 -ffreestanding -nostdlib -nostartfiles -fno-stack-check -fno-stack-protector
+CFLAGS        := -Wall -Wextra -std=c99 -O2 -march=rv64ima -mabi=lp64 -mcmodel=medany -ffreestanding -nostdlib -nostartfiles -fno-stack-check -fno-stack-protector
 LDFLAGS       := -static
 FS_MOUNT_PATH := $(PWD)/tmp_mnt_pt
 
@@ -62,11 +62,11 @@ clean:
 %.o: %.s
 	$(CC) $(CFLAGS) $^ -c -o $@
 
-prog-metal.elf: $(GFILES) $(KFILES) userspace #$(UFILES)
-	$(CC) $(CFLAGS) $(GFILES) $(KFILES) userspace.cpio.elf -T ./bare_metal.ld $(LDFLAGS) -o $@
+prog-metal.elf: $(GFILES) $(KFILES) #$(UFILES)
+	$(CC) $(CFLAGS) $(GFILES) $(KFILES) -T ./bare_metal.ld $(LDFLAGS) -o $@
 
-prog-emu.elf: $(GFILES) $(KFILES) userspace #$(UFILES)
-	$(CC) $(CFLAGS) $(GFILES) $(KFILES) userspace.cpio.elf -T ./emulation.ld $(LDFLAGS) -o $@
+prog-emu.elf: $(GFILES) $(KFILES) #$(UFILES)
+	$(CC) $(CFLAGS) $(GFILES) $(KFILES) -T ./emulation.ld $(LDFLAGS) -o $@
 
 prog-%.elf.strip: prog-%.elf
 	$(STRIP) -s -x -R .comment -R .text.startup -R .riscv.attributes $^ -o $@
@@ -95,10 +95,10 @@ userspace.cpio:
 	find . | cpio -o -H bin > ../$@
 
 emu:
-	qemu-system-riscv32 -kernel ./prog-emu.elf.strip -M sifive_e -serial stdio -display none
+	qemu-system-riscv64 -bios ./prog-emu.elf.strip -M sifive_u -serial stdio -display none
 
 emu-debug:
-	qemu-system-riscv32 -kernel ./prog-emu.elf.strip -M sifive_e -serial stdio -display none -gdb tcp::1234 -S
+	qemu-system-riscv64 -bios ./prog-emu.elf.strip -M sifive_u -serial stdio -display none -gdb tcp::1234 -S
 
 debug:
-	$(TUPLE)-gdb -ex "target remote localhost:1234" -ex "layout asm" -ex "tui reg general" -ex "break *0x20400000" -ex "continue"
+	$(TUPLE)-gdb -ex "target remote localhost:1234" -ex "layout asm" -ex "tui reg general" -ex "break *0x1000"

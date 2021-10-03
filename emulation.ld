@@ -13,13 +13,13 @@ MEMORY
 	0x2040_0000 in QEMUs sifive_e board emulation.  This is the 
 	reset vector.
 	*/
-	flash (rx)  : ORIGIN = 0x20400000, LENGTH = 0x1FFFFFFF
+	flash (rx)  : ORIGIN = 0x80000000, LENGTH = 0x0000FFFF
 	
 	/*
 	The actual ram onboard the SOC is mapped starting at memory
 	address 0x8000_0000.
 	*/
-	ram   (rwx) : ORIGIN = 0x80000000, LENGTH = 0x00003FFF
+	ram   (rwx) : ORIGIN = 0x80010000, LENGTH = 0x0000FFFF
 }
 
 SECTIONS
@@ -27,7 +27,7 @@ SECTIONS
 	/*
 	Force the linker to starting at address 0x2040_0000
 	*/
-	. = 0x20400000;
+	. = 0x80000000;
 	
 	/*
 	Inform the linker that .text sections will be starting 
@@ -55,18 +55,22 @@ SECTIONS
 	.rodata : {
 		*.o (.rodata);
 		*.o (.rodata.*);
+		*.o (.srodata);
+		*.o (.srodata.*);
 	} > flash
 	
+	/*
 	section_CPIO_ARCHIVE : ALIGN(0x4) {
 		USERSPACE_ARCHIVE_START = .;
 		userspace.cpio.elf (section_CPIO_ARCHIVE);
 	} > flash
+	*/
 	
 	/*
 	Make sure that global variables are mapped to reside starting 
 	at the beginning of the actual ram on the SOC.
 	*/
-	. = 0x80000000;
+	. = 0x80010000;
 	.sbss : {
 		*.o (.sbss);
 	} > ram

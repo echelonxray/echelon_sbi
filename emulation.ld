@@ -63,14 +63,22 @@ SECTIONS
 	
 	/*
 	At the very end of the space reserved for global variables
-	in the ram, link in this custom section.  This is used to
+	in the ram, link in these custom sections.  This is used to
 	add a symbol called KHEAP_START to the program that will
-	inform the C code where the heap can start.  This allows the
-	heap to start right after the global variables on 128-bit
-	alignment.  This ensures that data accesses will be aligned
-	in 32-bit, 64-bit, and possible future 128-bit modes.
+	inform the code where the heap can start.  It is also used
+	to add a symbol called KISTACK_TOP to the program that will
+	inform the code where the top of the initial stack is
+	(inclusive).  It is	on a 128-bit alignment.  This ensures
+	that data accesses will be aligned	in 32-bit, 64-bit, and
+	possible future 128-bit modes.
 	*/
-	section_KHEAP_START (NOLOAD) : ALIGN(0x10) {
+	section_FILLSPACE (NOLOAD) : ALIGN(0x10) {
+	  KISTACK_BOTTOM = .;
+	  FILL(0xDEADBEEF);
+	  . = KISTACK_BOTTOM + 0x1000;
+	  KISTACK_TOP = .;
+	  FILL(0xDEADBEEF);
+	  . = KISTACK_TOP + 0x10;
 		KHEAP_START = .;
 	} > ram
 	

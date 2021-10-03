@@ -3,20 +3,7 @@
 .globl my_entry_pt
 
 my_entry_pt:
-  csrr a0, mvendorid
-  csrr a1, marchid
-  csrr a2, mimpid
   csrr a3, mhartid
-  lui a4, 0x40010
-  slli a4, a4, 1
-  li s1, 32
-  mv s2, a3
-  call mul
-  add a5, s3, a4
-  #sw a0, 0(a5)
-  #sw a1, 8(a5)
-  #sw a2, 16(a5)
-  #sw a3, 24(a5)
   
   li a2, 1
   bne a3, a2, clear_and_loop
@@ -64,8 +51,8 @@ my_entry_pt:
   call kmain
 
 clear_and_loop:
-  mv sp, zero
   mv ra, zero
+  mv sp, zero
   mv gp, zero
   mv tp, zero
   mv t0, zero
@@ -98,23 +85,3 @@ clear_and_loop:
   loop:
   wfi
   j loop
-
-# Primative multiplication of registers s1 with s2. It
-# stores the result in s3 and returns.  It assumes
-# positive numbers in both s1 and s2.  It also does not
-# handle overflow.  It does not change the values of s1
-# or s2.  In addition to s3, it clobbers t0.
-mul:
-  mv s3, zero
-  mv t0, zero
-  mul_loop:
-  beq t0, s2, mul_end
-  addi t0, t0, 1
-  add s3, s3, s1
-  j mul_loop
-  mul_end:
-  ret
-
-# This should not be reachable, but just in case,
-# jump back into the infinite loop.
-j clear_and_loop

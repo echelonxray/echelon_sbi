@@ -11,11 +11,6 @@
 #include "./globals.h"
 #include "./debug.h"
 
-void kwrite(char* str) {
-	DEBUG_print(str);
-	return;
-}
-
 signed int kmain(unsigned int argc, char* argv[], char* envp[]) {
 	// START: CPU Init
 	volatile uint32_t* ctrl_reg;
@@ -24,9 +19,7 @@ signed int kmain(unsigned int argc, char* argv[], char* envp[]) {
 	ctrl_reg = (uint32_t*)(UART0_BASE + UART_TXCTRL);
 	*ctrl_reg = 0x1;
 	
-	DEBUG_print("TraceY\n");
-	CPU_WAIT();
-	DEBUG_print("TraceZ\n");
+	DEBUG_print("Hello World!\n");
 	
 	return 0;
 }

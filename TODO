@@ -1,11 +1,4 @@
-Known issues: 
---The kernel interface is unsafe.  The reading of ELF files in the program 
-  loader does not completely sanitize input.  Additionally, the kernel call 
-  UART_WRITE(As of writing this, the only kernel call implemented), does 
-  not sanitize inputs.  It will read from any memory address.
-
 TODO: 
---Current functionality is extremely limited and certain parts may need re-designing 
-  as the current structure does not seem to be as clean as I would like.
---I have just finished getting the ablity to load and run a userspace program working.  
-  I need to do extensive clean up and documentaion in the code.
+--Finish/Fix itoa implementation
+--Clean Up typing for portability across XLEN sizes
+--Implement format string outputs: printf, dprintf, sprintf, etc...

@@ -2,44 +2,36 @@
 This is not actually needed (At least not on actual hardware.), but 
 it explicitly sets the entry point in the .elf file to be the same 
 as the true entry point to the program. The global symbol my_entry_pt
-is located at the start of src/kernel/entry.s.  More on this below.
+is located in src/kernel/kstart_entry.s.  More on this below.
 */
 ENTRY(my_entry_pt)
 
 MEMORY
 {
 	/*
-	The SPI flash memory is mapped starting at memory address 
-	0x2040_0000 in QEMUs sifive_e board emulation.  This is the 
-	reset vector.
+	The actual RAM (DDR) is mapped starting at memory:   0x0000_0000_8000_0000.
+	There are 16GB onboard the SiFive Unmatched.  16GB = 0x0000_0004_0000_0000.
 	*/
-	flash (rx)  : ORIGIN = 0x80000000, LENGTH = 0x0000FFFF
-	
-	/*
-	The actual ram onboard the SOC is mapped starting at memory
-	address 0x8000_0000.
-	*/
-	ram   (rwx) : ORIGIN = 0x80010000, LENGTH = 0x0000FFFF
+	ram   (rwx) : ORIGIN = 0x0000000080000000, LENGTH = 0x0000000400000000
 }
 
 SECTIONS
 {
 	/*
-	Force the linker to starting at address 0x2040_0000
+	Inform the linker to start at the beginning of RAM
 	*/
-	. = 0x80000000;
+	. = ORIGIN(ram);
 	
 	/*
-	Inform the linker that .text sections will be starting 
-	at address 0x2040_0000
+	Inform the linker that .text section will be linked first
 	*/
 	.text : {
 		/*
-		Make sure the .text section from src/kernel/entry.o is 
-		linked first.  The .text section of src/kernel/entry.s 
-		is the actual entry machine code for the kernel and is 
-		first in the file.  This way, at reset, exection starts 
-		by jumping to this machine code.
+		Make sure the .text section from src/kernel/kstart_entry.s is
+		linked first.  The .text section of src/kernel/kstart_entry.s
+		is the actual entry machine code for the kernel and should be at
+		the start start of the file.  This way, at reset, execution
+		starts by jumping to this machine code.
 		*/
 		src/kernel/kstart_entry.o (.text);
 		
@@ -47,61 +39,58 @@ SECTIONS
 		Link the rest of the kernel's .text sections.
 		*/
 		*.o (.text);
-	} > flash
+	} > ram
 	
 	/*
-	Put in the .rodata in the flash after the actual machine code.
+	Put the .rodata section after the actual machine code.
 	*/
 	.rodata : {
 		*.o (.rodata);
 		*.o (.rodata.*);
 		*.o (.srodata);
 		*.o (.srodata.*);
-	} > flash
+	} > ram
 	
 	/*
-	section_CPIO_ARCHIVE : ALIGN(0x4) {
-		USERSPACE_ARCHIVE_START = .;
-		userspace.cpio.elf (section_CPIO_ARCHIVE);
-	} > flash
+	Next, make room for the global variables in RAM.
 	*/
-	
-	/*
-	Make sure that global variables are mapped to reside starting 
-	at the beginning of the actual ram on the SOC.
-	*/
-	. = 0x80010000;
 	.sbss : {
 		*.o (.sbss);
 	} > ram
 	.bss : {
 		*.o (.bss);
 	} > ram
-	section_KHEAP_START (NOLOAD) : ALIGN(0x4) {
-		/*
-		At the very end of the space reserved for global variables 
-		in the ram, link in this custom section.  This is used to
-		add a symbol called KHEAP_START to the program that will 
-		inform the C code where the heap can start.  This allows the 
-		heap to start right after the global variables.
-		*/
+	
+	/*
+	At the very end of the space reserved for global variables
+	in the ram, link in this custom section.  This is used to
+	add a symbol called KHEAP_START to the program that will
+	inform the C code where the heap can start.  This allows the
+	heap to start right after the global variables on 128-bit
+	alignment.  This ensures that data accesses will be aligned
+	in 32-bit, 64-bit, and possible future 128-bit modes.
+	*/
+	section_KHEAP_START (NOLOAD) : ALIGN(0x10) {
 		KHEAP_START = .;
-		/* src/kernel/entry.o (section_KHEAP_START); */
 	} > ram
 	
 	/*
-	Discard everything that hasn't be explictly linked.  I don't
+	Discard everything that hasn't be explicitly linked.  I don't
 	want the linker to guess where to put stuff.  If it doesn't know, 
-	don't include it.  If this casues a linking error, good.  I want 
+	don't include it.  If this causes a linking error, good!  I want
 	to know that I need to fix something, rather than a silent failure 
 	that could cause hard to debug issues later.  For instance, 
 	without explicitly setting the .sbss and .bss sections above, 
 	the linker attempted to put my global variables after the 
-	machine code in the flash.  This would mean that ever access to 
-	those variables would mean read a write to the external SPI flash 
-	IC on real hardware.  I do not believe that initialized globals 
-	are possible since there is nothing to initialize them.  So I don't
-	want to, for instance, include the .data section.
+	machine code in the flash when I was working on a FE310-G002 SOC
+	with a different linker setup.  This would have meant that every
+	access to those variables would result in a read or a write to the
+	memory-mapped	external SPI flash IC on real hardware.  I also do
+	not believe that initialized global variables are possible since
+	there is nothing to initialize them.  So I don't want to, for
+	instance, include the .data section.  If I get a linking error
+	regarding that section, I will know to look for a bug in my code
+	where I may have mistakenly used an initialized global variable.
 	*/
 	/DISCARD/ : {
 		* (.*);

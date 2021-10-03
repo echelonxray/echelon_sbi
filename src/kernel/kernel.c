@@ -17,7 +17,7 @@
 #define s_in 4
 
 void kwrite(char* str) {
-	uart_write((unsigned char*)str, UART0_BASE, strlen(str));
+	DEBUG_print(str);
 	return;
 }
 

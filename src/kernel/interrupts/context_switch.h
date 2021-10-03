@@ -10,7 +10,6 @@ typedef struct {
 	uintRL_t regs[32];
 } CPU_Context;
 
-uint32_t load_context_from_elf_data(char* elf_data, size_t elf_data_size, CPU_Context* context_ptr, void** mem_base, void** mem_top);
 void switch_context(CPU_Context* cpu_context);
 
 #endif

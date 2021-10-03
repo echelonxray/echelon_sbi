@@ -6,7 +6,7 @@
 #include "./inc/gpio_oper.h"
 #include "./idle/idle_loop.h"
 #include "./drivers/uart.h"
-#include "./interrupts/base.h"
+#include "./interrupts/interrupt.h"
 #include "./interrupts/context_switch.h"
 #include "./memalloc.h"
 #include "./globals.h"

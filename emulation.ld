@@ -41,7 +41,7 @@ SECTIONS
 		first in the file.  This way, at reset, exection starts 
 		by jumping to this machine code.
 		*/
-		src/kernel/entry.o (.text);
+		src/kernel/kstart_entry.o (.text);
 		
 		/*
 		Link the rest of the kernel's .text sections.

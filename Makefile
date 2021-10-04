@@ -20,11 +20,8 @@ KFILES        := $(KFILES) src/kernel/memalloc.o
 KFILES        := $(KFILES) src/kernel/debug.o
 #  - Drivers
 KFILES        := $(KFILES) src/kernel/drivers/uart.o
-#  - Idle Loop
-KFILES        := $(KFILES) src/kernel/idle/idle_loop.o
 #  - Interrupt Handler
-KFILES        := $(KFILES) src/kernel/interrupts/interrupt.o
-KFILES        := $(KFILES) src/kernel/interrupts/interrupt_entry.o
+KFILES        := $(KFILES) src/kernel/interrupts/context_switch.o
 KFILES        := $(KFILES) src/kernel/interrupts/context_switch_asm.o
 
 .PHONY: all rebuild clean emu emu-debug debug
@@ -42,6 +39,9 @@ clean:
 	$(CC) $(CFLAGS) $^ -c -o $@
 
 %.o: %.s
+	$(CC) $(CFLAGS) $^ -c -o $@
+
+%.o: %.S
 	$(CC) $(CFLAGS) $^ -c -o $@
 
 prog-metal.elf: $(GFILES) $(KFILES)

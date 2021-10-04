@@ -1,6 +1,7 @@
 .section .text
 
 .globl my_entry_pt
+.globl idle_loop
 
 my_entry_pt:
   csrr a3, mhartid
@@ -8,9 +9,14 @@ my_entry_pt:
   li a2, 1
   bne a3, a2, clear_and_loop
   
-  # Load the location of symbol KISTACK_TOP into Stack Pointer
+  # Load the location of symbol KISTACK_TOP into the Stack Pointer
   # This is done using pc relative addressing so that it works
   # across 32-bit, 64-bit, and 128-bit sizes and locations.
+  # The placement symbol KISTACK_TOP is determined at build time
+  # by the linker script to provide 0x1000 bytes of stack space.
+  # Specifically, KISTACK_TOP is set (0x1000 - 0x10) so that its
+  # initial value can be used to store up to a 128 bit value.
+  # It is aligned to a 16 (0x10) byte boundary.
   stack_top_pc_rel_0:
   auipc sp, %pcrel_hi(KISTACK_TOP)
   addi sp, sp, %pcrel_lo(stack_top_pc_rel_0)
@@ -82,6 +88,6 @@ clear_and_loop:
   mv t4, zero
   mv t5, zero
   mv t6, zero
-  loop:
+idle_loop:
   wfi
-  j loop
+  j idle_loop

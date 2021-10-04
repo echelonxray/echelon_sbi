@@ -13,7 +13,7 @@ typedef unsigned char uint8_t;
 typedef signed char sint8_t;
 typedef signed char int8_t;
 
-#if __riscv_xlen == 128
+#if   __riscv_xlen == 128
 typedef uint128_t uintRL_t;
 typedef sint128_t sintRL_t;
 #elif __riscv_xlen == 64

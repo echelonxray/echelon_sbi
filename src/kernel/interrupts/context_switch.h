@@ -4,12 +4,14 @@
 #include "./../../inc/types.h"
 
 typedef struct {
-	uint32_t context_id;
-	uint32_t status_vals;
-	uint32_t program_memory;
+	uintRL_t context_id;
+	uintRL_t execution_mode;
+	uintRL_t entry_address; // Absolute Address
 	uintRL_t regs[32];
 } CPU_Context;
 
+void interrupt_c_handler();
+void interrupt_entry_handler();
 void switch_context(CPU_Context* cpu_context);
 
 #endif

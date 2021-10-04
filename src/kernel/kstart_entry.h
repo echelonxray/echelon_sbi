@@ -3,4 +3,6 @@
 
 #include "./../inc/types.h"
 
+void idle_loop();
+
 #endif

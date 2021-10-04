@@ -17,5 +17,6 @@ void kmain() {
 	ctrl_reg = (uint32_t*)(UART0_BASE + UART_TXCTRL);
 	*ctrl_reg = 0x1;
 	
-	DEBUG_print("Hello World!\n");
+	DEBUG_print("Hello, World!\n");
+	return;
 }

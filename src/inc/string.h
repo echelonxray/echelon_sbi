@@ -3,7 +3,7 @@
 
 #include "./types.h"
 
-void itoa(register unsigned int number, register char* buf, register signed int buf_len, register signed int base, register signed int set_width);
+void itoa(uintRL_t num, char* buf, size_t buf_len, signed int base, signed int set_min_width);
 void memset(void* s, unsigned int c, size_t n);
 void *memcpy(void *dest, const void *src, size_t n);
 size_t strlen(char* str);

@@ -1,104 +1,142 @@
 #include "./string.h"
 
-void itoa(register unsigned int number, register char* buf, register signed int buf_len, register signed int base, register signed int set_width) {
-	//register signed long int num;
-	register unsigned int num;
-	num = number;
-	if (base < 0) {
-		base = -base;
-		/*
-		if(number < 0) {
-			num = -num - 1;
-		}
-		*/
+void itoa(uintRL_t num, char* buf, size_t buf_len, signed int base, signed int set_min_width) {
+	// At least write a NULL terminator so that if the calling function 
+	// attempts to use the buffer, it will not run off into memory.
+	if (buf_len > 0) {
+		*buf = 0;
 	}
+	
+	// Verify that the buffer length is long enough to be useful.
+	if (buf_len < 3) {
+		return;
+	}
+	
+	// If set_min_width is 0, don't pad zeros.
+	// 
+	// Otherwise, '0's are padded on left to meet a minimum
+	// length of set_min_width.  The behaviour is as described:
+	// 
+	// If base is positive:
+	// The sign of the number is considered part of the length.
+	// However, it is not padded with '0'.  Rather, if
+	// set_min_width is positive, number is non-negative,
+	// and padding is required, a single space of padding
+	// is added where the sign character would be.  If
+	// set_min_width were negative given the same situation, a '+'
+	// is used to prefix a non-negative number.  If number is
+	// negative, '-' is always used as a prefix and the sign of
+	// set_min_width makes no difference.
+	// 
+	// If base is negative:
+	// The sign of set_min_width is ignored and the magnitude of
+	// set_min_width is used as a the minimum length.  '0's are
+	// padded to the left of number to meet the minimum length.
+	
+	{
+		char pos_sign;
+		pos_sign = ' ';
+		if (set_min_width < 0) {
+			pos_sign = '+';
+			set_min_width = -set_min_width;
+		}
+		if (set_min_width != 0) {
+			if (buf_len <= (size_t)set_min_width) {
+				// Buffer is too short to encode to the requested size
+				// number and add the NULL terminator.
+				return;
+			}
+			if (base >= 0) {
+				if (set_min_width == 1) {
+					// This doesn't make sense.  set_min_width is too short.
+					return;
+				}
+				buf_len--;
+				set_min_width--;
+				sintRL_t number = (sintRL_t)num;
+				if (number < 0) {
+					*buf = '-';
+					num = (uintRL_t)(-number);
+				} else {
+					*buf = pos_sign;
+				}
+				buf++;
+			} else {
+				base = -base;
+			}
+		} else {
+			if (base >= 0) {
+				sintRL_t number = (sintRL_t)num;
+				if (number < 0) {
+					*buf = '-';
+					num = (uintRL_t)(-number);
+					buf++;
+					buf_len--;
+				}
+			} else {
+				base = -base;
+			}
+		}
+	}
+	
+	// Verify the base is within valid range
 	if (base > 16 || base < 2) {
 		return;
 	}
-	if (buf_len < 2) {
-		return;
-	}
-	if (set_width != 0) {
-		if (set_width < 0 || num >= 0) {
-			if (buf_len <= set_width) {
-				return;
-			}
-		} else {
-			if (buf_len <= set_width + 1) {
-				return;
-			}
-		}
-	}
-	//Check if zero since this will fail to loop and can be easily handled now
-	register unsigned char i_2;
+	
+	// Exclude the NULL terminator from the buffer length so
+	// that is can be easily looped.
+	buf_len--;
+	
+	// Check if num is zero since this will fail to loop and
+	// can be easily handled now.
 	if (num == 0) {
-		if (set_width != 0) {
-			if (set_width < 0) {
-				set_width = -set_width;
+		if (set_min_width != 0) {
+			size_t i;
+			for (i = 0; i < buf_len; i++) {
+				buf[i] = '0';
 			}
-			i_2 = 0;
-			while (i_2 < set_width) {
-				buf[i_2] = '0';
-				i_2++;
-			}
-			buf[i_2] = 0;
+			buf[i] = 0;
 			return;
 		} else {
 			buf[0] = '0';
 			buf[1] = 0;
 			return;
 		}
+		// Here is unreachable
 	} else {
-		register unsigned char i_then_length;
-		i_then_length = 0;
-		i_2 = 0;
-		//i_then_length is now an index
-		//Append "-" character for negatives
-		if(num < 0){
-			if (set_width < 0) {
-				set_width++;
-			}
-			num = -num;
-			buf[0] = '-';
-			buf_len--;
-			buf++;
-		}
-		if (set_width < 0) {
-			set_width = -set_width;
-		}
-		//Find Characters
+		size_t i_then_length = 0;
+		// i_then_length is now an index
+		// Find Characters
 		while (num > 0 && i_then_length < buf_len) {
-			i_2 = num % base;
-			if (i_2 < 10) {
-				buf[(unsigned int)i_then_length] = '0' + i_2;
+			uintRL_t number;
+			number = num % base;
+			if (number < 10) {
+				buf[i_then_length] = (char)('0' + number);
 			} else {
-				buf[(unsigned int)i_then_length] = '7' + i_2;
+				buf[i_then_length] = (char)('7' + number);
 			}
 			num /= base;
 			i_then_length++;
 		}
-		while (i_then_length < set_width && i_then_length < buf_len) {
-			buf[(unsigned int)i_then_length] = '0';
+		while (i_then_length < (size_t)set_min_width && i_then_length < buf_len) {
+			buf[i_then_length] = '0';
 			i_then_length++;
 		}
-		//i_then_length is now a length count for char array
-		//Loop to fix character order
-		i_2 = 0;
-		register char tmpchar;
-		while (i_2 < (i_then_length / 2) && i_2 < buf_len) {
-			tmpchar = buf[(int)((i_then_length - i_2) - 1)];
-			buf[(int)((i_then_length - i_2) - 1)] = buf[(unsigned int)i_2];
-			buf[(unsigned int)i_2] = tmpchar;
-			i_2++;
+		
+		// i_then_length is now a length
+		// Loop to reverse character order
+		size_t i = 0;
+		char tmpchar;
+		while (i < (i_then_length / 2)) {
+			tmpchar = buf[(i_then_length - i) - 1];
+			buf[(i_then_length - i) - 1] = buf[i];
+			buf[i] = tmpchar;
+			i++;
 		}
-		if (i_then_length < buf_len) {
-			buf[(unsigned int)i_then_length] = 0;
-		} else {
-			buf[(unsigned int)(i_then_length - 1)] = 0;
-		}
+		buf[i_then_length] = 0;
 	}
 	return;
-
 }
 void memset(void* s, unsigned int c, size_t n) {
 	unsigned char* ptr;

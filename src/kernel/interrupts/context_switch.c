@@ -8,29 +8,31 @@
 #include "./../drivers/uart.h"
 #include "./../debug.h"
 
-void interrupt_c_handler(CPU_Context* cpu_context) {
-	//DEBUG_print("Trap Caught: ");
-	
-	//volatile uint32_t* ctrl_reg;
-	sintRL_t mcause;
-	__asm__ __volatile__ ("csrrc %0, mcause, zero" : "=r" (mcause));
-	if (mcause < 0) {
+void interrupt_c_handler(CPU_Context* cpu_context, uintRL_t is_interrupt, uintRL_t cause_value) {
+	if (is_interrupt) {
+		// Interrupt caused handler to fire
+		
 		DEBUG_print("ESBI Error 1! Interrupt Triggered. Lower mcause bits: ");
-		char str[20];
-		mcause &= 0x7FFFFFFF;
-		itoa(mcause, str, 20, 10, 0);
+		char str[30];
+		itoa(cause_value, str, 30, 10, 0);
 		DEBUG_print(str);
 		DEBUG_print("\n");
 		idle_loop();
 	} else {
-		if (mcause == 8) {
+		// Exception caused handler to fire
+		
+		if (cause_value == 8) {
 			// User Mode Environment Exception
-			//DEBUG_print("User Mode Environment Exception!\n");
-			uintRL_t Code = cpu_context->regs[10];
-			uintRL_t Param1 = cpu_context->regs[11];
-			uintRL_t Param2 = cpu_context->regs[12];
-			uintRL_t Param3 = cpu_context->regs[13];
-			if(Code == KC_UARTWRITE) {
+			
+			// Get Request Code
+			uintRL_t Request_Code = cpu_context->regs[REG_A0];
+			
+			// Get Request Parameters
+			uintRL_t Param1 = cpu_context->regs[REG_A1];
+			uintRL_t Param2 = cpu_context->regs[REG_A2];
+			uintRL_t Param3 = cpu_context->regs[REG_A3];
+			
+			if(Request_Code == KC_UARTWRITE) {
 				unsigned char* data = (unsigned char*)Param2;
 				size_t count = (size_t)Param3;
 				if (Param1 == 0) {
@@ -43,13 +45,16 @@ void interrupt_c_handler(CPU_Context* cpu_context) {
 			}
 		} else {
 			DEBUG_print("ESBI Error 2! Not a User Mode Environment Exception. Lower mcause bits: ");
-			char str[20];
-			itoa(mcause, str, 20, 10, 0);
+			char str[30];
+			itoa(cause_value, str, 30, 10, 0);
 			DEBUG_print(str);
 			DEBUG_print("\n");
 			idle_loop();
 		}
 	}
-
+	
+	// Should never return.  Use "void switch_context(CPU_Context* cpu_context)" 
+	// to switch (back) to another execution mode.
+	idle_loop();
 	return;
 }

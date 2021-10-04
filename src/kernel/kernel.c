@@ -9,7 +9,7 @@
 #include "./globals.h"
 #include "./debug.h"
 
-signed int kmain(unsigned int argc, char* argv[], char* envp[]) {
+void kmain() {
 	// START: CPU Init
 	volatile uint32_t* ctrl_reg;
 	
@@ -18,6 +18,4 @@ signed int kmain(unsigned int argc, char* argv[], char* envp[]) {
 	*ctrl_reg = 0x1;
 	
 	DEBUG_print("Hello World!\n");
-	
-	return 0;
 }

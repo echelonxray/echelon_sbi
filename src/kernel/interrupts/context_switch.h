@@ -10,8 +10,8 @@ typedef struct {
 	uintRL_t regs[32];
 } CPU_Context;
 
-void interrupt_c_handler();
-void interrupt_entry_handler();
 void switch_context(CPU_Context* cpu_context);
+void interrupt_entry_handler();
+void interrupt_c_handler(CPU_Context* cpu_context, uintRL_t is_interrupt, uintRL_t cause_value);
 
 #endif

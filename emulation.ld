@@ -73,12 +73,12 @@ SECTIONS
 	possible future 128-bit modes.
 	*/
 	section_FILLSPACE (NOLOAD) : ALIGN(0x10) {
-	  KISTACK_BOTTOM = .;
-	  FILL(0xDEADBEEF);
-	  . = KISTACK_BOTTOM + 0x1000;
-	  KISTACK_TOP = .;
-	  FILL(0xDEADBEEF);
-	  . = KISTACK_TOP + 0x10;
+		KISTACK_BOTTOM = .;
+		FILL(0xDEADBEEF);
+		. = KISTACK_BOTTOM + 0x1000;
+		KISTACK_TOP = .;
+		FILL(0xDEADBEEF);
+		. = KISTACK_TOP + 0x10;
 		KHEAP_START = .;
 	} > ram
 	

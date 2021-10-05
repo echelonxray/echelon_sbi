@@ -4,12 +4,14 @@ OBJCPY        := $(TUPLE)objcopy
 STRIP         := $(TUPLE)strip
 CFLAGS        := -Wall -Wextra -std=c99 -O2 -march=rv64ima -mabi=lp64 -mcmodel=medany -ffreestanding -nostdlib -nostartfiles -fno-stack-check -fno-stack-protector
 LDFLAGS       := -static
+DEFINES       := -D MM_FU540_C000
 
 GFILES        := 
 KFILES        := 
 
 # Global Library
-GFILES        := $(GFILES) src/inc/string.o src/inc/gcc_supp.o
+GFILES        := $(GFILES) src/inc/gcc_supp.o
+GFILES        := $(GFILES) src/inc/string.o
 
 # Kernel
 #  - Core (Entry/System Setup/Globals)
@@ -36,18 +38,18 @@ clean:
 	rm -f *.elf *.strip *.bin *.hex $(GFILES) $(KFILES)
 
 %.o: %.c
-	$(CC) $(CFLAGS) $^ -c -o $@
+	$(CC) $(CFLAGS) $(DEFINES) $^ -c -o $@
 
 %.o: %.s
-	$(CC) $(CFLAGS) $^ -c -o $@
+	$(CC) $(CFLAGS) $(DEFINES) $^ -c -o $@
 
 %.o: %.S
-	$(CC) $(CFLAGS) $^ -c -o $@
+	$(CC) $(CFLAGS) $(DEFINES) $^ -c -o $@
 
 prog-metal.elf: $(GFILES) $(KFILES)
 	$(CC) $(CFLAGS) $(GFILES) $(KFILES) -T ./bare_metal.ld $(LDFLAGS) -o $@
 
-prog-emu.elf: $(GFILES) $(KFILES) #$(UFILES)
+prog-emu.elf: $(GFILES) $(KFILES)
 	$(CC) $(CFLAGS) $(GFILES) $(KFILES) -T ./emulation.ld $(LDFLAGS) -o $@
 
 prog-%.elf.strip: prog-%.elf

@@ -33,49 +33,47 @@ void itoa(uintRL_t num, char* buf, size_t buf_len, signed int base, signed int s
 	// set_min_width is used as a the minimum length.  '0's are
 	// padded to the left of number to meet the minimum length.
 	
-	{
-		char pos_sign;
-		pos_sign = ' ';
-		if (set_min_width < 0) {
-			pos_sign = '+';
-			set_min_width = -set_min_width;
+	char pos_sign;
+	pos_sign = ' ';
+	if (set_min_width < 0) {
+		pos_sign = '+';
+		set_min_width = -set_min_width;
+	}
+	if (set_min_width != 0) {
+		if (buf_len <= (size_t)set_min_width) {
+			// Buffer is too short to encode to the requested size
+			// number and add the NULL terminator.
+			return;
 		}
-		if (set_min_width != 0) {
-			if (buf_len <= (size_t)set_min_width) {
-				// Buffer is too short to encode to the requested size
-				// number and add the NULL terminator.
+		if (base >= 0) {
+			if (set_min_width == 1) {
+				// This doesn't make sense.  set_min_width is too short.
 				return;
 			}
-			if (base >= 0) {
-				if (set_min_width == 1) {
-					// This doesn't make sense.  set_min_width is too short.
-					return;
-				}
-				buf_len--;
-				set_min_width--;
-				sintRL_t number = (sintRL_t)num;
-				if (number < 0) {
-					*buf = '-';
-					num = (uintRL_t)(-number);
-				} else {
-					*buf = pos_sign;
-				}
-				buf++;
+			buf_len--;
+			set_min_width--;
+			sintRL_t number = (sintRL_t)num;
+			if (number < 0) {
+				*buf = '-';
+				num = (uintRL_t)(-number);
 			} else {
-				base = -base;
+				*buf = pos_sign;
+			}
+			buf++;
+		} else {
+			base = -base;
+		}
+	} else {
+		if (base >= 0) {
+			sintRL_t number = (sintRL_t)num;
+			if (number < 0) {
+				*buf = '-';
+				num = (uintRL_t)(-number);
+				buf++;
+				buf_len--;
 			}
 		} else {
-			if (base >= 0) {
-				sintRL_t number = (sintRL_t)num;
-				if (number < 0) {
-					*buf = '-';
-					num = (uintRL_t)(-number);
-					buf++;
-					buf_len--;
-				}
-			} else {
-				base = -base;
-			}
+			base = -base;
 		}
 	}
 	
@@ -93,7 +91,7 @@ void itoa(uintRL_t num, char* buf, size_t buf_len, signed int base, signed int s
 	if (num == 0) {
 		if (set_min_width != 0) {
 			size_t i;
-			for (i = 0; i < buf_len; i++) {
+			for (i = 0; i < (size_t)set_min_width && i < buf_len; i++) {
 				buf[i] = '0';
 			}
 			buf[i] = 0;

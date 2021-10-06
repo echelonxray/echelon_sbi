@@ -2,7 +2,7 @@ TUPLE         := riscv64-unknown-elf-
 CC            := $(TUPLE)gcc
 OBJCPY        := $(TUPLE)objcopy
 STRIP         := $(TUPLE)strip
-CFLAGS        := -Wall -Wextra -std=c99 -O2 -march=rv64ima -mabi=lp64 -mcmodel=medany -ffreestanding -nostdlib -nostartfiles -fno-stack-check -fno-stack-protector
+CFLAGS        := -Wall -Wextra -std=c99 -O2 -march=rv64ia -mabi=lp64 -mcmodel=medany -ffreestanding -nostdlib -nostartfiles -fno-stack-check -fno-stack-protector
 LDFLAGS       := -static
 DEFINES       := -D MM_FU540_C000
 

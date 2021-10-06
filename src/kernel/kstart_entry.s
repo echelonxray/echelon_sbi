@@ -6,14 +6,11 @@
 my_entry_pt:
 	csrr a3, mhartid
 	
-  lui a1, 0x40008
-  slli a1, a1, 1
-  li a4, 1
-  sll a4, a4, a3
-  #fence.i
-  #amoor.w.aqrl a0, a4, (a1)
-  amoor.w a0, a4, (a1)
-  #fence.i
+	lui a1, 0x40008
+	slli a1, a1, 1
+	li a4, 1
+	sll a4, a4, a3
+	amoor.w a0, a4, (a1)
 	
 	li a0, 0
 	bne a3, a0, clear_and_loop
@@ -40,12 +37,13 @@ my_entry_pt:
 	
 	# Zero all other registers
 	mv ra, zero
-	#mv gp, zero
+	# mv sp, zero
+	# mv gp, zero
 	mv tp, zero
 	mv t0, zero
 	mv t1, zero
 	mv t2, zero
-	mv fp, zero
+	mv s0, zero
 	mv s1, zero
 	mv a0, zero
 	mv a1, zero
@@ -81,7 +79,7 @@ clear_and_loop:
 	mv t0, zero
 	mv t1, zero
 	mv t2, zero
-	mv fp, zero
+	mv s0, zero
 	mv s1, zero
 	mv a0, zero
 	mv a1, zero

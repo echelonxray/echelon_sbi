@@ -1,13 +1,13 @@
-TUPLE         := riscv64-unknown-elf-
+TUPLE         := riscv64-linux-gnu-
 CC            := $(TUPLE)gcc
 OBJCPY        := $(TUPLE)objcopy
 STRIP         := $(TUPLE)strip
-CFLAGS        := -Wall -Wextra -std=c99 -O2 -march=rv64ia -mabi=lp64 -mcmodel=medany -mrelax -ffreestanding -nostdlib -nostartfiles -fno-stack-check -fno-stack-protector -fomit-frame-pointer
+CFLAGS        := -Wall -Wextra -std=c99 -O2 -march=rv64ia -mabi=lp64 -mcmodel=medany -mrelax -fno-pic -ffreestanding -nostdlib -nostartfiles -fno-stack-check -fno-stack-protector -fomit-frame-pointer
 LDFLAGS       := -static
 DEFINES       := -D MM_FU540_C000
 
-GFILES        := 
-KFILES        := 
+GFILES        :=
+KFILES        :=
 
 # Global Library
 GFILES        := $(GFILES) src/inc/gcc_supp.o

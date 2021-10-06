@@ -1,4 +1,4 @@
-.section .text
+.section entry_text
 
 .globl my_entry_pt
 .globl idle_loop
@@ -19,12 +19,12 @@ my_entry_pt:
 	bne a3, a0, clear_and_loop
 	
 	# Setup the Global Pointer
-	#.option push
-	#.option norelax
+	.option push
+	.option norelax
 	global_pointer_pc_rel_0:
 	auipc gp, %pcrel_hi(__global_pointer$)
 	addi gp, gp, %pcrel_lo(global_pointer_pc_rel_0)
-	#.option pop
+	.option pop
 	
 	# Load the location of symbol KISTACK_TOP into the Stack Pointer
 	# This is done using pc relative addressing so that it works
@@ -40,7 +40,7 @@ my_entry_pt:
 	
 	# Zero all other registers
 	mv ra, zero
-	mv gp, zero
+	#mv gp, zero
 	mv tp, zero
 	mv t0, zero
 	mv t1, zero

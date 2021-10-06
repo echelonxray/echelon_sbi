@@ -33,12 +33,12 @@ SECTIONS
 		the start start of the file.  This way, at reset, execution
 		starts by jumping to this machine code.
 		*/
-		src/kernel/kstart_entry.o (.text);
+		*.elf (entry_text);
 		
 		/*
 		Link the rest of the kernel's .text sections.
 		*/
-		*.o (.text);
+		*.elf (.text);
 	} > ram
 	
 	/*
@@ -59,20 +59,20 @@ SECTIONS
 		*/
 		__global_pointer$ = . + 0x800;
 		
-		*.o (.rodata);
-		*.o (.rodata.*);
-		*.o (.srodata);
-		*.o (.srodata.*);
+		*.elf (.rodata);
+		*.elf (.rodata.*);
+		*.elf (.srodata);
+		*.elf (.srodata.*);
 	} > ram
 	
 	/*
 	Next, make room for the global variables in RAM.
 	*/
 	.sbss : {
-		*.o (.sbss);
+		*.elf (.sbss);
 	} > ram
 	.bss : {
-		*.o (.bss);
+		*.elf (.bss);
 	} > ram
 	
 	/*

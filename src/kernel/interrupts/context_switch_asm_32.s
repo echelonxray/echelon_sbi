@@ -3,7 +3,7 @@
 .globl interrupt_entry_handler
 .globl switch_context
 
-.align 8, 0
+.align 2, 0
 interrupt_entry_handler:
 	# Save Register States
 	csrrw a0, mscratch, a0 # Save the context pointer in a0 (arg1)

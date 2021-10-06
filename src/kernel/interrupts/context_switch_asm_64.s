@@ -4,8 +4,7 @@
 .globl hart_start_entry_handler
 .globl switch_context
 
-.align 8, 0
-
+.align 2, 0
 hart_start_entry_handler:
 	auipc a1, %pcrel_hi(hart_m_contexts)
 	ld a1, %pcrel_lo(hart_start_entry_handler)(a1)

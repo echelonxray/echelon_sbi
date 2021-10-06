@@ -45,6 +45,20 @@ SECTIONS
 	Put the .rodata section after the actual machine code.
 	*/
 	.rodata : {
+		/*
+		THIS SHOULD PROBABLY BE MOVED IF SPLITING .rodata AWAY FROM
+		.bss, ETC...  THEREFORE, gp CAN BE USED TO REFERENCE THAT
+		DATA INSTEAD.
+		
+		Setup the gp register.  The linker assumes that	if this symbol is
+		defined, that its location is also the value stored in the global
+		pointer register, gp A.K.A. x3.  It will then relax references to 
+		memory addresses within +0x7FF / -0x800 of gp.  The range is set
+		like this because it the maximum range of the 12-bit signed offset
+		that will	fit	into the of encoding register offset addressing.
+		*/
+		__global_pointer$ = . + 0x800;
+		
 		*.o (.rodata);
 		*.o (.rodata.*);
 		*.o (.srodata);

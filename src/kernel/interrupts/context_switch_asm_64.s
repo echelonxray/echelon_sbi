@@ -1,9 +1,18 @@
 .section .text
 
 .globl interrupt_entry_handler
+.globl hart_start_entry_handler
 .globl switch_context
 
 .align 8, 0
+
+hart_start_entry_handler:
+	auipc a1, %pcrel_hi(hart_m_contexts)
+	ld a1, %pcrel_lo(hart_start_entry_handler)(a1)
+	csrr a0, mhartid
+	
+	j idle_loop # Should be unreachable
+
 interrupt_entry_handler:
 	# Save Register States
 	csrrw a0, mscratch, a0 # Save the context pointer in a0 (arg1)

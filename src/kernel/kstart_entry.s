@@ -10,12 +10,21 @@ my_entry_pt:
   slli a1, a1, 1
   li a4, 1
   sll a4, a4, a3
-  fence.i
-  amoor.w.aq a0, a4, (a1)
-  fence.i
+  #fence.i
+  #amoor.w.aqrl a0, a4, (a1)
+  amoor.w a0, a4, (a1)
+  #fence.i
 	
 	li a0, 0
 	bne a3, a0, clear_and_loop
+	
+	# Setup the Global Pointer
+	#.option push
+	#.option norelax
+	global_pointer_pc_rel_0:
+	auipc gp, %pcrel_hi(__global_pointer$)
+	addi gp, gp, %pcrel_lo(global_pointer_pc_rel_0)
+	#.option pop
 	
 	# Load the location of symbol KISTACK_TOP into the Stack Pointer
 	# This is done using pc relative addressing so that it works

@@ -9,9 +9,11 @@
 #include "./globals.h"
 #include "./debug.h"
 
+void** hart_m_contexts;
+
 void print_state() {
 	static unsigned int counter = 0;
-	__asm__ __volatile__ ("fence.i");
+	//__asm__ __volatile__ ("fence.i");
 	volatile uint32_t* state = (uint32_t*)(0x80010000u);
 	char buf[50];
 	DEBUG_print("Cores ");
@@ -34,7 +36,22 @@ void kmain() {
 	ctrl_reg = (uint32_t*)(UART0_BASE + UART_TXCTRL);
 	*ctrl_reg = 0x1;
 	
-	DEBUG_print("Hello, World!\n");
+	hart_m_contexts = (void*)10;
+	
+	uintRL_t some_value;
+	__asm__ __volatile__ (
+	                       "label_0: auipc %0, %%pcrel_hi(hart_m_contexts) \n"
+	                       "ld %0, %%pcrel_lo(label_0)(%0) \n"
+	                       : "=r" (some_value) // Output Only (=) and Outputs/Inputs (+)
+	                       : // Input Only
+	                       : // Clobbers
+	                     );
+	
+	DEBUG_print("Hello, World!: ");
+	char buf[50];
+	itoa(some_value, buf, 50, -10, 0);
+	DEBUG_print(buf);
+	DEBUG_print("\n");
 	DEBUG_print("\n");
 	
 	print_state();

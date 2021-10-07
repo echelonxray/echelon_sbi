@@ -5,8 +5,8 @@
 
 struct hart_m_context {
 	uintRL_t mhartid;
-	uintRL_t mhart_sp;
-	uintRL_t mhart_tp;
+	void* mhart_sp;
+	void* mhart_tp;
 };
 
 extern void** KISTACK_BOTTOM;

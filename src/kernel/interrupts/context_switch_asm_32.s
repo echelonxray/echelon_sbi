@@ -98,11 +98,11 @@ interrupt_entry_handler:
 	# Specifically, KISTACK_TOP is set (0x1000 - 0x10) so that its
 	# initial value can be used to store up to a 128 bit value.
 	# It is aligned to a 16 (0x10) byte boundary.
-	stack_top_pc_rel_0:
-	auipc sp, %pcrel_hi(KISTACK_TOP)
-	addi sp, sp, %pcrel_lo(stack_top_pc_rel_0)
+	1: auipc sp, %pcrel_hi(KISTACK_TOP)
+	addi sp, sp, %pcrel_lo(1b)
 	
 	call interrupt_c_handler
+	j idle_loop
 
 switch_context:
 	lw a4, 0x04(a0)   # Load the execution mode from the context block

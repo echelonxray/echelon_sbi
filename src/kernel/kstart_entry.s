@@ -5,23 +5,22 @@
 
 my_entry_pt:
 	csrr a3, mhartid
-
+	
 	lui a1, 0x40008
 	slli a1, a1, 1
 	li a4, 1
 	sll a4, a4, a3
 	amoor.w zero, a4, (a1)
-
+	
 	# Setup the Global Pointer
 	.option push
 	.option norelax
-	global_pointer_pc_rel_0:
-	auipc gp, %pcrel_hi(__global_pointer$)
-	addi gp, gp, %pcrel_lo(global_pointer_pc_rel_0)
+	1: auipc gp, %pcrel_hi(__global_pointer$)
+	addi gp, gp, %pcrel_lo(1b)
 	.option pop
-
+	
 	bne a3, zero, setup_int_and_spin
-
+	
 	# Load the location of symbol KISTACK_TOP into the Stack Pointer
 	# This is done using pc relative addressing so that it works
 	# across 32-bit, 64-bit, and 128-bit sizes and locations.
@@ -30,43 +29,9 @@ my_entry_pt:
 	# Specifically, KISTACK_TOP is set (0x1000 - 0x10) so that its
 	# initial value can be used to store up to a 128 bit value.
 	# It is aligned to a 16 (0x10) byte boundary.
-	stack_top_pc_rel_0:
-	auipc sp, %pcrel_hi(KISTACK_TOP)
-	addi sp, sp, %pcrel_lo(stack_top_pc_rel_0)
-
-	# Zero all other registers
-	mv ra, zero
-	# mv sp, zero
-	# mv gp, zero
-	mv tp, zero
-	mv t0, zero
-	mv t1, zero
-	mv t2, zero
-	mv s0, zero
-	mv s1, zero
-	mv a0, zero
-	mv a1, zero
-	mv a2, zero
-	mv a3, zero
-	mv a4, zero
-	mv a5, zero
-	mv a6, zero
-	mv a7, zero
-	mv s2, zero
-	mv s3, zero
-	mv s4, zero
-	mv s5, zero
-	mv s6, zero
-	mv s7, zero
-	mv s8, zero
-	mv s9, zero
-	mv s10, zero
-	mv s11, zero
-	mv t3, zero
-	mv t4, zero
-	mv t5, zero
-	mv t6, zero
-
+	1: auipc sp, %pcrel_hi(KISTACK_TOP)
+	addi sp, sp, %pcrel_lo(1b)
+	
 	# Call into the C function
 	call kmain
 
@@ -76,9 +41,8 @@ idle_loop:
 
 setup_int_and_spin:
 	# Setup the interrupt vector
-	int_vec_pc_rel_0:
-	auipc a0, %pcrel_hi(hart_start_entry_handler)
-	addi a0, a0, %pcrel_lo(int_vec_pc_rel_0)
+	1: auipc a0, %pcrel_hi(hart_start_entry_handler)
+	addi a0, a0, %pcrel_lo(1b)
 	csrw mtvec, a0
 	li a0, 0x08
 	csrs mie, a0

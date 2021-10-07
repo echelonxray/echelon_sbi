@@ -1,4 +1,4 @@
-TUPLE         := riscv64-linux-gnu-
+TUPLE         := riscv64-unknown-elf-
 CC            := $(TUPLE)gcc
 OBJCPY        := $(TUPLE)objcopy
 STRIP         := $(TUPLE)strip

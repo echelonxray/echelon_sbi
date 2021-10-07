@@ -18,6 +18,7 @@ void hart_start_c_handler(uintRL_t hart_context_index, uintRL_t is_interrupt, ui
 	DEBUG_print("Hart Start: ");
 	DEBUG_print(buf);
 	DEBUG_print("\n");
+	__asm__ __volatile__ ("csrc mie, %0" : : "r" (0x08));
 	return;
 }
 

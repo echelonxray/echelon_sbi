@@ -4,7 +4,9 @@
 #include "./../inc/types.h"
 
 void* kmalloc(size_t size);
+void* kmalloc_stack(size_t size);
 void kfree(void* ptr);
+void kfree_stack(void* ptr);
 void kallocinit(void* block_start, void* block_end);
 
 #endif

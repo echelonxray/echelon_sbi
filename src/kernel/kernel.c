@@ -46,16 +46,16 @@ void kmain() {
 	hart_m_context_count = 4;
 	hart_m_contexts = kmalloc(hart_m_context_count * sizeof(struct hart_m_context));
 	hart_m_contexts[0].mhartid = 1;
-	hart_m_contexts[0].mhart_sp = (((uintRL_t)kmalloc(0x1000)) & ~((uintRL_t)0xF)) + 0x1000;
+	hart_m_contexts[0].mhart_sp = kmalloc_stack(0x1000);
 	hart_m_contexts[0].mhart_tp = 0;
 	hart_m_contexts[1].mhartid = 2;
-	hart_m_contexts[1].mhart_sp = (((uintRL_t)kmalloc(0x1000)) & ~((uintRL_t)0xF)) + 0x1000;
+	hart_m_contexts[1].mhart_sp = kmalloc_stack(0x1000);
 	hart_m_contexts[1].mhart_tp = 0;
 	hart_m_contexts[2].mhartid = 3;
-	hart_m_contexts[2].mhart_sp = (((uintRL_t)kmalloc(0x1000)) & ~((uintRL_t)0xF)) + 0x1000;
+	hart_m_contexts[2].mhart_sp = kmalloc_stack(0x1000);
 	hart_m_contexts[2].mhart_tp = 0;
 	hart_m_contexts[3].mhartid = 4;
-	hart_m_contexts[3].mhart_sp = (((uintRL_t)kmalloc(0x1000)) & ~((uintRL_t)0xF)) + 0x1000;
+	hart_m_contexts[3].mhart_sp = kmalloc_stack(0x1000);
 	hart_m_contexts[3].mhart_tp = 0;
 
 	DEBUG_print("Hello, World!\n");

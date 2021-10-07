@@ -9,6 +9,26 @@ struct alloc_section {
 void* mem_block_start = 0;
 void* mem_block_end = 0;
 
+void* kmalloc_stack(size_t size) {
+	size_t over_alloc_size = size + 0x20;
+	uintRL_t allocation = (uintRL_t)kmalloc(over_alloc_size);
+	if (allocation == 0) {
+		return 0;
+	}
+	uintRL_t* stack_pointer = (uintRL_t*)((allocation + size + 0x10) & (~((uintRL_t)0xF)));
+	*stack_pointer = allocation;
+	return ((void*)(stack_pointer)) - 0x10;
+}
+
+void kfree_stack(void* ptr) {
+	if (ptr == 0) {
+		return;
+	}
+	uintRL_t* stack_pointer = (uintRL_t*)(ptr + 0x10);
+	kfree((void*)(*stack_pointer));
+	return;
+}
+
 void* kmalloc(size_t size) {
 	if (size % sizeof(uintRL_t)) {
 		size += sizeof(uintRL_t) - (size % sizeof(uintRL_t));

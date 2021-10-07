@@ -8,6 +8,11 @@
 #include "./../drivers/uart.h"
 #include "./../debug.h"
 
+void hart_start_c_handler(uintRL_t hart_context_index, uintRL_t is_interrupt, uintRL_t cause_value) {
+	DEBUG_print("Hart Start!\n");
+	return;
+}
+
 void interrupt_c_handler(CPU_Context* cpu_context, uintRL_t is_interrupt, uintRL_t cause_value) {
 	if (is_interrupt) {
 		// Interrupt caused handler to fire

@@ -9,7 +9,14 @@
 #include "./globals.h"
 #include "./debug.h"
 
-void** hart_m_contexts;
+struct hart_m_context {
+	uintRL_t mhartid;
+	uintRL_t mhart_sp;
+	uintRL_t mhart_tp;
+};
+
+uintRL_t hart_m_context_count;
+struct hart_m_context* hart_m_contexts;
 
 void print_state() {
 	static unsigned int counter = 0;
@@ -36,22 +43,24 @@ void kmain() {
 	ctrl_reg = (uint32_t*)(UART0_BASE + UART_TXCTRL);
 	*ctrl_reg = 0x1;
 	
-	hart_m_contexts = (void*)10;
+	kallocinit((void*)KHEAP_START, (void*)KHEAP_START + 0x8000);
 	
-	uintRL_t some_value;
-	__asm__ __volatile__ (
-	                       "label_0: auipc %0, %%pcrel_hi(hart_m_contexts) \n"
-	                       "ld %0, %%pcrel_lo(label_0)(%0) \n"
-	                       : "=r" (some_value) // Output Only (=) and Outputs/Inputs (+)
-	                       : // Input Only
-	                       : // Clobbers
-	                     );
+	hart_m_context_count = 4;
+	hart_m_contexts = kmalloc(hart_m_context_count * sizeof(struct hart_m_context));
+	hart_m_contexts[0].mhartid = 1;
+	hart_m_contexts[0].mhart_sp = kmalloc(0x1000);
+	hart_m_contexts[0].mhart_tp = 0;
+	hart_m_contexts[1].mhartid = 2;
+	hart_m_contexts[1].mhart_sp = kmalloc(0x1000);
+	hart_m_contexts[1].mhart_tp = 0;
+	hart_m_contexts[2].mhartid = 3;
+	hart_m_contexts[2].mhart_sp = kmalloc(0x1000);
+	hart_m_contexts[2].mhart_tp = 0;
+	hart_m_contexts[3].mhartid = 4;
+	hart_m_contexts[3].mhart_sp = kmalloc(0x1000);
+	hart_m_contexts[3].mhart_tp = 0;
 	
-	DEBUG_print("Hello, World!: ");
-	char buf[50];
-	itoa(some_value, buf, 50, -10, 0);
-	DEBUG_print(buf);
-	DEBUG_print("\n");
+	DEBUG_print("Hello, World!\n");
 	DEBUG_print("\n");
 	
 	print_state();

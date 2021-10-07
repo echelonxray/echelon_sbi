@@ -6,11 +6,39 @@
 
 .align 2, 0
 hart_start_entry_handler:
-	auipc a1, %pcrel_hi(hart_m_contexts)
-	ld a1, %pcrel_lo(hart_start_entry_handler)(a1)
 	csrr a0, mhartid
 	
-	j idle_loop # Should be unreachable
+	1: auipc a1, %pcrel_hi(hart_m_contexts)
+	ld a1, %pcrel_lo(1b)(a1)
+	
+	1: auipc a2, %pcrel_hi(hart_m_context_count)
+	ld a2, %pcrel_lo(1b)(a2)
+	
+	li a3, 0
+	2: # loop start
+	beq a2, a3, 3f # Error: mhartid not found in array
+	ld a4, 0x00(a1)
+	beq a0, a4, 2f
+	addi a1, a1, 0x18
+	addi a3, a3, 1
+	j 2b
+	2: # loop end
+	
+	ld sp, 0x08(a1)
+	ld tp, 0x10(a1)
+	mv a0, a3
+	
+	# Find the cause of the interrupt
+	csrr a2, mcause
+	slti a1, a2, 0 # Save the interrupt flag in a1 (arg2)
+	not a4, zero
+	srli a4, a4, 1
+	and a2, a2, a4 # Save the cause value in a2 (arg3)
+	
+	call hart_start_c_handler
+	
+	3:
+	j idle_loop
 
 interrupt_entry_handler:
 	# Save Register States
@@ -56,7 +84,6 @@ interrupt_entry_handler:
 	sd  a2, 0x018(a0)
 	
 	# Find the cause of the interrupt
-	csrr a2, mcause
 	csrr a2, mcause
 	slti a1, a2, 0 # Save the interrupt flag in a1 (arg2)
 	not sp, zero

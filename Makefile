@@ -1,4 +1,4 @@
-TUPLE         := riscv64-linux-gnu-
+TUPLE         := riscv64-unknown-linux-gnu-
 CC            := $(TUPLE)gcc
 OBJCPY        := $(TUPLE)objcopy
 STRIP         := $(TUPLE)strip
@@ -6,8 +6,8 @@ CFLAGS        := -Wall -Wextra -std=c99 -O2 -march=rv64ia -mabi=lp64 -mcmodel=me
 LDFLAGS       := -static
 DEFINES       := -D MM_FU540_C000
 
-GFILES        :=
-KFILES        :=
+GFILES        := 
+KFILES        := 
 
 # Global Library
 GFILES        := $(GFILES) src/inc/gcc_supp.o

@@ -1,9 +1,45 @@
 .section .text
 
 .globl interrupt_entry_handler
+.globl hart_start_entry_handler
 .globl switch_context
 
 .align 2, 0
+hart_start_entry_handler:
+	csrr a0, mhartid
+	
+	1: auipc a1, %pcrel_hi(hart_m_contexts)
+	lw a1, %pcrel_lo(1b)(a1)
+	
+	1: auipc a2, %pcrel_hi(hart_m_context_count)
+	lw a2, %pcrel_lo(1b)(a2)
+	
+	li a3, 0
+	2: # loop start
+	beq a2, a3, 3f # Error: mhartid not found in array
+	lw a4, 0x00(a1)
+	beq a0, a4, 2f
+	addi a1, a1, 0x0C
+	addi a3, a3, 1
+	j 2b
+	2: # loop end
+	
+	lw sp, 0x04(a1)
+	lw tp, 0x0C(a1)
+	mv a0, a3
+	
+	# Find the cause of the interrupt
+	csrr a2, mcause
+	slti a1, a2, 0 # Save the interrupt flag in a1 (arg2)
+	not a4, zero
+	srli a4, a4, 1
+	and a2, a2, a4 # Save the cause value in a2 (arg3)
+	
+	call hart_start_c_handler
+	
+	3:
+	j idle_loop
+
 interrupt_entry_handler:
 	# Save Register States
 	csrrw a0, mscratch, a0 # Save the context pointer in a0 (arg1)
@@ -48,7 +84,6 @@ interrupt_entry_handler:
 	sw  a2, 0x00C(a0)
 	
 	# Find the cause of the interrupt
-	csrr a2, mcause
 	csrr a2, mcause
 	slti a1, a2, 0 # Save the interrupt flag in a1 (arg2)
 	not sp, zero

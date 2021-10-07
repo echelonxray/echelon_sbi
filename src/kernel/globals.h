@@ -3,8 +3,14 @@
 
 #include "./../inc/types.h"
 
-extern uintRL_t KISTACK_BOTTOM;
-extern uintRL_t KISTACK_TOP;
-extern uintRL_t KHEAP_START;
+struct hart_m_context {
+	uintRL_t mhartid;
+	uintRL_t mhart_sp;
+	uintRL_t mhart_tp;
+};
+
+extern void** KISTACK_BOTTOM;
+extern void** KISTACK_TOP;
+extern void** KHEAP_START;
 
 #endif

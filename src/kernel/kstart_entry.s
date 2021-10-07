@@ -5,13 +5,13 @@
 
 my_entry_pt:
 	csrr a3, mhartid
-	
+
 	lui a1, 0x40008
 	slli a1, a1, 1
 	li a4, 1
 	sll a4, a4, a3
 	amoor.w zero, a4, (a1)
-	
+
 	# Setup the Global Pointer
 	.option push
 	.option norelax
@@ -19,9 +19,9 @@ my_entry_pt:
 	auipc gp, %pcrel_hi(__global_pointer$)
 	addi gp, gp, %pcrel_lo(global_pointer_pc_rel_0)
 	.option pop
-	
-	bne a3, zero, clear_and_loop
-	
+
+	bne a3, zero, setup_int_and_spin
+
 	# Load the location of symbol KISTACK_TOP into the Stack Pointer
 	# This is done using pc relative addressing so that it works
 	# across 32-bit, 64-bit, and 128-bit sizes and locations.
@@ -33,7 +33,7 @@ my_entry_pt:
 	stack_top_pc_rel_0:
 	auipc sp, %pcrel_hi(KISTACK_TOP)
 	addi sp, sp, %pcrel_lo(stack_top_pc_rel_0)
-	
+
 	# Zero all other registers
 	mv ra, zero
 	# mv sp, zero
@@ -66,19 +66,21 @@ my_entry_pt:
 	mv t4, zero
 	mv t5, zero
 	mv t6, zero
-	
+
 	# Call into the C function
 	call kmain
 
-clear_and_loop:
+idle_loop:
+	wfi
+	j idle_loop
+
+setup_int_and_spin:
 	# Setup the interrupt vector
 	int_vec_pc_rel_0:
 	auipc a0, %pcrel_hi(hart_start_entry_handler)
 	addi a0, a0, %pcrel_lo(int_vec_pc_rel_0)
 	csrw mtvec, a0
 	li a0, 0x08
-	#csrs mstatus, a0
-
-idle_loop:
-	wfi
+	csrs mie, a0
+	csrs mstatus, a0
 	j idle_loop

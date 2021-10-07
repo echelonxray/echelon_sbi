@@ -32,6 +32,9 @@ my_entry_pt:
 	1: auipc sp, %pcrel_hi(KISTACK_TOP)
 	addi sp, sp, %pcrel_lo(1b)
 	
+	1: auipc tp, %pcrel_hi(KTMEM_START)
+	addi tp, tp, %pcrel_lo(1b)
+	
 	# Call into the C function
 	call kmain
 

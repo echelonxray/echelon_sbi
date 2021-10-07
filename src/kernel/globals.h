@@ -11,6 +11,7 @@ struct hart_m_context {
 
 extern void** KISTACK_BOTTOM;
 extern void** KISTACK_TOP;
+extern void** KTMEM_START;
 extern void** KHEAP_START;
 
 #endif

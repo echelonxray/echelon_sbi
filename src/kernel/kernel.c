@@ -43,20 +43,23 @@ void kmain() {
 
 	kallocinit(&KHEAP_START, &KHEAP_START + 0x8000);
 
-	hart_m_context_count = 4;
+	hart_m_context_count = 5;
 	hart_m_contexts = kmalloc(hart_m_context_count * sizeof(struct hart_m_context));
-	hart_m_contexts[0].mhartid = 1;
-	hart_m_contexts[0].mhart_sp = kmalloc_stack(0x1000);
-	hart_m_contexts[0].mhart_tp = 0;
-	hart_m_contexts[1].mhartid = 2;
+	hart_m_contexts[0].mhartid = 0;
+	hart_m_contexts[0].mhart_sp = &KISTACK_TOP;
+	hart_m_contexts[0].mhart_tp = &KTMEM_START;
+	hart_m_contexts[1].mhartid = 1;
 	hart_m_contexts[1].mhart_sp = kmalloc_stack(0x1000);
-	hart_m_contexts[1].mhart_tp = 0;
-	hart_m_contexts[2].mhartid = 3;
+	hart_m_contexts[1].mhart_tp = kmalloc(0x100);
+	hart_m_contexts[2].mhartid = 2;
 	hart_m_contexts[2].mhart_sp = kmalloc_stack(0x1000);
-	hart_m_contexts[2].mhart_tp = 0;
-	hart_m_contexts[3].mhartid = 4;
+	hart_m_contexts[2].mhart_tp = kmalloc(0x100);
+	hart_m_contexts[3].mhartid = 3;
 	hart_m_contexts[3].mhart_sp = kmalloc_stack(0x1000);
-	hart_m_contexts[3].mhart_tp = 0;
+	hart_m_contexts[3].mhart_tp = kmalloc(0x100);
+	hart_m_contexts[4].mhartid = 4;
+	hart_m_contexts[4].mhart_sp = kmalloc_stack(0x1000);
+	hart_m_contexts[4].mhart_tp = kmalloc(0x100);
 
 	DEBUG_print("Hello, World!\n");
 	DEBUG_print("\n");

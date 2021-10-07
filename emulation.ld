@@ -93,6 +93,9 @@ SECTIONS
 		KISTACK_TOP = .;
 		FILL(0xDEADBEEF);
 		. = KISTACK_TOP + 0x10;
+		KTMEM_START = .;
+		FILL(0xDEADBEEF);
+		. = KTMEM_START + 0x100;
 		KHEAP_START = .;
 	} > ram
 	

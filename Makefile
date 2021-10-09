@@ -2,12 +2,21 @@ TUPLE         := riscv64-unknown-elf-
 CC            := $(TUPLE)gcc
 OBJCPY        := $(TUPLE)objcopy
 STRIP         := $(TUPLE)strip
-CFLAGS        := -Wall -Wextra -std=c99 -O2 -march=rv64ia -mabi=lp64 -mcmodel=medany -mrelax -ftls-model=local-exec -fno-pic -ffreestanding -nostdlib -nostartfiles -fno-stack-check -fno-stack-protector -fomit-frame-pointer -fno-zero-initialized-in-bss
 LDFLAGS       := -e my_entry_pt -static
 DEFINES       := -D MM_FU540_C000
+CFLAGS        := 
+CFLAGS        := $(CFLAGS) -Wall -Wextra # Turn on all buuld warnings.
+CFLAGS        := $(CFLAGS) -std=c99 # The standards to build to.
+CFLAGS        := $(CFLAGS) -march=rv64ia -mabi=lp64 # The build target architectural information.
+CFLAGS        := $(CFLAGS) -mcmodel=medany # The symbol relocation scheme.
+CFLAGS        := $(CFLAGS) -O2 -mrelax -fno-stack-check -fno-stack-protector -fomit-frame-pointer # Optimizations to make and unused features/cruft.
+CFLAGS        := $(CFLAGS) -ftls-model=local-exec # Thread Local Store (TLS) scheme: Final TLS offsets are known at linktime. (local-exec)
+CFLAGS        := $(CFLAGS) -fno-pic # Do not build position independent code.  Older versions of GCC did not default to this.
+CFLAGS        := $(CFLAGS) -ffreestanding -nostdlib -nostartfiles # Build a freestanding program.  Do not automatically include any other libraries or object files.
+CFLAGS        := $(CFLAGS) -fno-zero-initialized-in-bss # Because this will run on the bare metal, there is nothing to zero the memory.  Do not assume that fresh memory is zeroed.
 
-GFILES        :=
-KFILES        :=
+GFILES        := 
+KFILES        := 
 
 # Global Library
 GFILES        := $(GFILES) src/inc/gcc_supp.o

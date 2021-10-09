@@ -93,15 +93,16 @@ SECTIONS
 	.sdata : {
 		*.elf (.sdata);
 	} > ram
+	.data : {
+		*.elf (.data);
+	} > ram
 	INIT_DATA_RUNTIME_END = .;
 	.sbss : {
 		*.elf (.sbss);
 	} > ram
-	/* Doesn't seem to be used
 	.bss : {
 		*.elf (.bss);
 	} > ram
-	*/
 	
 	/*
 	At the very end of the space reserved for global variables

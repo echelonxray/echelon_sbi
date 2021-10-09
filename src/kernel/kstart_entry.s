@@ -4,14 +4,6 @@
 .globl idle_loop
 
 my_entry_pt:
-	csrr a3, mhartid
-	
-	lui a1, 0x40008
-	slli a1, a1, 1
-	li a4, 1
-	sll a4, a4, a3
-	amoor.w zero, a4, (a1)
-	
 	# Setup the Global Pointer
 	.option push
 	.option norelax
@@ -19,7 +11,29 @@ my_entry_pt:
 	addi gp, gp, %pcrel_lo(1b)
 	.option pop
 	
-	bne a3, zero, setup_int_and_spin
+	# Spin/Halt all harts except for hart 0
+	csrr a0, mhartid
+	bne a0, zero, setup_int_and_spin
+	
+	# Initialize global variables if needed
+	1: auipc a0, %pcrel_hi(INIT_DATA_PROGAMIMAGE_START)
+	addi a0, a0, %pcrel_lo(1b)
+	1: auipc a1, %pcrel_hi(INIT_DATA_RUNTIME_START)
+	addi a1, a1, %pcrel_lo(1b)
+	# If the addresses are different, the global variables
+	# are separate from the program binary.  Copy over
+	# the image of to initialized values to memory in order
+	# to initialize the global variables in RAM.
+	beq a0, a1, 2f
+	1: auipc a2, %pcrel_hi(INIT_DATA_RUNTIME_END)
+	addi a2, a2, %pcrel_lo(1b)
+	3: beq a1, a2, 2f
+	lb a3, (a0)
+	sb a3, (a1)
+	addi a0, a0, 1
+	addi a1, a1, 1
+	j 3b
+	2:
 	
 	# Load the location of symbol KISTACK_TOP into the Stack Pointer
 	# This is done using pc relative addressing so that it works
@@ -32,10 +46,8 @@ my_entry_pt:
 	1: auipc sp, %pcrel_hi(KISTACK_TOP)
 	addi sp, sp, %pcrel_lo(1b)
 	
-	1: auipc tp, %pcrel_hi(KTMEM_START)
-	addi tp, tp, %pcrel_lo(1b)
-	
-	# Call into the C function
+	# Call into the C functions
+	call kinit # Register tp is initialized inside this function.
 	call kmain
 
 idle_loop:

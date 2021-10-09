@@ -2,8 +2,8 @@ TUPLE         := riscv64-unknown-elf-
 CC            := $(TUPLE)gcc
 OBJCPY        := $(TUPLE)objcopy
 STRIP         := $(TUPLE)strip
-CFLAGS        := -Wall -Wextra -std=c99 -O2 -march=rv64ia -mabi=lp64 -mcmodel=medany -mrelax -fno-pic -ffreestanding -nostdlib -nostartfiles -fno-stack-check -fno-stack-protector -fomit-frame-pointer
-LDFLAGS       := -static
+CFLAGS        := -Wall -Wextra -std=c99 -O2 -march=rv64ia -mabi=lp64 -mcmodel=medany -mrelax -ftls-model=local-exec -fno-pic -ffreestanding -nostdlib -nostartfiles -fno-stack-check -fno-stack-protector -fomit-frame-pointer -fno-zero-initialized-in-bss
+LDFLAGS       := -e my_entry_pt -static
 DEFINES       := -D MM_FU540_C000
 
 GFILES        :=

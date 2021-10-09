@@ -10,14 +10,15 @@
 #include "./../debug.h"
 
 extern struct hart_m_context* hart_m_contexts;
+extern __thread uintRL_t mhartid;
 
 void hart_start_c_handler(uintRL_t hart_context_index, uintRL_t is_interrupt, uintRL_t cause_value) {
-	uintRL_t hartid = hart_m_contexts[hart_context_index].mhartid;
+	mhartid = hart_m_contexts[hart_context_index].mhartid;
 	char buf[20];
-	itoa(hartid, buf, 20, -10, 0);
-	DEBUG_print("Hart Start: ");
+	itoa(mhartid, buf, 20, -10, 0);
+	DEBUG_print("Hart: ");
 	DEBUG_print(buf);
-	DEBUG_print("\n");
+	DEBUG_print(" - Started\n");
 	__asm__ __volatile__ ("csrc mie, %0" : : "r" (0x08));
 	return;
 }

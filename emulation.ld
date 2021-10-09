@@ -21,6 +21,7 @@ SECTIONS
 	Inform the linker to start at the beginning of RAM
 	*/
 	. = ORIGIN(ram);
+	PROGAMIMAGE_START = .;
 	
 	/*
 	Inform the linker that .text section will be linked first
@@ -42,8 +43,21 @@ SECTIONS
 	} > ram
 	
 	/*
-	Put the .rodata section after the actual machine code.
+	Create a TLS data block image
 	*/
+	section_THREAD_INIT_tdata : {
+		THI_START = .;
+		THI_tdata_START = .;
+		*.elf (.tdata);
+		THI_tdata_END = .;
+	} > ram
+	section_THREAD_INIT_tbss (NOLOAD) : {
+		THI_tbss_START = .;
+		*.elf (.tbss);
+		THI_tbss_END = .;
+		THI_END = .;
+	} > ram
+	
 	.rodata : {
 		/*
 		THIS SHOULD PROBABLY BE MOVED IF SPLITING .rodata AWAY FROM
@@ -68,12 +82,26 @@ SECTIONS
 	/*
 	Next, make room for the global variables in RAM.
 	*/
+	INIT_DATA_PROGAMIMAGE_START = .;
+	
+	/*
+	IF THE PROGRAM IS SPLIT INTO ROM AND RAM,
+	SET THE VALUE OF "." TO THE RAM HERE.
+	*/
+	
+	INIT_DATA_RUNTIME_START = .;
+	.sdata : {
+		*.elf (.sdata);
+	} > ram
+	INIT_DATA_RUNTIME_END = .;
 	.sbss : {
 		*.elf (.sbss);
 	} > ram
+	/* Doesn't seem to be used
 	.bss : {
 		*.elf (.bss);
 	} > ram
+	*/
 	
 	/*
 	At the very end of the space reserved for global variables
@@ -93,9 +121,6 @@ SECTIONS
 		KISTACK_TOP = .;
 		FILL(0xDEADBEEF);
 		. = KISTACK_TOP + 0x10;
-		KTMEM_START = .;
-		FILL(0xDEADBEEF);
-		. = KTMEM_START + 0x100;
 		KHEAP_START = .;
 	} > ram
 	

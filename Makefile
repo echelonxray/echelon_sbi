@@ -44,7 +44,7 @@ rebuild: clean
 	$(MAKE) all
 
 clean:
-	rm -f *.elf *.strip *.bin *.hex prog.o $(GFILES) $(KFILES)
+	rm -f *.elf *.strip *.bin *.hex prog-partial.o prog-prerelax.o $(GFILES) $(KFILES)
 
 %.o: %.c
 	$(CC) $(CFLAGS) $(DEFINES) $^ -c -o $@
@@ -55,16 +55,16 @@ clean:
 %.o: %.S
 	$(CC) $(CFLAGS) $(DEFINES) $^ -c -o $@
 
-prog.o: $(GFILES) $(KFILES)
+prog-partial.o: $(GFILES) $(KFILES)
 	$(CC) $(CFLAGS) $(GFILES) $(KFILES) -r $(LDFLAGS) -o $@
 
-prog.elf: prog.o
+prog-prerelax.o: prog-partial.o
 	$(OBJCPY) --set-section-flags .rodata.str1.8=alloc $^ $@
 
-prog-metal.elf: prog.elf
+prog-metal.elf: prog-prerelax.o
 	$(CC) $(CFLAGS) $^ -T ./bare_metal.ld $(LDFLAGS) -o $@
 
-prog-emu.elf: prog.elf
+prog-emu.elf: prog-prerelax.o
 	$(CC) $(CFLAGS) $^ -T ./emulation.ld $(LDFLAGS) -o $@
 
 prog-%.elf.strip: prog-%.elf

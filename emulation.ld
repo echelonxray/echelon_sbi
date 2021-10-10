@@ -34,12 +34,12 @@ SECTIONS
 		the start start of the file.  This way, at reset, execution
 		starts by jumping to this machine code.
 		*/
-		*.elf (entry_text);
+		*.o (entry_text);
 		
 		/*
 		Link the rest of the kernel's .text sections.
 		*/
-		*.elf (.text);
+		*.o (.text);
 	} > ram
 	
 	/*
@@ -48,12 +48,12 @@ SECTIONS
 	section_THREAD_INIT_tdata : {
 		THI_START = .;
 		THI_tdata_START = .;
-		*.elf (.tdata);
+		*.o (.tdata);
 		THI_tdata_END = .;
 	} > ram
 	section_THREAD_INIT_tbss (NOLOAD) : {
 		THI_tbss_START = .;
-		*.elf (.tbss);
+		*.o (.tbss);
 		THI_tbss_END = .;
 		THI_END = .;
 	} > ram
@@ -73,10 +73,10 @@ SECTIONS
 		*/
 		__global_pointer$ = . + 0x800;
 		
-		*.elf (.rodata);
-		*.elf (.rodata.*);
-		*.elf (.srodata);
-		*.elf (.srodata.*);
+		*.o (.rodata);
+		*.o (.rodata.*);
+		*.o (.srodata);
+		*.o (.srodata.*);
 	} > ram
 	
 	/*
@@ -91,17 +91,17 @@ SECTIONS
 	
 	INIT_DATA_RUNTIME_START = .;
 	.sdata : {
-		*.elf (.sdata);
+		*.o (.sdata);
 	} > ram
 	.data : {
-		*.elf (.data);
+		*.o (.data);
 	} > ram
 	INIT_DATA_RUNTIME_END = .;
 	.sbss : {
-		*.elf (.sbss);
+		*.o (.sbss);
 	} > ram
 	.bss : {
-		*.elf (.bss);
+		*.o (.bss);
 	} > ram
 	
 	/*

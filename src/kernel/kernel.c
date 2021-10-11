@@ -34,10 +34,6 @@ void kinit() {
 	ptr = kmalloc(tls_size);
 	memcpy(ptr, &THI_tdata_START, tls_init_size);
 	memset(ptr + tls_null_offt, 0, tls_null_size);
-	//hart_contexts[0].mhart_tp = ptr;
-	//hart_contexts[0].mhart_sp = &KISTACK_TOP;
-	//hart_contexts[0].mhartid = 0;
-	//hart_contexts[0].mcontext = kmalloc(sizeof(CPU_Context));
 	hart_contexts[0].context_id = 0;
 	hart_contexts[0].execution_mode = 3;
 	hart_contexts[0].reserved_0 = 0;
@@ -52,24 +48,11 @@ void kinit() {
 	__asm__ __volatile__ ("mv tp, %0" : : "r" (ptr) : "memory");
 	mhartid = 0;
 	
-	/*
-	typedef struct {
-		uintRL_t context_id;
-		uintRL_t execution_mode;
-		uintRL_t entry_address; // Absolute Address
-		uintRL_t regs[32];
-	} CPU_Context;
-	*/
-	
 	// Setup the other hart's context structs
 	for (uintRL_t i = 1; i < 5; i++) {
 		ptr = kmalloc(tls_size);
 		memcpy(ptr, &THI_tdata_START, tls_init_size);
 		memset(ptr + tls_null_offt, 0, tls_null_size);
-		//hart_contexts[i].mhart_tp = ptr;
-		//hart_contexts[i].mhart_sp = kmalloc_stack(stack_size);
-		//hart_contexts[i].mhartid = i;
-		//hart_contexts[i].mcontext = kmalloc(sizeof(CPU_Context));
 		hart_contexts[i].context_id = i;
 		hart_contexts[i].execution_mode = 3;
 		hart_contexts[i].reserved_0 = 0;
@@ -100,6 +83,35 @@ void kmain() {
 
 	DEBUG_print("Hello, World!\n");
 	DEBUG_print("\n");
+	
+	__asm__ __volatile__ ("fence.i" : : : "memory");
+	
+	volatile uint8_t* memory_read = (uint8_t*)0x20000000ul;
+	char buf[20];
+	DEBUG_print("QSPI Read 0x");
+	itoa(memory_read[0], buf, 20, -16, -2);
+	DEBUG_print(buf);
+	itoa(memory_read[1], buf, 20, -16, -2);
+	DEBUG_print(buf);
+	DEBUG_print("_");
+	itoa(memory_read[2], buf, 20, -16, -2);
+	DEBUG_print(buf);
+	itoa(memory_read[3], buf, 20, -16, -2);
+	DEBUG_print(buf);
+	DEBUG_print("_");
+	itoa(memory_read[4], buf, 20, -16, -2);
+	DEBUG_print(buf);
+	itoa(memory_read[5], buf, 20, -16, -2);
+	DEBUG_print(buf);
+	DEBUG_print("_");
+	itoa(memory_read[6], buf, 20, -16, -2);
+	DEBUG_print(buf);
+	itoa(memory_read[7], buf, 20, -16, -2);
+	DEBUG_print(buf);
+	DEBUG_print("\n");
+	DEBUG_print("\n");
+	
+	__asm__ __volatile__ ("fence.i" : : : "memory");
 	
 	ctrl_reg = (uint32_t*)CLINT_BASE;
 	wait_by_spin();

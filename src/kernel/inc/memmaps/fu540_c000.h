@@ -27,11 +27,11 @@
 // CLINT
 #define CLINT_BASE ((void*)0x02000000u)
 // Offsets
-#define CLINT_H0_MSIP 0x0000u
-#define CLINT_H1_MSIP 0x0004u
-#define CLINT_H2_MSIP 0x0008u
-#define CLINT_H3_MSIP 0x000Cu
-#define CLINT_H4_MSIP 0x0010u
+#define CLINT_H0_MSIP (0x0000u)
+#define CLINT_H1_MSIP (0x0004u)
+#define CLINT_H2_MSIP (0x0008u)
+#define CLINT_H3_MSIP (0x000Cu)
+#define CLINT_H4_MSIP (0x0010u)
 
 // Cache Controller
 #define CACHE_CONTROLLER_BASE ((void*)0x02010000u)
@@ -50,6 +50,11 @@
 #define PRCI_PLLCFG 0x08u
 #define PRCI_PLLOUTDIV 0x0Cu
 #define PRCI_PROCMONCFG 0xF0u
+
+// SPI Interfaces
+#define QSPI0_BASE (0x10040000ul);
+#define QSPI1_BASE (0x10041000ul);
+#define QSPI2_BASE (0x10050000ul);
 
 // GPIO
 #define GPIO_BASE ((void*)0x10060000u)

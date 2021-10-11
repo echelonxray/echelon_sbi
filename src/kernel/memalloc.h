@@ -3,10 +3,15 @@
 
 #include "./../inc/types.h"
 
-void* kmalloc(size_t size);
-void* kmalloc_stack(size_t size);
-void kfree(void* ptr);
+void kalloc_pageinit(void* block_start, void* block_end);
+void kfree_page(void* ptr);
+void* kalloc_page();
+
 void kfree_stack(void* ptr);
+void* kmalloc_stack(size_t size);
+
 void kallocinit(void* block_start, void* block_end);
+void kfree(void* ptr);
+void* kmalloc(size_t size);
 
 #endif

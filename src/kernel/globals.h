@@ -3,11 +3,14 @@
 
 #include "./../inc/types.h"
 
+/*
 struct hart_m_context {
 	uintRL_t mhartid;
 	void* mhart_sp;
 	void* mhart_tp;
+	CPU_Context* mcontext;
 };
+*/
 
 // Typeless symbols from the linker script
 

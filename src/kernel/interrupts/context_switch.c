@@ -9,21 +9,50 @@
 #include "./../globals.h"
 #include "./../debug.h"
 
-extern struct hart_m_context* hart_m_contexts;
+extern CPU_Context* hart_contexts;
 extern __thread uintRL_t mhartid;
 
-void hart_start_c_handler(uintRL_t hart_context_index, uintRL_t is_interrupt, uintRL_t cause_value) {
-	mhartid = hart_m_contexts[hart_context_index].mhartid;
+void* hart_start_c_handler(uintRL_t hart_context_index, uintRL_t is_interrupt, uintRL_t cause_value) {
+	mhartid = hart_contexts[hart_context_index].context_id;
+	
+	if (is_interrupt) {
+		if (cause_value == 3) {
+			// Machine Software Interrupt
+			volatile uint32_t* clint_hart_msip_ctls = (uint32_t*)CLINT_BASE;
+			clint_hart_msip_ctls[mhartid] = 0;
+			char buf[20];
+			itoa(mhartid, buf, 20, -10, 0);
+			DEBUG_print("Hart: ");
+			DEBUG_print(buf);
+			DEBUG_print(" - Started\n");
+			return &interrupt_entry_handler;
+		}
+	}
+	
+	DEBUG_print("\n__Inside hart_start_c_handler()__\n");
+	DEBUG_print("Unhanded Trap!  Spinning with codes: \n");
 	char buf[20];
+	
 	itoa(mhartid, buf, 20, -10, 0);
-	DEBUG_print("Hart: ");
+	DEBUG_print("mhartid: ");
 	DEBUG_print(buf);
-	DEBUG_print(" - Started\n");
-	__asm__ __volatile__ ("csrc mie, %0" : : "r" (0x08));
-	return;
+	DEBUG_print("\n");
+	
+	itoa(is_interrupt, buf, 20, -10, 0);
+	DEBUG_print("is_interrupt: ");
+	DEBUG_print(buf);
+	DEBUG_print("\n");
+	
+	itoa(cause_value, buf, 20, -10, 0);
+	DEBUG_print("cause_value: ");
+	DEBUG_print(buf);
+	DEBUG_print("\n");
+	
+	idle_loop();
+	return 0;
 }
 
-void interrupt_c_handler(CPU_Context* cpu_context, uintRL_t is_interrupt, uintRL_t cause_value) {
+void interrupt_c_handler(CPU_Context* cpu_context, uintRL_t hart_context_index, uintRL_t is_interrupt, uintRL_t cause_value) {
 	if (is_interrupt) {
 		// Interrupt caused handler to fire
 
@@ -70,6 +99,5 @@ void interrupt_c_handler(CPU_Context* cpu_context, uintRL_t is_interrupt, uintRL
 
 	// Should never return.  Use "void switch_context(CPU_Context* cpu_context)"
 	// to switch (back) to another execution mode.
-	idle_loop();
 	return;
 }

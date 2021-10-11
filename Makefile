@@ -83,10 +83,10 @@ prog-%.elf.strip: prog-%.elf
 	$(OBJCPY) -O ihex $^ $@
 
 emu:
-	qemu-system-riscv64 -cpu sifive-u54 -smp 5 -bios ./prog-emu.elf.strip.bin -M sifive_u -serial stdio -display none
+	qemu-system-riscv64 -cpu sifive-u54 -smp 5 -bios ./prog-emu.elf.strip.bin -M sifive_u -serial stdio -display none -drive file=./flash.img,if=mtd,format=raw,index=0,readonly=on
 
 emu-debug:
-	qemu-system-riscv64 -cpu sifive-u54 -smp 5 -bios ./prog-emu.elf.strip.bin -M sifive_u -serial stdio -display none -gdb tcp::1234 -S
+	qemu-system-riscv64 -cpu sifive-u54 -smp 5 -bios ./prog-emu.elf.strip.bin -M sifive_u -serial stdio -display none -drive file=./flash.img,if=mtd,format=raw,index=0,readonly=on -gdb tcp::1234 -S
 
 debug:
 	$(TUPLE)gdb -ex "target remote localhost:1234" -ex "layout asm" -ex "tui reg general" -ex "break *0x80000000"

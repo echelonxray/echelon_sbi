@@ -6,12 +6,19 @@
 
 .align 2, 0
 hart_start_entry_handler:
+	# Setup the Global Pointer
+	.option push
+	.option norelax
+	1: auipc gp, %pcrel_hi(__global_pointer$)
+	addi gp, gp, %pcrel_lo(1b)
+	.option pop
+	
 	csrr a0, mhartid
 	
-	1: auipc a1, %pcrel_hi(hart_m_contexts)
+	1: auipc a1, %pcrel_hi(hart_contexts)
 	ld a1, %pcrel_lo(1b)(a1)
 	
-	1: auipc a2, %pcrel_hi(hart_m_context_count)
+	1: auipc a2, %pcrel_hi(hart_context_count)
 	ld a2, %pcrel_lo(1b)(a2)
 	
 	li a3, 0
@@ -19,13 +26,14 @@ hart_start_entry_handler:
 	beq a2, a3, 3f # Error: mhartid not found in array
 	ld a4, 0x00(a1)
 	beq a0, a4, 2f
-	addi a1, a1, 0x18
+	addi a1, a1, 0x118
 	addi a3, a3, 1
 	j 2b
 	2: # loop end
 	
-	ld sp, 0x08(a1)
-	ld tp, 0x10(a1)
+	ld sp, 0x28(a1)
+	ld tp, 0x38(a1)
+	csrw mscratch, a1
 	mv a0, a3
 	
 	# Find the cause of the interrupt
@@ -36,6 +44,11 @@ hart_start_entry_handler:
 	and a2, a2, a4 # Save the cause value in a2 (arg3)
 	
 	call hart_start_c_handler
+	#li a1, 3
+	#not a1, a1
+	#and a0, a0, a1
+	csrw mtvec, a0
+	mret
 	
 	3:
 	j idle_loop
@@ -75,6 +88,13 @@ interrupt_entry_handler:
 	sd  t5, 0x108(a0) # Save x30
 	sd  t6, 0x110(a0) # Save x31
 	
+	# Setup the Global Pointer
+	.option push
+	.option norelax
+	1: auipc gp, %pcrel_hi(__global_pointer$)
+	addi gp, gp, %pcrel_lo(1b)
+	.option pop
+	
 	# Save x10 -- Actually saved here
 	csrrw a1, mscratch, a0
 	sd  a1, 0x068(a0)
@@ -84,25 +104,36 @@ interrupt_entry_handler:
 	sd  a2, 0x018(a0)
 	
 	# Find the cause of the interrupt
-	csrr a2, mcause
-	slti a1, a2, 0 # Save the interrupt flag in a1 (arg2)
+	csrr a3, mcause
+	slti a2, a3, 0 # Save the interrupt flag in a1 (arg3)
 	not sp, zero
 	srli sp, sp, 1
-	and a2, a2, sp # Save the cause value in a2 (arg3)
+	and a3, a3, sp # Save the cause value in a2 (arg4)
 	
-	# Load the location of symbol KISTACK_TOP into the Stack Pointer
-	# This is done using pc relative addressing so that it works
-	# across 32-bit, 64-bit, and 128-bit sizes and locations.
-	# The placement symbol KISTACK_TOP is determined at build time
-	# by the linker script to provide 0x1000 bytes of stack space.
-	# Specifically, KISTACK_TOP is set (0x1000 - 0x10) so that its
-	# initial value can be used to store up to a 128 bit value.
-	# It is aligned to a 16 (0x10) byte boundary.
-	1: auipc sp, %pcrel_hi(KISTACK_TOP)
-	addi sp, sp, %pcrel_lo(1b)
+	csrr t0, mhartid
 	
+	1: auipc t1, %pcrel_hi(hart_contexts)
+	ld t1, %pcrel_lo(1b)(t1)
+	
+	1: auipc t2, %pcrel_hi(hart_context_count)
+	ld t2, %pcrel_lo(1b)(t2)
+	
+	li a1, 0
+	2: # loop start
+	beq t2, a1, 3b # Error: mhartid not found in array
+	ld sp, 0x00(t1)
+	beq t0, sp, 2f
+	addi t1, t1, 0x118
+	addi a1, a1, 1
+	j 2b
+	2: # loop end
+	
+	ld sp, 0x28(t1)
+	ld tp, 0x38(t1)
+	
+	mv s0, a0
 	call interrupt_c_handler
-	j idle_loop
+	mv a0, s0
 
 switch_context:
 	ld a4, 0x08(a0)   # Load the execution mode from the context block
@@ -171,6 +202,6 @@ switch_context:
 	
 	# Finally: Jump and switch execution modes
 	mret
-
-# Should be unreachable.  Jump to an infinite loop just in case.
-j idle_loop
+	
+	# Should be unreachable.  Jump to an infinite loop just in case.
+	j idle_loop

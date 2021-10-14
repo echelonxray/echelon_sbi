@@ -4,11 +4,13 @@
 #include "./../../inc/kernel_calls.h"
 #include "./../inc/general_oper.h"
 #include "./../inc/memmap.h"
+#include "./../thread_locking.h"
 #include "./../kstart_entry.h"
 #include "./../drivers/uart.h"
 #include "./../globals.h"
 #include "./../debug.h"
 
+extern ksemaphore_t* hart_command_que_locks;
 extern volatile CPU_Context* hart_contexts;
 extern volatile Hart_Command* hart_commands;
 
@@ -25,11 +27,6 @@ void* hart_start_c_handler(uintRL_t hart_context_index, uintRL_t is_interrupt, u
 	if (is_interrupt) {
 		if (cause_value == 3) {
 			// Machine Software Interrupt
-			char buf[20];
-			itoa(mhartid, buf, 20, -10, 0);
-			DEBUG_print("Hart: ");
-			DEBUG_print(buf);
-			DEBUG_print(" - Started\n");
 			volatile uint32_t* clint_hart_msip_ctls = (uint32_t*)CLINT_BASE;
 			clint_hart_msip_ctls[mhartid] = 0;
 			return &interrupt_entry_handler;
@@ -64,10 +61,33 @@ void interrupt_c_handler(volatile CPU_Context* cpu_context, uintRL_t cpu_context
 		// Interrupt caused handler to fire
 		
 		if (cause_value == 3) {
+			// M-Mode Software Interrupt -- This is a hart command
+			
+			// Save the command locally so that it does not get clobbered when the
+			// msip flag is cleared.
+			Hart_Command command = hart_commands[mhartid];
+			
 			volatile uint32_t* clint_hart_msip_ctls = (uint32_t*)CLINT_BASE;
-			clint_hart_msip_ctls[mhartid] = 0;
-			if (hart_commands[mhartid].command == HARTCMD_SWITCHCONTEXT) {
-				switch_context((CPU_Context*)(hart_commands[mhartid].param0));
+			
+			if        (command.command == HARTCMD_SWITCHCONTEXT) {
+				clint_hart_msip_ctls[mhartid] = 0;
+				switch_context((CPU_Context*)(command.param0));
+			} else if (command.command == HARTCMD_GETEXCEPTIONDELEGATION) {
+				__asm__ __volatile__ ("csrr %0, medeleg" : "=r" (hart_commands[mhartid].param0));
+				clint_hart_msip_ctls[mhartid] = 0;
+				return;
+			} else if (command.command == HARTCMD_SETEXCEPTIONDELEGATION) {				
+				clint_hart_msip_ctls[mhartid] = 0;
+				__asm__ __volatile__ ("csrw medeleg, %0" : : "r" (command.param0));
+				return;
+			} else if (command.command == HARTCMD_GETINTERRUPTDELEGATION) {
+				__asm__ __volatile__ ("csrr %0, mideleg" : "=r" (hart_commands[mhartid].param0));
+				clint_hart_msip_ctls[mhartid] = 0;
+				return;
+			} else if (command.command == HARTCMD_SETINTERRUPTDELEGATION) {
+				clint_hart_msip_ctls[mhartid] = 0;
+				__asm__ __volatile__ ("csrw mideleg, %0" : : "r" (command.param0));
+				return;
 			}
 		}
 
@@ -86,7 +106,7 @@ void interrupt_c_handler(volatile CPU_Context* cpu_context, uintRL_t cpu_context
 			cpu_context->regs[REG_PC] += 4;
 			//csrs medeleg, a4
 			//__asm__ __volatile__ ("csrs medeleg, %0" : : "r" (0x0000_0000_0000_0000));
-			__asm__ __volatile__ ("csrs medeleg, %0" : : "r" (0x0000000000000100));
+			//__asm__ __volatile__ ("csrs medeleg, %0" : : "r" (0x0000000000000100));
 			
 			/*
 			// Get Request Code
@@ -127,5 +147,38 @@ void interrupt_c_handler(volatile CPU_Context* cpu_context, uintRL_t cpu_context
 		}
 	}
 	
+	return;
+}
+
+void send_hart_command_que(uintRL_t hart_id, Hart_Command* command) {
+	volatile uint32_t* clint_hart_msip_ctls = (uint32_t*)CLINT_BASE;
+	while (clint_hart_msip_ctls[hart_id]) {}
+	ksem_wait(hart_command_que_locks + hart_id);
+	hart_commands[hart_id] = *command;
+	clint_hart_msip_ctls[hart_id] = 1;
+	ksem_post(hart_command_que_locks + hart_id);
+	return;
+}
+
+void send_hart_command_blk(uintRL_t hart_id, Hart_Command* command) {
+	volatile uint32_t* clint_hart_msip_ctls = (uint32_t*)CLINT_BASE;
+	while (clint_hart_msip_ctls[hart_id]) {}
+	ksem_wait(hart_command_que_locks + hart_id);
+	hart_commands[hart_id] = *command;
+	clint_hart_msip_ctls[hart_id] = 1;
+	while (clint_hart_msip_ctls[hart_id]) {}
+	ksem_post(hart_command_que_locks + hart_id);
+	return;
+}
+
+void send_hart_command_ret(uintRL_t hart_id, Hart_Command* command) {
+	volatile uint32_t* clint_hart_msip_ctls = (uint32_t*)CLINT_BASE;
+	while (clint_hart_msip_ctls[hart_id]) {}
+	ksem_wait(hart_command_que_locks + hart_id);
+	hart_commands[hart_id] = *command;
+	clint_hart_msip_ctls[hart_id] = 1;
+	while (clint_hart_msip_ctls[hart_id]) {}
+	*command = hart_commands[hart_id];
+	ksem_post(hart_command_que_locks + hart_id);
 	return;
 }

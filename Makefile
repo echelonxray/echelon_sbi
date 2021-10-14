@@ -28,6 +28,7 @@ KFILES        := $(KFILES) src/kernel/kernel.o
 KFILES        := $(KFILES) src/kernel/kstart_entry.o
 KFILES        := $(KFILES) src/kernel/globals.o
 KFILES        := $(KFILES) src/kernel/memalloc.o
+KFILES        := $(KFILES) src/kernel/thread_locking.o
 KFILES        := $(KFILES) src/kernel/debug.o
 #  - Drivers
 KFILES        := $(KFILES) src/kernel/drivers/uart.o

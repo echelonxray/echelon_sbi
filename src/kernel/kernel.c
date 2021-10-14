@@ -6,9 +6,11 @@
 #include "./drivers/uart.h"
 #include "./interrupts/context_switch.h"
 #include "./memalloc.h"
+#include "./thread_locking.h"
 #include "./globals.h"
 #include "./debug.h"
 
+ksemaphore_t* hart_command_que_locks;
 uintRL_t hart_context_count;
 volatile CPU_Context* hart_contexts;
 volatile Hart_Command* hart_commands;
@@ -31,7 +33,20 @@ void clear_hart_context(volatile CPU_Context* hart_context) {
 
 void kinit() {
 	kallocinit(&KHEAP_START, &KHEAP_START + 0x8000);
-	kalloc_pageinit(&KHEAP_START + 0x8000, &KHEAP_START + 0x8000 + 0x10000000);
+	//kalloc_pageinit(&KHEAP_START + 0x8000, &KHEAP_START + 0x8000 + 0x10000000);
+	
+	hart_commands = kmalloc(TOTAL_HART_COUNT * sizeof(Hart_Command));
+	hart_command_que_locks = kmalloc(TOTAL_HART_COUNT * sizeof(ksemaphore_t));
+	for (uintRL_t i = 0; i < TOTAL_HART_COUNT; i++) {
+		hart_commands[i].command = 0;
+		hart_commands[i].param0 = 0;
+		hart_commands[i].param1 = 0;
+		hart_commands[i].param2 = 0;
+		hart_commands[i].param3 = 0;
+		hart_commands[i].param4 = 0;
+		hart_commands[i].param5 = 0;
+		ksem_init(hart_command_que_locks + i);
+	}
 	
 	// Note:
 	//   &THI_START == &THI_tdata_START
@@ -43,10 +58,9 @@ void kinit() {
 	uintRL_t tls_null_offt = (uintRL_t)(&THI_tbss_START) - (uintRL_t)(&THI_START);
 	hart_context_count = (TOTAL_HART_COUNT + (USE_HART_COUNT * 1));
 	hart_contexts = kmalloc(hart_context_count * sizeof(CPU_Context));
-	hart_commands = kmalloc(TOTAL_HART_COUNT * sizeof(Hart_Command));
-	void* ptr;
 	
 	// Setup this hart's (Hart 0) context struct
+	void* ptr;
 	ptr = kmalloc(tls_size);
 	memcpy(ptr, &THI_tdata_START, tls_init_size);
 	memset(ptr + tls_null_offt, 0, tls_null_size);
@@ -76,6 +90,15 @@ void kinit() {
 		// them from their current spinning/halted state.
 	}
 	
+	// Start and wait for other harts to initialize
+	volatile uint32_t* clint_hart_msip_ctls = (uint32_t*)CLINT_BASE;
+	for (uintRL_t i = 1; i < TOTAL_HART_COUNT; i++) {
+		clint_hart_msip_ctls[i] = 0x1;
+	}
+	for (uintRL_t i = 1; i < TOTAL_HART_COUNT; i++) {
+		while (clint_hart_msip_ctls[i]) {}
+	}
+	
 	return;
 }
 
@@ -86,93 +109,34 @@ void wait_by_spin() {
 
 void kmain() {
 	volatile uint32_t* ctrl_reg;
-
+	
 	// Enable TX on UART0
 	ctrl_reg = (uint32_t*)(UART0_BASE + UART_TXCTRL);
 	*ctrl_reg = 0x1;
-
+	
 	DEBUG_print("Hello, World!\n");
 	DEBUG_print("\n");
 	
-	volatile uint8_t* memory_read = (uint8_t*)0x20000000ul;
-	char buf[20];
-	DEBUG_print("QSPI Read 0x");
-	itoa(memory_read[0], buf, 20, -16, -2);
-	DEBUG_print(buf);
-	itoa(memory_read[1], buf, 20, -16, -2);
-	DEBUG_print(buf);
-	DEBUG_print("_");
-	itoa(memory_read[2], buf, 20, -16, -2);
-	DEBUG_print(buf);
-	itoa(memory_read[3], buf, 20, -16, -2);
-	DEBUG_print(buf);
-	DEBUG_print("_");
-	itoa(memory_read[4], buf, 20, -16, -2);
-	DEBUG_print(buf);
-	itoa(memory_read[5], buf, 20, -16, -2);
-	DEBUG_print(buf);
-	DEBUG_print("_");
-	itoa(memory_read[6], buf, 20, -16, -2);
-	DEBUG_print(buf);
-	itoa(memory_read[7], buf, 20, -16, -2);
-	DEBUG_print(buf);
-	DEBUG_print("\n");
-	DEBUG_print("\n");
-	
-	ctrl_reg = (uint32_t*)CLINT_BASE;
-	//wait_by_spin();
-	
-	DEBUG_print("Sending H1 Wake Up...");
-	ctrl_reg[1] = 0x1;
-	//DEBUG_print("Sent\n");
-	while (ctrl_reg[1]) {}
-	//wait_by_spin();
-
-	DEBUG_print("Sending H2 Wake Up...");
-	ctrl_reg[2] = 0x1;
-	//DEBUG_print("Sent\n");
-	while (ctrl_reg[2]) {}
-	//wait_by_spin();
-
-	DEBUG_print("Sending H3 Wake Up...");
-	ctrl_reg[3] = 0x1;
-	//DEBUG_print("Sent\n");
-	while (ctrl_reg[3]) {}
-	//wait_by_spin();
-
-	DEBUG_print("Sending H4 Wake Up...");
-	ctrl_reg[4] = 0x1;
-	//DEBUG_print("Sent\n");
-	while (ctrl_reg[4]) {}
-	//wait_by_spin();
-
-	DEBUG_print("\n");
-	//wait_by_spin();
-
-	/*
-	struct hart_command {
-		uintRL_t command;
-		uintRL_t param0;
-		uintRL_t param1;
-		uintRL_t param2;
-		uintRL_t param3;
-		uintRL_t param4;
-		uintRL_t param5;
-	};
-	*/
 	clear_hart_context(hart_contexts + TOTAL_HART_COUNT + 0);
 	hart_contexts[TOTAL_HART_COUNT + 0].regs[REG_PC] = 0x20000000;
 	hart_contexts[TOTAL_HART_COUNT + 0].regs[REG_SP] = (uintRL_t)kmalloc_stack(STACK_SIZE);
 	hart_contexts[TOTAL_HART_COUNT + 0].context_id = TOTAL_HART_COUNT + 0;
 	hart_contexts[TOTAL_HART_COUNT + 0].execution_mode = EM_S;
-	hart_commands[1].command = HARTCMD_SWITCHCONTEXT;
-	hart_commands[1].param0 = (uintRL_t)(hart_contexts + TOTAL_HART_COUNT + 0);
-	ctrl_reg[1] = 0x1;
-	while (ctrl_reg[1]) {}
+	
+	Hart_Command command;
+	
+	command.command = HARTCMD_SETEXCEPTIONDELEGATION;
+	command.param0 = 1 << 8;
+	send_hart_command_blk(1, &command);
+	
+	command.command = HARTCMD_SWITCHCONTEXT;
+	command.param0 = (uintRL_t)(hart_contexts + TOTAL_HART_COUNT + 0);
+	send_hart_command_blk(1, &command);
+	
 	wait_by_spin();
-
+	
 	DEBUG_print("\n");
 	DEBUG_print("Bye, World!\n");
-
+	
 	return;
 }

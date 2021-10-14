@@ -24,8 +24,16 @@ void* hart_start_c_handler(uintRL_t hart_context_index, uintRL_t is_interrupt, u
 void interrupt_c_handler(volatile CPU_Context* cpu_context, uintRL_t cpu_context_index, uintRL_t is_interrupt, uintRL_t cause_value);
 void interrupt_entry_handler();
 void switch_context(volatile CPU_Context* cpu_context);
+void send_hart_command_que(uintRL_t hart_id, Hart_Command* command);
+void send_hart_command_blk(uintRL_t hart_id, Hart_Command* command);
+void send_hart_command_ret(uintRL_t hart_id, Hart_Command* command);
 
 #define HARTCMD_SWITCHCONTEXT 1
+#define HARTCMD_GETEXCEPTIONDELEGATION 2
+#define HARTCMD_SETEXCEPTIONDELEGATION 3
+#define HARTCMD_GETINTERRUPTDELEGATION 4
+#define HARTCMD_SETINTERRUPTDELEGATION 5
+
 #define EM_M 3
 #define EM_S 1
 #define EM_U 0

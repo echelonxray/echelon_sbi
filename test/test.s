@@ -52,11 +52,13 @@ my_entry_pt:
 print_string:
 	lbu a2, (a0)
 	beq a2, zero, 1f
+	2: lw a3, (a1)
+	blt a3, zero, 2b
 	sw a2, (a1)
 	addi a0, a0, 1
 	j print_string
 	1: ret
-	j loop
+	j loop # Should be unreachable
 
 trap_handler:
 	lui a1, 0x10010
@@ -65,6 +67,8 @@ trap_handler:
 	addi a0, a0, %pcrel_lo(1b)
 	
 	call print_string
+	
+	ecall
 	
 	csrr a0, sepc
 	addi a0, a0, 4

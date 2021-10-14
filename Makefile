@@ -83,10 +83,10 @@ prog-%.elf.strip: prog-%.elf
 	$(OBJCPY) -O ihex $^ $@
 
 emu:
-	qemu-system-riscv64 -cpu sifive-u54 -smp 5 -bios ./prog-emu.elf.strip.bin -M sifive_u -serial stdio -display none -device loader,file=./flash.img,addr=0x20000000
+	qemu-system-riscv64 -cpu sifive-u54 -smp 5 -bios ./prog-emu.elf.strip.bin -M sifive_u -serial stdio -display none -device loader,file=./test/test.out.strip.bin,addr=0x20000000
 
 emu-debug:
-	qemu-system-riscv64 -cpu sifive-u54 -smp 5 -bios ./prog-emu.elf.strip.bin -M sifive_u -serial stdio -display none -device loader,file=./flash.img,addr=0x20000000 -gdb tcp::1234 -S
+	qemu-system-riscv64 -cpu sifive-u54 -smp 5 -bios ./prog-emu.elf.strip.bin -M sifive_u -serial stdio -display none -device loader,file=./test/test.out.strip.bin,addr=0x20000000 -gdb tcp::1234 -S
 
 emu-linux:
 	qemu-system-riscv64 -cpu sifive-u54 -smp 5 -kernel ./kernel.img -M sifive_u -serial stdio -display none

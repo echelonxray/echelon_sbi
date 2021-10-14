@@ -10,10 +10,17 @@
 #include "./../debug.h"
 
 extern CPU_Context* hart_contexts;
+extern Hart_Command* hart_commands;
+
 extern __thread uintRL_t mhartid;
 
 void* hart_start_c_handler(uintRL_t hart_context_index, uintRL_t is_interrupt, uintRL_t cause_value) {
 	mhartid = hart_contexts[hart_context_index].context_id;
+	
+	// Allow all memory access
+	// QEMU will fail when switching to Supervisor mode of no PMP rules are set
+	__asm__ __volatile__ ("csrrw zero, pmpaddr0, %0" : : "r" (0x003FFFFFFFFFFFFF));
+	__asm__ __volatile__ ("csrrw zero, pmpcfg0, %0" : : "r" (0x000000000000000F));
 	
 	if (is_interrupt) {
 		if (cause_value == 3) {
@@ -52,9 +59,17 @@ void* hart_start_c_handler(uintRL_t hart_context_index, uintRL_t is_interrupt, u
 	return 0;
 }
 
-void interrupt_c_handler(CPU_Context* cpu_context, uintRL_t hart_context_index, uintRL_t is_interrupt, uintRL_t cause_value) {
+void interrupt_c_handler(CPU_Context* cpu_context, uintRL_t cpu_context_index, uintRL_t is_interrupt, uintRL_t cause_value) {
 	if (is_interrupt) {
 		// Interrupt caused handler to fire
+		
+		if (cause_value == 3) {
+			volatile uint32_t* clint_hart_msip_ctls = (uint32_t*)CLINT_BASE;
+			clint_hart_msip_ctls[mhartid] = 0;
+			if (hart_commands[mhartid].command == HARTCMD_SWITCHCONTEXT) {
+				switch_context((CPU_Context*)(hart_commands[mhartid].param0));
+			}
+		}
 
 		DEBUG_print("ESBI Error 1! Interrupt Triggered. Lower mcause bits: ");
 		char str[30];

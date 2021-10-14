@@ -11,13 +11,28 @@
 
 uintRL_t hart_context_count;
 CPU_Context* hart_contexts;
+Hart_Command* hart_commands;
+
 __thread uintRL_t mhartid;
+
+#define TOTAL_HART_COUNT 5
+#define USE_HART_COUNT 4
+#define STACK_SIZE 0x1000
+
+void clear_hart_context(CPU_Context* hart_context) {
+	hart_context->context_id = 0;
+	hart_context->execution_mode = 0;
+	hart_context->reserved_0 = 0;
+	for (uintRL_t j = 0; j < 32; j++) {
+		hart_context->regs[j] = 0;
+	}
+	return;
+}
 
 void kinit() {
 	kallocinit(&KHEAP_START, &KHEAP_START + 0x8000);
 	kalloc_pageinit(&KHEAP_START + 0x8000, &KHEAP_START + 0x8000 + 0x10000000);
 	
-	uintRL_t stack_size = 0x1000;
 	// Note:
 	//   &THI_START == &THI_tdata_START
 	//   &THI_END == &THI_tbss_END
@@ -26,20 +41,18 @@ void kinit() {
 	uintRL_t tls_init_size = (uintRL_t)(&THI_tdata_END) - (uintRL_t)(&THI_tdata_START);
 	uintRL_t tls_null_size = (uintRL_t)(&THI_tbss_END) - (uintRL_t)(&THI_tbss_START);
 	uintRL_t tls_null_offt = (uintRL_t)(&THI_tbss_START) - (uintRL_t)(&THI_START);
-	hart_context_count = 5;
+	hart_context_count = (TOTAL_HART_COUNT + (USE_HART_COUNT * 1));
 	hart_contexts = kmalloc(hart_context_count * sizeof(CPU_Context));
+	hart_commands = kmalloc(TOTAL_HART_COUNT * sizeof(Hart_Command));
 	void* ptr;
 	
 	// Setup this hart's (Hart 0) context struct
 	ptr = kmalloc(tls_size);
 	memcpy(ptr, &THI_tdata_START, tls_init_size);
 	memset(ptr + tls_null_offt, 0, tls_null_size);
+	clear_hart_context(hart_contexts + 0);
 	hart_contexts[0].context_id = 0;
-	hart_contexts[0].execution_mode = 3;
-	hart_contexts[0].reserved_0 = 0;
-	for (uintRL_t j = 0; j < 32; j++) {
-		hart_contexts[0].regs[j] = 0;
-	}
+	hart_contexts[0].execution_mode = EM_M;
 	hart_contexts[0].regs[REG_TP] = (uintRL_t)ptr;
 	hart_contexts[0].regs[REG_SP] = (uintRL_t)&KISTACK_TOP;
 	// Now that we actually have TLS memory allocated and setup for this
@@ -49,18 +62,15 @@ void kinit() {
 	mhartid = 0;
 	
 	// Setup the other hart's context structs
-	for (uintRL_t i = 1; i < 5; i++) {
+	for (uintRL_t i = 1; i < TOTAL_HART_COUNT; i++) {
 		ptr = kmalloc(tls_size);
 		memcpy(ptr, &THI_tdata_START, tls_init_size);
 		memset(ptr + tls_null_offt, 0, tls_null_size);
+		clear_hart_context(hart_contexts + i);
 		hart_contexts[i].context_id = i;
-		hart_contexts[i].execution_mode = 3;
-		hart_contexts[i].reserved_0 = 0;
-		for (uintRL_t j = 0; j < 32; j++) {
-			hart_contexts[i].regs[j] = 0;
-		}
+		hart_contexts[i].execution_mode = EM_M;
 		hart_contexts[i].regs[REG_TP] = (uintRL_t)ptr;
-		hart_contexts[i].regs[REG_SP] = (uintRL_t)kmalloc_stack(stack_size);
+		hart_contexts[i].regs[REG_SP] = (uintRL_t)kmalloc_stack(STACK_SIZE);
 		// The special registers (sp and tp) in these harts will be set up
 		// by the one-time interrupt handler that they run when we interrupt
 		// them from their current spinning/halted state.
@@ -83,8 +93,6 @@ void kmain() {
 
 	DEBUG_print("Hello, World!\n");
 	DEBUG_print("\n");
-	
-	__asm__ __volatile__ ("fence.i" : : : "memory");
 	
 	volatile uint8_t* memory_read = (uint8_t*)0x20000000ul;
 	char buf[20];
@@ -111,8 +119,6 @@ void kmain() {
 	DEBUG_print("\n");
 	DEBUG_print("\n");
 	
-	__asm__ __volatile__ ("fence.i" : : : "memory");
-	
 	ctrl_reg = (uint32_t*)CLINT_BASE;
 	wait_by_spin();
 	
@@ -134,6 +140,31 @@ void kmain() {
 	DEBUG_print("Sending H4 Wake Up...");
 	ctrl_reg[4] = 0x1;
 	DEBUG_print("Sent\n");
+	wait_by_spin();
+
+	DEBUG_print("\n");
+	wait_by_spin();
+
+	/*
+	struct hart_command {
+		uintRL_t command;
+		uintRL_t param0;
+		uintRL_t param1;
+		uintRL_t param2;
+		uintRL_t param3;
+		uintRL_t param4;
+		uintRL_t param5;
+	};
+	*/
+	clear_hart_context(hart_contexts + TOTAL_HART_COUNT + 0);
+	hart_contexts[TOTAL_HART_COUNT + 0].regs[REG_PC] = 0x20000000;
+	hart_contexts[TOTAL_HART_COUNT + 0].regs[REG_SP] = (uintRL_t)kmalloc_stack(STACK_SIZE);
+	hart_contexts[TOTAL_HART_COUNT + 0].context_id = TOTAL_HART_COUNT + 0;
+	hart_contexts[TOTAL_HART_COUNT + 0].execution_mode = EM_S;
+	hart_commands[1].command = HARTCMD_SWITCHCONTEXT;
+	hart_commands[1].param0 = (uintRL_t)(hart_contexts + TOTAL_HART_COUNT + 0);
+	while (ctrl_reg[1]) {}
+	ctrl_reg[1] = 0x1;
 	wait_by_spin();
 
 	DEBUG_print("\n");

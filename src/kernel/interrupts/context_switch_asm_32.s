@@ -43,6 +43,10 @@ hart_start_entry_handler:
 	srli a4, a4, 1
 	and a2, a2, a4 # Save the cause value in a2 (arg3)
 	
+	#li a3, 1
+	#slli a4, a3, 8
+	#csrs medeleg, a4
+	
 	call hart_start_c_handler
 	#li a1, 3
 	#not a1, a1
@@ -98,6 +102,11 @@ interrupt_entry_handler:
 	# Save x10 -- Actually saved here
 	csrrw a1, mscratch, a0
 	sw  a1, 0x034(a0)
+	
+	csrr a1, mstatus
+	srli a1, a1, 11
+	andi a1, a1, 0x3
+	sw a1, 0x004(a0)
 	
 	# Save the Program Counter
 	csrr a2, mepc

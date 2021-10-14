@@ -10,8 +10,8 @@
 #include "./debug.h"
 
 uintRL_t hart_context_count;
-CPU_Context* hart_contexts;
-Hart_Command* hart_commands;
+volatile CPU_Context* hart_contexts;
+volatile Hart_Command* hart_commands;
 
 __thread uintRL_t mhartid;
 
@@ -19,7 +19,7 @@ __thread uintRL_t mhartid;
 #define USE_HART_COUNT 4
 #define STACK_SIZE 0x1000
 
-void clear_hart_context(CPU_Context* hart_context) {
+void clear_hart_context(volatile CPU_Context* hart_context) {
 	hart_context->context_id = 0;
 	hart_context->execution_mode = 0;
 	hart_context->reserved_0 = 0;
@@ -120,30 +120,34 @@ void kmain() {
 	DEBUG_print("\n");
 	
 	ctrl_reg = (uint32_t*)CLINT_BASE;
-	wait_by_spin();
+	//wait_by_spin();
 	
 	DEBUG_print("Sending H1 Wake Up...");
 	ctrl_reg[1] = 0x1;
-	DEBUG_print("Sent\n");
-	wait_by_spin();
+	//DEBUG_print("Sent\n");
+	while (ctrl_reg[1]) {}
+	//wait_by_spin();
 
 	DEBUG_print("Sending H2 Wake Up...");
 	ctrl_reg[2] = 0x1;
-	DEBUG_print("Sent\n");
-	wait_by_spin();
+	//DEBUG_print("Sent\n");
+	while (ctrl_reg[2]) {}
+	//wait_by_spin();
 
 	DEBUG_print("Sending H3 Wake Up...");
 	ctrl_reg[3] = 0x1;
-	DEBUG_print("Sent\n");
-	wait_by_spin();
+	//DEBUG_print("Sent\n");
+	while (ctrl_reg[3]) {}
+	//wait_by_spin();
 
 	DEBUG_print("Sending H4 Wake Up...");
 	ctrl_reg[4] = 0x1;
-	DEBUG_print("Sent\n");
-	wait_by_spin();
+	//DEBUG_print("Sent\n");
+	while (ctrl_reg[4]) {}
+	//wait_by_spin();
 
 	DEBUG_print("\n");
-	wait_by_spin();
+	//wait_by_spin();
 
 	/*
 	struct hart_command {
@@ -163,8 +167,8 @@ void kmain() {
 	hart_contexts[TOTAL_HART_COUNT + 0].execution_mode = EM_S;
 	hart_commands[1].command = HARTCMD_SWITCHCONTEXT;
 	hart_commands[1].param0 = (uintRL_t)(hart_contexts + TOTAL_HART_COUNT + 0);
-	while (ctrl_reg[1]) {}
 	ctrl_reg[1] = 0x1;
+	while (ctrl_reg[1]) {}
 	wait_by_spin();
 
 	DEBUG_print("\n");

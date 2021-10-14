@@ -21,9 +21,9 @@ typedef struct {
 } Hart_Command;
 
 void* hart_start_c_handler(uintRL_t hart_context_index, uintRL_t is_interrupt, uintRL_t cause_value);
-void interrupt_c_handler(CPU_Context* cpu_context, uintRL_t cpu_context_index, uintRL_t is_interrupt, uintRL_t cause_value);
+void interrupt_c_handler(volatile CPU_Context* cpu_context, uintRL_t cpu_context_index, uintRL_t is_interrupt, uintRL_t cause_value);
 void interrupt_entry_handler();
-void switch_context(CPU_Context* cpu_context);
+void switch_context(volatile CPU_Context* cpu_context);
 
 #define HARTCMD_SWITCHCONTEXT 1
 #define EM_M 3

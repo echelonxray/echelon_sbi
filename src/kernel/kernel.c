@@ -10,7 +10,13 @@
 #include "./globals.h"
 #include "./debug.h"
 
+extern void* mem_block_end;
+
 ksemaphore_t* hart_command_que_locks;
+uintRL_t dtb_location_a0;
+uintRL_t dtb_location_a1;
+uintRL_t dtb_location_a2;
+uintRL_t dtb_location_a3;
 uintRL_t hart_context_count;
 volatile CPU_Context* hart_contexts;
 volatile Hart_Command* hart_commands;
@@ -32,7 +38,7 @@ void clear_hart_context(volatile CPU_Context* hart_context) {
 }
 
 void kinit() {
-	kallocinit(&KHEAP_START, &KHEAP_START + 0x8000);
+	kallocinit(&KHEAP_START, &KHEAP_START + 0x10000);
 	//kalloc_pageinit(&KHEAP_START + 0x8000, &KHEAP_START + 0x8000 + 0x10000000);
 	
 	hart_commands = kmalloc(TOTAL_HART_COUNT * sizeof(Hart_Command));
@@ -107,6 +113,28 @@ void wait_by_spin() {
 	return;
 }
 
+/*
+struct __attribute__((__packed__)) kboot_header {
+	uint32_t code0;
+	uint32_t code1;
+	uint32_t text_offset_a;
+	uint32_t text_offset_b;
+	uint32_t image_size_a;
+	uint32_t image_size_b;
+	uint32_t flags_a;
+	uint32_t flags_b;
+	uint16_t version_minor;
+	uint16_t version_major;
+	uint32_t res1;
+	uint32_t res2_a;
+	uint32_t res2_b;
+	uint32_t magic_a;
+	uint32_t magic_b;
+	uint32_t magic2;
+	uint32_t res3;
+};
+*/
+
 void kmain() {
 	volatile uint32_t* ctrl_reg;
 	
@@ -117,8 +145,77 @@ void kmain() {
 	DEBUG_print("Hello, World!\n");
 	DEBUG_print("\n");
 	
+	struct __attribute__((__packed__)) kboot_header {
+		uint32_t code0;
+		uint32_t code1;
+		uint32_t text_offset_a;
+		uint32_t text_offset_b;
+		uint32_t image_size_a;
+		uint32_t image_size_b;
+		uint32_t flags_a;
+		uint32_t flags_b;
+		uint16_t version_minor;
+		uint16_t version_major;
+		uint32_t res1;
+		uint32_t res2_a;
+		uint32_t res2_b;
+		uint32_t magic_a;
+		uint32_t magic_b;
+		uint32_t magic2;
+		uint32_t res3;
+	};
+	
+	struct kboot_header* bkh = (void*)(0x20000000);
+	char buf[20];
+	itoa(bkh->text_offset_b, buf, 20, -16, 8);
+	DEBUG_print("bkh.text_offse: 0x");
+	DEBUG_print(buf);
+	DEBUG_print("_");
+	itoa(bkh->text_offset_a, buf, 20, -16, 8);
+	DEBUG_print(buf);
+	DEBUG_print("\n");
+	
+	itoa(bkh->image_size_b, buf, 20, -16, 8);
+	DEBUG_print("bkh.image_size: 0x");
+	DEBUG_print(buf);
+	DEBUG_print("_");
+	itoa(bkh->image_size_a, buf, 20, -16, 8);
+	DEBUG_print(buf);
+	DEBUG_print("\n");
+	
+	uintRL_t text_offset = bkh->text_offset_b;
+	text_offset <<= 32;
+	text_offset |= bkh->text_offset_a;
+	uintRL_t image_size = bkh->image_size_b;
+	image_size <<= 32;
+	image_size |= bkh->image_size_a;
+	
+	uintRL_t load_point;
+	load_point = 0x80000000; // 0x8000_0000
+	load_point += text_offset;
+	
+	while (load_point < ((uintRL_t)mem_block_end)) {
+		load_point += 0x00200000; // 0x0020_0000
+	}
+	
+	itoa(load_point >> 32, buf, 20, -16, 8);
+	DEBUG_print("    load_point: 0x");
+	DEBUG_print(buf);
+	DEBUG_print("_");
+	itoa(load_point & 0xFFFFFFFF, buf, 20, -16, 8);
+	DEBUG_print(buf);
+	DEBUG_print("\n");
+	
+	DEBUG_print("\n");
+	
+	memcpy((void*)load_point, (void*)0x20000000, image_size);
+	
 	clear_hart_context(hart_contexts + TOTAL_HART_COUNT + 0);
-	hart_contexts[TOTAL_HART_COUNT + 0].regs[REG_PC] = 0x20000000;
+	hart_contexts[TOTAL_HART_COUNT + 0].regs[REG_A0] = 1;
+	hart_contexts[TOTAL_HART_COUNT + 0].regs[REG_A1] = dtb_location_a1;
+	hart_contexts[TOTAL_HART_COUNT + 0].regs[REG_A2] = 0;
+	hart_contexts[TOTAL_HART_COUNT + 0].regs[REG_A3] = 0;
+	hart_contexts[TOTAL_HART_COUNT + 0].regs[REG_PC] = load_point;
 	hart_contexts[TOTAL_HART_COUNT + 0].regs[REG_SP] = (uintRL_t)kmalloc_stack(STACK_SIZE);
 	hart_contexts[TOTAL_HART_COUNT + 0].context_id = TOTAL_HART_COUNT + 0;
 	hart_contexts[TOTAL_HART_COUNT + 0].execution_mode = EM_S;
@@ -126,7 +223,16 @@ void kmain() {
 	Hart_Command command;
 	
 	command.command = HARTCMD_SETEXCEPTIONDELEGATION;
-	command.param0 = 1 << 8;
+	command.param0  = 0;
+	command.param0 |= (1 <<  0) | (1 <<  1) | (1 <<  2) | (1 <<  3) | (1 <<  4) | (1 <<  5) | (1 <<  6);
+	command.param0 |= (1 <<  7) | (1 <<  8) |                                     (1 << 12) | (1 << 13);
+	command.param0 |=             (1 << 15);
+	send_hart_command_blk(1, &command);
+	
+	command.command = HARTCMD_SETINTERRUPTDELEGATION;
+	command.param0  = 0;
+	command.param0 |= (1 <<  0) | (1 <<  1) |                         (1 <<  4) | (1 <<  5)            ;
+	command.param0 |=             (1 <<  8) | (1 <<  9);
 	send_hart_command_blk(1, &command);
 	
 	command.command = HARTCMD_SWITCHCONTEXT;

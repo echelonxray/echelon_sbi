@@ -1,11 +1,31 @@
+.global my_entry_pt
+
 .section .text
+.align 2, 0
+my_entry_pt: j main_code
+.align 2, 0
+.4byte 0
+.8byte 0x00200000 # 0x0020_0000
+.8byte (program_end - my_entry_pt)
+.8byte 0
+.2byte 2
+.2byte 0
+.4byte 0
+.8byte 0
+.8byte 0x0000056435349520 # 0x0000_0564_3534_9520
+.4byte 0x05435352 # 0x0543_5352
+.4byte 0
 
-.globl my_entry_pt
-
-my_entry_pt:
+main_code:
 	# Spin all harts except for hart 0
 	#csrr a0, mhartid
 	#bne a0, zero, loop
+	
+	mv s0, a0
+	mv s1, a1
+	mv s2, a2
+	mv s3, a3
+	mv s4, a4
 	
 	# Setup the Global Pointer
 	.option push
@@ -24,6 +44,79 @@ my_entry_pt:
 	addi a0, a0, %pcrel_lo(find_my_string)
 	
 	call print_string
+	
+	# -----------------------------------------
+	mv a0, s0
+	call itoa
+	
+	1: auipc a0, %pcrel_hi(program_end)
+	addi a0, a0, %pcrel_lo(1b)
+	
+	call print_string
+	
+	1: auipc a0, %pcrel_hi(my_string4)
+	addi a0, a0, %pcrel_lo(1b)
+	
+	call print_string
+	# -----------------------------------------
+	# -----------------------------------------
+	mv a0, s1
+	call itoa
+	
+	1: auipc a0, %pcrel_hi(program_end)
+	addi a0, a0, %pcrel_lo(1b)
+	
+	call print_string
+	
+	1: auipc a0, %pcrel_hi(my_string4)
+	addi a0, a0, %pcrel_lo(1b)
+	
+	call print_string
+	# -----------------------------------------
+	# -----------------------------------------
+	mv a0, s2
+	call itoa
+	
+	1: auipc a0, %pcrel_hi(program_end)
+	addi a0, a0, %pcrel_lo(1b)
+	
+	call print_string
+	
+	1: auipc a0, %pcrel_hi(my_string4)
+	addi a0, a0, %pcrel_lo(1b)
+	
+	call print_string
+	# -----------------------------------------
+	# -----------------------------------------
+	mv a0, s3
+	call itoa
+	
+	1: auipc a0, %pcrel_hi(program_end)
+	addi a0, a0, %pcrel_lo(1b)
+	
+	call print_string
+	
+	1: auipc a0, %pcrel_hi(my_string4)
+	addi a0, a0, %pcrel_lo(1b)
+	
+	call print_string
+	# -----------------------------------------
+	# -----------------------------------------
+	mv a0, s4
+	call itoa
+	
+	1: auipc a0, %pcrel_hi(program_end)
+	addi a0, a0, %pcrel_lo(1b)
+	
+	call print_string
+	
+	1: auipc a0, %pcrel_hi(my_string4)
+	addi a0, a0, %pcrel_lo(1b)
+	
+	call print_string
+	# -----------------------------------------
+	
+	j loop
 	
 	ecall
 	
@@ -58,7 +151,36 @@ print_string:
 	addi a0, a0, 1
 	j print_string
 	1: ret
-	j loop # Should be unreachable
+
+itoa:
+	1: auipc t0, %pcrel_hi(program_end)
+	addi t0, t0, %pcrel_lo(1b)
+	li t1, 10
+	beqz a0, 2f
+	1: beqz a0, 1f
+	remu t2, a0, t1
+	divu a0, a0, t1
+	sb t2, (t0)
+	addi t0, t0, 1
+	j 1b
+	2: sb zero, (t0)
+	addi t0, t0, 1
+	1: sb zero, (t0)
+	1: auipc t1, %pcrel_hi(program_end)
+	addi t1, t1, %pcrel_lo(1b)
+	2: bgeu t1, t0, 1f
+	addi t0, t0, -1
+	lbu t2, (t0)
+	lbu a2, (t1)
+	addi t2, t2, '0'
+	addi a2, a2, '0'
+	sb t2, (t1)
+	sb a2, (t0)
+	addi t1, t1, 1
+	j 2b
+	1: ret
+
+j loop # Should be unreachable
 
 trap_handler:
 	lui a1, 0x10010
@@ -89,3 +211,7 @@ umode_program:
 	my_stringb: .string "<TraceB>\n\x00"
 	my_string3: .string "ESBI Trap Caught!  Trap Handler: S-Mode\n\x00"
 	my_stringc: .string "<TraceC>\n\x00"
+	my_string4: .string "\n\x00"
+	my_stringd: .string "<TraceD>\n\x00"
+
+program_end:

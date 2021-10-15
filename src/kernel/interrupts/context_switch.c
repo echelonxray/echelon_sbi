@@ -147,6 +147,7 @@ void interrupt_c_handler(volatile CPU_Context* cpu_context, uintRL_t cpu_context
 		}
 	}
 	
+	//idle_loop();
 	return;
 }
 

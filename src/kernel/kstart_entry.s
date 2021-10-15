@@ -11,9 +11,23 @@ my_entry_pt:
 	addi gp, gp, %pcrel_lo(1b)
 	.option pop
 	
+	mv sp, a0
+	mv s0, a1
+	mv s1, a2
+	mv s2, a3
+	
 	# Spin/Halt all harts except for hart 0
 	csrr a0, mhartid
 	bne a0, zero, setup_int_and_spin
+	
+	1: auipc t0, %pcrel_hi(dtb_location_a0)
+	sd sp, %pcrel_lo(1b)(t0)
+	1: auipc t0, %pcrel_hi(dtb_location_a1)
+	sd s0, %pcrel_lo(1b)(t0)
+	1: auipc t0, %pcrel_hi(dtb_location_a2)
+	sd s1, %pcrel_lo(1b)(t0)
+	1: auipc t0, %pcrel_hi(dtb_location_a3)
+	sd s2, %pcrel_lo(1b)(t0)
 	
 	# Initialize global variables if needed
 	1: auipc a0, %pcrel_hi(INIT_DATA_PROGAMIMAGE_START)

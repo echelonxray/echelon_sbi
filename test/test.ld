@@ -2,7 +2,7 @@ ENTRY(my_entry_pt)
 
 SECTIONS
 {
-	. = 0x20000000;
+	. = 0x80200000;
 	
 	.text : {
 		*.o (.text);

@@ -94,7 +94,7 @@ emu-debug:
 	qemu-system-riscv64 -cpu sifive-u54 -smp 5 -bios ./prog-emu.elf.strip.bin -M sifive_u -serial stdio -display none -device loader,file=./test/test.out.strip.bin,addr=0x20000000 -gdb tcp::1234 -S
 
 emu-linux:
-	qemu-system-riscv64 -cpu sifive-u54 -smp 5 -kernel ./kernel.img -M sifive_u -serial stdio -display none
+	qemu-system-riscv64 -cpu sifive-u54 -smp 5 -kernel ./ignore/kernel -M sifive_u -serial stdio -display none
 
 debug:
 	$(TUPLE)gdb -ex "target remote localhost:1234" -ex "layout asm" -ex "tui reg general" -ex "break *0x80000000"

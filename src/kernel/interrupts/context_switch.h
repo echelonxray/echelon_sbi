@@ -33,6 +33,10 @@ void send_hart_command_ret(uintRL_t hart_id, Hart_Command* command);
 #define HARTCMD_SETEXCEPTIONDELEGATION 3
 #define HARTCMD_GETINTERRUPTDELEGATION 4
 #define HARTCMD_SETINTERRUPTDELEGATION 5
+#define HARTCMD_GETPMPADDR 6
+#define HARTCMD_SETPMPADDR 7
+#define HARTCMD_GETPMPCFG 8
+#define HARTCMD_SETPMPCFG 9
 
 #define EM_M 3
 #define EM_S 1

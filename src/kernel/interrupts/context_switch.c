@@ -16,6 +16,16 @@ extern volatile Hart_Command* hart_commands;
 
 extern __thread uintRL_t mhartid;
 
+#define SBI_SUCCESS 0
+#define SBI_ERR_FAILED -1
+#define SBI_ERR_NOT_SUPPORTED -2
+#define SBI_ERR_INVALID_PARAM -3
+#define SBI_ERR_DENIED -4
+#define SBI_ERR_INVALID_ADDRESS -5
+#define SBI_ERR_ALREADY_AVAILABLE -6
+#define SBI_ERR_ALREADY_STARTED -7
+#define SBI_ERR_ALREADY_STOPPED -8
+
 void* hart_start_c_handler(uintRL_t hart_context_index, uintRL_t is_interrupt, uintRL_t cause_value) {
 	mhartid = hart_contexts[hart_context_index].context_id;
 	
@@ -75,28 +85,24 @@ void interrupt_c_handler(volatile CPU_Context* cpu_context, uintRL_t cpu_context
 			} else if (command.command == HARTCMD_GETEXCEPTIONDELEGATION) {
 				__asm__ __volatile__ ("csrr %0, medeleg" : "=r" (hart_commands[mhartid].param0));
 				clint_hart_msip_ctls[mhartid] = 0;
-				return;
 			} else if (command.command == HARTCMD_SETEXCEPTIONDELEGATION) {				
 				clint_hart_msip_ctls[mhartid] = 0;
 				__asm__ __volatile__ ("csrw medeleg, %0" : : "r" (command.param0));
-				return;
 			} else if (command.command == HARTCMD_GETINTERRUPTDELEGATION) {
 				__asm__ __volatile__ ("csrr %0, mideleg" : "=r" (hart_commands[mhartid].param0));
 				clint_hart_msip_ctls[mhartid] = 0;
-				return;
 			} else if (command.command == HARTCMD_SETINTERRUPTDELEGATION) {
 				clint_hart_msip_ctls[mhartid] = 0;
 				__asm__ __volatile__ ("csrw mideleg, %0" : : "r" (command.param0));
-				return;
 			}
+		} else {
+			DEBUG_print("ESBI Interrupt!  Lower mcause bits: ");
+			char str[30];
+			itoa(cause_value, str, 30, 10, 0);
+			DEBUG_print(str);
+			DEBUG_print("\n");
+			idle_loop();
 		}
-
-		DEBUG_print("ESBI Interrupt!  Lower mcause bits: ");
-		char str[30];
-		itoa(cause_value, str, 30, 10, 0);
-		DEBUG_print(str);
-		DEBUG_print("\n");
-		idle_loop();
 	} else {
 		// Exception caused handler to fire
 
@@ -133,6 +139,63 @@ void interrupt_c_handler(volatile CPU_Context* cpu_context, uintRL_t cpu_context
 			// Supervisor-Mode Environment Exception
 			DEBUG_print("ESBI Trap Caught!  From: S-Mode.  Trap Handler: M-Mode\n");
 			cpu_context->regs[REG_PC] += 4;
+			
+			if (cpu_context->regs[REG_A7] == 0x10) {
+				if        (cpu_context->regs[REG_A6] == 0) {
+					// Get SBI specification version
+					DEBUG_print("\tGet SBI specification version\n");
+					cpu_context->regs[REG_A1] = 2;
+					cpu_context->regs[REG_A0] = SBI_SUCCESS;
+				} else if (cpu_context->regs[REG_A6] == 1) {
+					// Get SBI implementation ID
+					DEBUG_print("\tGet SBI implementation ID\n");
+					cpu_context->regs[REG_A1] = 6;
+					cpu_context->regs[REG_A0] = SBI_SUCCESS;
+				} else if (cpu_context->regs[REG_A6] == 2) {
+					// Get SBI implementation version
+					DEBUG_print("\tGet SBI implementation version\n");
+					cpu_context->regs[REG_A1] = 0;
+					cpu_context->regs[REG_A0] = SBI_SUCCESS;
+				} else if (cpu_context->regs[REG_A6] == 3) {
+					// Probe SBI extension
+					DEBUG_print("\tProbe SBI extension: ");
+					char str[30];
+					itoa(cpu_context->regs[REG_A0], str, 30, -16, 0);
+					DEBUG_print(str);
+					DEBUG_print("\n");
+					cpu_context->regs[REG_A1] = 0;
+					cpu_context->regs[REG_A0] = SBI_SUCCESS;
+				} else if (cpu_context->regs[REG_A6] == 4) {
+					// Get machine vendor ID
+					DEBUG_print("\tGet machine vendor ID\n");
+					__asm__ __volatile__ ("csrr %0, mvendorid" : "=r" (cpu_context->regs[REG_A1]));
+					cpu_context->regs[REG_A0] = SBI_SUCCESS;
+				} else if (cpu_context->regs[REG_A6] == 5) {
+					// Get machine architecture ID
+					DEBUG_print("\tGet machine architecture ID\n");
+					__asm__ __volatile__ ("csrr %0, marchid" : "=r" (cpu_context->regs[REG_A1]));
+					cpu_context->regs[REG_A0] = SBI_SUCCESS;
+				} else if (cpu_context->regs[REG_A6] == 6) {
+					// Get machine implementation ID
+					DEBUG_print("\tGet machine implementation ID\n");
+					__asm__ __volatile__ ("csrr %0, mimpid" : "=r" (cpu_context->regs[REG_A1]));
+					cpu_context->regs[REG_A0] = SBI_SUCCESS;
+				} else {
+					goto not_supported;
+				}
+			} else {
+				// Not Supported
+				not_supported:
+				char str[30];
+				DEBUG_print("\tError: ");
+				itoa(cpu_context->regs[REG_A7], str, 30, -16, 0);
+				DEBUG_print(str);
+				DEBUG_print(" x ");
+				itoa(cpu_context->regs[REG_A6], str, 30, -16, 0);
+				DEBUG_print(str);
+				DEBUG_print("\n");
+				cpu_context->regs[REG_A0] = SBI_ERR_NOT_SUPPORTED;
+			}
 		} else if (cause_value == 11) {
 			// Machine-Mode Environment Exception
 			DEBUG_print("ESBI Trap Caught!  From: M-Mode.  Trap Handler: M-Mode\n");

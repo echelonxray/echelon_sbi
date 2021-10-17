@@ -208,6 +208,74 @@ void kmain() {
 	
 	DEBUG_print("\n");
 	
+	/*
+	DEBUG_print("dtb_location_a0: 0x");
+	itoa(dtb_location_a0, buf, 20, -16, 8);
+	DEBUG_print(buf);
+	DEBUG_print("\n");
+	DEBUG_print("dtb_location_a1: 0x");
+	itoa(dtb_location_a1, buf, 20, -16, 8);
+	DEBUG_print(buf);
+	DEBUG_print("\n");
+	DEBUG_print("dtb_location_a2: 0x");
+	itoa(dtb_location_a2, buf, 20, -16, 8);
+	DEBUG_print(buf);
+	DEBUG_print("\n");
+	DEBUG_print("dtb_location_a3: 0x");
+	itoa(dtb_location_a3, buf, 20, -16, 8);
+	DEBUG_print(buf);
+	DEBUG_print("\n");
+	DEBUG_print("\n");
+	
+	DEBUG_print("----Hex Dump of 0x");
+	itoa(dtb_location_a1, buf, 20, -16, 8);
+	DEBUG_print(buf);
+	DEBUG_print(" for ");
+	itoa(8192, buf, 20, -10, 0);
+	DEBUG_print(buf);
+	DEBUG_print(" bytes:----");
+	unsigned char* byte = (void*)(dtb_location_a1);
+	for (uintRL_t i = 0; i < 8192; i++) {
+		if        (i % 16 == 0) {
+			DEBUG_print("\n0x");
+			itoa(i, buf, 20, -16, 8);
+			DEBUG_print(buf);
+			DEBUG_print(":  ");
+		} else if (i % 8 == 0) {
+			DEBUG_print("  ");
+		} else {
+			DEBUG_print(" ");
+		}
+		itoa(byte[i], buf, 20, -16, 2);
+		DEBUG_print(buf);
+	}
+	DEBUG_print("\n");
+	
+	DEBUG_print("----Hex Dump of 0x");
+	itoa(dtb_location_a2, buf, 20, -16, 8);
+	DEBUG_print(buf);
+	DEBUG_print(" for ");
+	itoa(0x50, buf, 20, -10, 0);
+	DEBUG_print(buf);
+	DEBUG_print(" bytes:----");
+	byte = (void*)(dtb_location_a2);
+	for (uintRL_t i = 0; i < 0x50; i++) {
+		if        (i % 16 == 0) {
+			DEBUG_print("\n0x");
+			itoa(i, buf, 20, -16, 8);
+			DEBUG_print(buf);
+			DEBUG_print(":  ");
+		} else if (i % 8 == 0) {
+			DEBUG_print("  ");
+		} else {
+			DEBUG_print(" ");
+		}
+		itoa(byte[i], buf, 20, -16, 2);
+		DEBUG_print(buf);
+	}
+	DEBUG_print("\n");
+	*/
+	
 	memcpy((void*)load_point, (void*)0x20000000, image_size);
 	
 	clear_hart_context(hart_contexts + TOTAL_HART_COUNT + 0);

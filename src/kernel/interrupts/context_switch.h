@@ -37,6 +37,10 @@ void send_hart_command_ret(uintRL_t hart_id, Hart_Command* command);
 #define HARTCMD_SETPMPADDR 7
 #define HARTCMD_GETPMPCFG 8
 #define HARTCMD_SETPMPCFG 9
+#define HARTCMD_GETSATP 10
+#define HARTCMD_SETSATP 11
+#define HARTCMD_GETSSTATUS 12
+#define HARTCMD_SETSSTATUS 13
 
 #define EM_M 3
 #define EM_S 1

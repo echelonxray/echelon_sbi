@@ -13,6 +13,7 @@
 extern void* mem_block_end;
 
 ksemaphore_t* hart_command_que_locks;
+extern ksemaphore_t* sbi_hsm_locks;
 uintRL_t dtb_location_a0;
 uintRL_t dtb_location_a1;
 uintRL_t dtb_location_a2;
@@ -43,6 +44,7 @@ void kinit() {
 	
 	hart_commands = kmalloc(TOTAL_HART_COUNT * sizeof(Hart_Command));
 	hart_command_que_locks = kmalloc(TOTAL_HART_COUNT * sizeof(ksemaphore_t));
+	sbi_hsm_locks = kmalloc(TOTAL_HART_COUNT * sizeof(ksemaphore_t));
 	for (uintRL_t i = 0; i < TOTAL_HART_COUNT; i++) {
 		hart_commands[i].command = 0;
 		hart_commands[i].param0 = 0;
@@ -52,6 +54,7 @@ void kinit() {
 		hart_commands[i].param4 = 0;
 		hart_commands[i].param5 = 0;
 		ksem_init(hart_command_que_locks + i);
+		ksem_init(sbi_hsm_locks + i);
 	}
 	
 	// Note:
@@ -112,28 +115,6 @@ void wait_by_spin() {
 	for (volatile unsigned int i = 0; i < 200000000; i++) {}
 	return;
 }
-
-/*
-struct __attribute__((__packed__)) kboot_header {
-	uint32_t code0;
-	uint32_t code1;
-	uint32_t text_offset_a;
-	uint32_t text_offset_b;
-	uint32_t image_size_a;
-	uint32_t image_size_b;
-	uint32_t flags_a;
-	uint32_t flags_b;
-	uint16_t version_minor;
-	uint16_t version_major;
-	uint32_t res1;
-	uint32_t res2_a;
-	uint32_t res2_b;
-	uint32_t magic_a;
-	uint32_t magic_b;
-	uint32_t magic2;
-	uint32_t res3;
-};
-*/
 
 void kmain() {
 	volatile uint32_t* ctrl_reg;
@@ -289,6 +270,39 @@ void kmain() {
 	hart_contexts[TOTAL_HART_COUNT + 0].execution_mode = EM_S;
 	
 	Hart_Command command;
+	
+	// Allow all memory access
+	// QEMU will fail when switching to Supervisor mode of no PMP rules are set
+	for (uintRL_t i = 1; i < 5; i++) {
+		command.command = HARTCMD_SETPMPADDR;
+		command.param1  = 0;
+		command.param0  = 0x0000000080000000; // 0x0000_0000_8000_0000
+		send_hart_command_blk(i, &command);
+		command.command = HARTCMD_SETPMPADDR;
+		command.param1  = 1;
+		command.param0  = load_point;
+		send_hart_command_blk(i, &command);
+		command.command = HARTCMD_SETPMPADDR;
+		command.param1  = 2;
+		command.param0  = 0x003FFFFFFFFFFFFF; // 0x003F_FFFF_FFFF_FFFF
+		send_hart_command_blk(i, &command);
+		
+		command.command = HARTCMD_SETPMPCFG;
+		command.param1  = 0;
+		command.param0  = 0;
+		command.param0 |= (0x0F << 16) | (0x08 <<  8) | (0x0F <<  0);
+		send_hart_command_blk(i, &command);
+		
+		command.command = HARTCMD_SETSATP;
+		command.param0  = 0;
+		send_hart_command_blk(i, &command);
+		
+		command.command = HARTCMD_GETSSTATUS;
+		send_hart_command_blk(i, &command);
+		command.param0 &= ~((uintRL_t)0x2);
+		command.command = HARTCMD_SETSSTATUS;
+		send_hart_command_blk(i, &command);
+	}
 	
 	command.command = HARTCMD_SETEXCEPTIONDELEGATION;
 	command.param0  = 0;

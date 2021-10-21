@@ -29,16 +29,20 @@ KFILES        := $(KFILES) src/kernel/kstart_entry.o
 KFILES        := $(KFILES) src/kernel/globals.o
 KFILES        := $(KFILES) src/kernel/memalloc.o
 KFILES        := $(KFILES) src/kernel/thread_locking.o
+KFILES        := $(KFILES) src/kernel/sbi_commands.o
 KFILES        := $(KFILES) src/kernel/debug.o
 #  - Drivers
 KFILES        := $(KFILES) src/kernel/drivers/uart.o
 #  - Interrupt Handler
 KFILES        := $(KFILES) src/kernel/interrupts/context_switch.o
 KFILES        := $(KFILES) src/kernel/interrupts/context_switch_asm.o
+#  - SBI Commands
+KFILES        := $(KFILES) src/kernel/sbi_commands/base.o
+KFILES        := $(KFILES) src/kernel/sbi_commands/hsm.o
 
 .PHONY: all rebuild clean supervisorspace emu emu-debug debug
 
-all: prog-emu.elf   prog-emu.elf.strip   prog-emu.elf.bin   prog-emu.elf.hex   prog-emu.elf.strip.bin   prog-emu.elf.strip.hex
+all: prog-emu.elf   prog-emu.elf.strip   prog-emu.elf.bin   prog-emu.elf.hex   prog-emu.elf.strip.bin   prog-emu.elf.strip.hex supervisorspace
 #    prog-metal.elf prog-metal.elf.strip prog-metal.elf.bin prog-metal.elf.hex prog-metal.elf.strip.bin prog-metal.elf.strip.hex
 
 rebuild: clean
@@ -60,7 +64,7 @@ supervisorspace:
 %.o: %.S
 	$(CC) $(CFLAGS) $(DEFINES) $^ -c -o $@
 
-prog-partial.o: $(GFILES) $(KFILES) supervisorspace
+prog-partial.o: $(GFILES) $(KFILES)
 	$(CC) $(CFLAGS) $(GFILES) $(KFILES) -r $(LDFLAGS) -o $@
 
 prog-prerelax.o: prog-partial.o
@@ -88,13 +92,22 @@ prog-%.elf.strip: prog-%.elf
 	$(OBJCPY) -O ihex $^ $@
 
 emu:
-	qemu-system-riscv64 -cpu sifive-u54 -smp 5 -bios ./prog-emu.elf.strip.bin -M sifive_u -serial stdio -display none -device loader,file=./test/test.out.strip.bin,addr=0x20000000
+	qemu-system-riscv64 -cpu sifive-u54 -smp 5 -bios ./prog-emu.elf.strip.bin -M sifive_u -serial stdio -display none -device loader,file=./ignore/kernel,addr=0x20000000
 
 emu-debug:
+	qemu-system-riscv64 -cpu sifive-u54 -smp 5 -bios ./prog-emu.elf.strip.bin -M sifive_u -serial stdio -display none -device loader,file=./ignore/kernel,addr=0x20000000 -gdb tcp::1234 -S
+
+emu-test:
+	qemu-system-riscv64 -cpu sifive-u54 -smp 5 -bios ./prog-emu.elf.strip.bin -M sifive_u -serial stdio -display none -device loader,file=./test/test.out.strip.bin,addr=0x20000000
+
+emu-test-debug:
 	qemu-system-riscv64 -cpu sifive-u54 -smp 5 -bios ./prog-emu.elf.strip.bin -M sifive_u -serial stdio -display none -device loader,file=./test/test.out.strip.bin,addr=0x20000000 -gdb tcp::1234 -S
 
 emu-linux:
 	qemu-system-riscv64 -cpu sifive-u54 -smp 5 -kernel ./ignore/kernel -M sifive_u -serial stdio -display none
+
+emu-linux-debug:
+	qemu-system-riscv64 -cpu sifive-u54 -smp 5 -kernel ./ignore/kernel -M sifive_u -serial stdio -display none -gdb tcp::1234 -S
 
 debug:
 	$(TUPLE)gdb -ex "target remote localhost:1234" -ex "layout asm" -ex "tui reg general" -ex "break *0x80000000"

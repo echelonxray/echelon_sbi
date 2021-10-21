@@ -4,6 +4,7 @@
 #include "./../../inc/kernel_calls.h"
 #include "./../inc/general_oper.h"
 #include "./../inc/memmap.h"
+#include "./../kernel.h"
 #include "./../thread_locking.h"
 #include "./../sbi_commands.h"
 #include "./../kstart_entry.h"
@@ -12,8 +13,11 @@
 #include "./../debug.h"
 
 extern ksemaphore_t* hart_command_que_locks;
+extern ksemaphore_t* sbi_hsm_locks;
+extern volatile sint32_t* sbi_hsm_states;
 extern volatile CPU_Context* hart_contexts;
 extern volatile Hart_Command* hart_commands;
+extern uintRL_t load_point;
 
 extern __thread uintRL_t mhartid;
 
@@ -191,6 +195,36 @@ void interrupt_c_handler(volatile CPU_Context* cpu_context, uintRL_t cpu_context
 			} else if (command.command == HARTCMD_SETSSTATUS) {
 				clint_hart_msip_ctls[mhartid] = 0;
 				__asm__ __volatile__ ("csrw sstatus, %0" : : "r" (command.param0));
+			} else if (command.command == HARTCMD_STARTHART) {
+				__asm__ __volatile__ ("csrw pmpaddr0, %0" : : "r" (0x0000000080000000));
+				__asm__ __volatile__ ("csrw pmpaddr0, %0" : : "r" (load_point));
+				__asm__ __volatile__ ("csrw pmpaddr0, %0" : : "r" (0x003FFFFFFFFFFFFF));
+				__asm__ __volatile__ ("csrw pmpcfg0, %0" : : "r" ((0x0F << 16) | (0x08 <<  8) | (0x0F <<  0)));
+				
+				uintRL_t delegation;
+				delegation = 0;
+				delegation |= (1 <<  0) | (1 <<  1) | (1 <<  2) | (1 <<  3) | (1 <<  4) | (1 <<  5) | (1 <<  6);
+				delegation |= (1 <<  7) | (1 <<  8) |                                     (1 << 12) | (1 << 13);
+				delegation |=             (1 << 15);
+				__asm__ __volatile__ ("csrw medeleg, %0" : : "r" (delegation));
+				delegation = 0;
+				delegation |= (1 <<  0) | (1 <<  1) |                         (1 <<  4) | (1 <<  5)            ;
+				delegation |=             (1 <<  8) | (1 <<  9);
+				__asm__ __volatile__ ("csrw mideleg, %0" : : "r" (delegation));
+				
+				__asm__ __volatile__ ("csrw satp, zero");
+				__asm__ __volatile__ ("csrc sstatus, %0" : : "r" (1 << 1));
+				
+				clear_hart_context(hart_contexts + USE_HART_COUNT + mhartid);
+				hart_contexts[USE_HART_COUNT + mhartid].context_id = USE_HART_COUNT + mhartid;
+				hart_contexts[USE_HART_COUNT + mhartid].execution_mode = EM_S;
+				hart_contexts[USE_HART_COUNT + mhartid].regs[REG_PC] = command.param1;
+				hart_contexts[USE_HART_COUNT + mhartid].regs[REG_A0] = command.param0;
+				hart_contexts[USE_HART_COUNT + mhartid].regs[REG_A1] = command.param2;
+				ksem_wait(sbi_hsm_locks + mhartid);
+				sbi_hsm_states[mhartid] = SBI_HSM_STARTED;
+				ksem_post(sbi_hsm_locks + mhartid);
+				switch_context(hart_contexts + USE_HART_COUNT + mhartid);
 			}
 		} else {
 			DEBUG_print("ESBI Interrupt!  Lower mcause bits: ");
@@ -202,14 +236,27 @@ void interrupt_c_handler(volatile CPU_Context* cpu_context, uintRL_t cpu_context
 		}
 	} else {
 		// Exception caused handler to fire
-
+		DEBUG_print("[Hart: ");
+		char str[30];
+		itoa(mhartid, str, 30, 10, 0);
+		DEBUG_print(str);
+		DEBUG_print("] ");
+		
 		if (cause_value == 8) {
 			// User-Mode Environment Exception
 			DEBUG_print("ESBI Trap Caught!  From: U-Mode.  Trap Handler: M-Mode\n");
+			DEBUG_print("\tPC: 0x");
+			itoa(cpu_context->regs[REG_PC], str, 30, -16, -8);
+			DEBUG_print(str);
+			DEBUG_print("\n");
 			cpu_context->regs[REG_PC] += 4;
 		} else if (cause_value == 9) {
 			// Supervisor-Mode Environment Exception
 			DEBUG_print("ESBI Trap Caught!  From: S-Mode.  Trap Handler: M-Mode\n");
+			DEBUG_print("\tPC: 0x");
+			itoa(cpu_context->regs[REG_PC], str, 30, -16, -8);
+			DEBUG_print(str);
+			DEBUG_print("\n");
 			cpu_context->regs[REG_PC] += 4;
 			
 			sintRL_t params[6];
@@ -228,13 +275,21 @@ void interrupt_c_handler(volatile CPU_Context* cpu_context, uintRL_t cpu_context
 		} else if (cause_value == 11) {
 			// Machine-Mode Environment Exception
 			DEBUG_print("ESBI Trap Caught!  From: M-Mode.  Trap Handler: M-Mode\n");
+			DEBUG_print("\tPC: 0x");
+			itoa(cpu_context->regs[REG_PC], str, 30, -16, -8);
+			DEBUG_print(str);
+			DEBUG_print("\n");
 			cpu_context->regs[REG_PC] += 4;
 		} else {
 			DEBUG_print("ESBI Exception!  Lower mcause bits: ");
-			char str[30];
 			itoa(cause_value, str, 30, 10, 0);
 			DEBUG_print(str);
 			DEBUG_print("\n");
+			DEBUG_print("\tPC: 0x");
+			itoa(cpu_context->regs[REG_PC], str, 30, -16, -8);
+			DEBUG_print(str);
+			DEBUG_print("\n");
+			delegation_trampoline(cpu_context, 0);
 			idle_loop();
 		}
 	}
@@ -243,10 +298,20 @@ void interrupt_c_handler(volatile CPU_Context* cpu_context, uintRL_t cpu_context
 	return;
 }
 
+void clear_hart_context(volatile CPU_Context* hart_context) {
+	hart_context->context_id = 0;
+	hart_context->execution_mode = 0;
+	hart_context->reserved_0 = 0;
+	for (uintRL_t j = 0; j < 32; j++) {
+		hart_context->regs[j] = 0;
+	}
+	return;
+}
+
 void send_hart_command_que(uintRL_t hart_id, Hart_Command* command) {
+	ksem_wait(hart_command_que_locks + hart_id);
 	volatile uint32_t* clint_hart_msip_ctls = (uint32_t*)CLINT_BASE;
 	while (clint_hart_msip_ctls[hart_id]) {}
-	ksem_wait(hart_command_que_locks + hart_id);
 	hart_commands[hart_id] = *command;
 	clint_hart_msip_ctls[hart_id] = 1;
 	ksem_post(hart_command_que_locks + hart_id);
@@ -254,9 +319,9 @@ void send_hart_command_que(uintRL_t hart_id, Hart_Command* command) {
 }
 
 void send_hart_command_blk(uintRL_t hart_id, Hart_Command* command) {
+	ksem_wait(hart_command_que_locks + hart_id);
 	volatile uint32_t* clint_hart_msip_ctls = (uint32_t*)CLINT_BASE;
 	while (clint_hart_msip_ctls[hart_id]) {}
-	ksem_wait(hart_command_que_locks + hart_id);
 	hart_commands[hart_id] = *command;
 	clint_hart_msip_ctls[hart_id] = 1;
 	while (clint_hart_msip_ctls[hart_id]) {}
@@ -265,9 +330,9 @@ void send_hart_command_blk(uintRL_t hart_id, Hart_Command* command) {
 }
 
 void send_hart_command_ret(uintRL_t hart_id, Hart_Command* command) {
+	ksem_wait(hart_command_que_locks + hart_id);
 	volatile uint32_t* clint_hart_msip_ctls = (uint32_t*)CLINT_BASE;
 	while (clint_hart_msip_ctls[hart_id]) {}
-	ksem_wait(hart_command_que_locks + hart_id);
 	hart_commands[hart_id] = *command;
 	clint_hart_msip_ctls[hart_id] = 1;
 	while (clint_hart_msip_ctls[hart_id]) {}

@@ -16,6 +16,9 @@
 #define SBI_HSM_SUSPEND_PENDING 5
 #define SBI_HSM_RESUME_PENDING 6
 
+#define SBI_HSM_SUSPEND_DEFAULT_RETENTIVE 0x00000000
+#define SBI_HSM_SUSPEND_DEFAULT_NONRETENTIVE 0x80000000
+
 struct sbiret sbi_hart_start(unsigned long hartid, unsigned long start_addr, unsigned long opaque);
 struct sbiret sbi_hart_stop();
 struct sbiret sbi_hart_get_status(unsigned long hartid);

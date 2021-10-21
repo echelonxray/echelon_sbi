@@ -6,7 +6,9 @@
 #include "./drivers/uart.h"
 #include "./interrupts/context_switch.h"
 #include "./memalloc.h"
+#include "./kernel.h"
 #include "./thread_locking.h"
+#include "./sbi_commands.h"
 #include "./globals.h"
 #include "./debug.h"
 
@@ -14,6 +16,7 @@ extern void* mem_block_end;
 
 ksemaphore_t* hart_command_que_locks;
 extern ksemaphore_t* sbi_hsm_locks;
+extern volatile sint32_t* sbi_hsm_states;
 uintRL_t dtb_location_a0;
 uintRL_t dtb_location_a1;
 uintRL_t dtb_location_a2;
@@ -21,22 +24,9 @@ uintRL_t dtb_location_a3;
 uintRL_t hart_context_count;
 volatile CPU_Context* hart_contexts;
 volatile Hart_Command* hart_commands;
+uintRL_t load_point;
 
 __thread uintRL_t mhartid;
-
-#define TOTAL_HART_COUNT 5
-#define USE_HART_COUNT 4
-#define STACK_SIZE 0x1000
-
-void clear_hart_context(volatile CPU_Context* hart_context) {
-	hart_context->context_id = 0;
-	hart_context->execution_mode = 0;
-	hart_context->reserved_0 = 0;
-	for (uintRL_t j = 0; j < 32; j++) {
-		hart_context->regs[j] = 0;
-	}
-	return;
-}
 
 void kinit() {
 	kallocinit(&KHEAP_START, &KHEAP_START + 0x10000);
@@ -45,6 +35,7 @@ void kinit() {
 	hart_commands = kmalloc(TOTAL_HART_COUNT * sizeof(Hart_Command));
 	hart_command_que_locks = kmalloc(TOTAL_HART_COUNT * sizeof(ksemaphore_t));
 	sbi_hsm_locks = kmalloc(TOTAL_HART_COUNT * sizeof(ksemaphore_t));
+	sbi_hsm_states = kmalloc(TOTAL_HART_COUNT * sizeof(sint32_t));
 	for (uintRL_t i = 0; i < TOTAL_HART_COUNT; i++) {
 		hart_commands[i].command = 0;
 		hart_commands[i].param0 = 0;
@@ -55,6 +46,7 @@ void kinit() {
 		hart_commands[i].param5 = 0;
 		ksem_init(hart_command_que_locks + i);
 		ksem_init(sbi_hsm_locks + i);
+		sbi_hsm_states[i] = SBI_HSM_STOPPED;
 	}
 	
 	// Note:
@@ -171,7 +163,6 @@ void kmain() {
 	image_size <<= 32;
 	image_size |= bkh->image_size_a;
 	
-	uintRL_t load_point;
 	load_point = 0x80000000; // 0x8000_0000
 	load_point += text_offset;
 	
@@ -265,7 +256,6 @@ void kmain() {
 	hart_contexts[TOTAL_HART_COUNT + 0].regs[REG_A2] = 0;
 	hart_contexts[TOTAL_HART_COUNT + 0].regs[REG_A3] = 0;
 	hart_contexts[TOTAL_HART_COUNT + 0].regs[REG_PC] = load_point;
-	hart_contexts[TOTAL_HART_COUNT + 0].regs[REG_SP] = (uintRL_t)kmalloc_stack(STACK_SIZE);
 	hart_contexts[TOTAL_HART_COUNT + 0].context_id = TOTAL_HART_COUNT + 0;
 	hart_contexts[TOTAL_HART_COUNT + 0].execution_mode = EM_S;
 	
@@ -309,13 +299,19 @@ void kmain() {
 	command.param0 |= (1 <<  0) | (1 <<  1) | (1 <<  2) | (1 <<  3) | (1 <<  4) | (1 <<  5) | (1 <<  6);
 	command.param0 |= (1 <<  7) | (1 <<  8) |                                     (1 << 12) | (1 << 13);
 	command.param0 |=             (1 << 15);
+	command.param0  = 0;
 	send_hart_command_blk(1, &command);
 	
 	command.command = HARTCMD_SETINTERRUPTDELEGATION;
 	command.param0  = 0;
 	command.param0 |= (1 <<  0) | (1 <<  1) |                         (1 <<  4) | (1 <<  5)            ;
 	command.param0 |=             (1 <<  8) | (1 <<  9);
+	command.param0  = 0;
 	send_hart_command_blk(1, &command);
+	
+	ksem_wait(sbi_hsm_locks + 1);
+	sbi_hsm_states[1] = SBI_HSM_STARTED;
+	ksem_post(sbi_hsm_locks + 1);
 	
 	command.command = HARTCMD_SWITCHCONTEXT;
 	command.param0 = (uintRL_t)(hart_contexts + TOTAL_HART_COUNT + 0);

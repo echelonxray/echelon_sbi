@@ -3,7 +3,7 @@
 struct sbiret call_to_sbi(sintRL_t EID, sintRL_t FID, sintRL_t* params) {
 	if        (EID == SBI_EXT_BASE) {
 		// Base Extension
-		DEBUG_print("Base Extension\n");
+		DEBUG_print("\tBase Extension\n");
 		
 		if        (FID == SBI_BASE_GET_SBI_VERSION) {
 			// Get SBI specification version
@@ -40,7 +40,7 @@ struct sbiret call_to_sbi(sintRL_t EID, sintRL_t FID, sintRL_t* params) {
 		}
 	} else if (EID == SBI_EXT_HSM) {
 		// Hart State Management Extension
-		DEBUG_print("HSM Extension\n");
+		DEBUG_print("\tHSM Extension\n");
 		
 		if        (FID == SBI_HSM_HART_START) {
 			// Start Hart

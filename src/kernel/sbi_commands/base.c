@@ -27,7 +27,7 @@ struct sbiret sbi_get_impl_version() {
 struct sbiret sbi_probe_extension(long extension_id) {
 	// Probe SBI extension
 	struct sbiret retval;
-	if        (extension_id == SBI_EXT_HSM && 0) {
+	if        (extension_id == SBI_EXT_HSM) {
 		retval.value = extension_id;
 	} else if (0) {
 	} else {

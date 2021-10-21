@@ -3,6 +3,7 @@
 .globl interrupt_entry_handler
 .globl hart_start_entry_handler
 .globl switch_context
+.globl delegation_trampoline
 
 .align 2, 0
 hart_start_entry_handler:
@@ -173,6 +174,68 @@ switch_context:
 	csrw mepc, a1     # Set the execution address to switch to
 	csrw mstatus, a2  # Set the mstatus state
 	
+	# Set Register States
+	ld  ra, 0x020(a0) # Set  x1
+	ld  sp, 0x028(a0) # Set  x2
+	ld  gp, 0x030(a0) # Set  x3
+	ld  tp, 0x038(a0) # Set  x4
+	ld  t0, 0x040(a0) # Set  x5
+	ld  t1, 0x048(a0) # Set  x6
+	ld  t2, 0x050(a0) # Set  x7
+	ld  s0, 0x058(a0) # Set  x8
+	ld  s1, 0x060(a0) # Set  x9
+	# Placeholder for " Set x10 " -- Actually saved below
+	ld  a1, 0x070(a0) # Set x11
+	ld  a2, 0x078(a0) # Set x12
+	ld  a3, 0x080(a0) # Set x13
+	ld  a4, 0x088(a0) # Set x14
+	ld  a5, 0x090(a0) # Set x15
+	ld  a6, 0x098(a0) # Set x16
+	ld  a7, 0x0A0(a0) # Set x17
+	ld  s2, 0x0A8(a0) # Set x18
+	ld  s3, 0x0B0(a0) # Set x19
+	ld  s4, 0x0B8(a0) # Set x20
+	ld  s5, 0x0C0(a0) # Set x21
+	ld  s6, 0x0C8(a0) # Set x22
+	ld  s7, 0x0D0(a0) # Set x23
+	ld  s8, 0x0D8(a0) # Set x24
+	ld  s9, 0x0E0(a0) # Set x25
+	ld s10, 0x0E8(a0) # Set x26
+	ld s11, 0x0F0(a0) # Set x27
+	ld  t3, 0x0F8(a0) # Set x28
+	ld  t4, 0x100(a0) # Set x29
+	ld  t5, 0x108(a0) # Set x30
+	ld  t6, 0x110(a0) # Set x31
+	
+	# Set x10 Actually set here
+	ld  a0, 0x068(a0)
+	
+	# Finally: Jump and switch execution modes
+	mret
+	
+	# Should be unreachable.  Jump to an infinite loop just in case.
+	j idle_loop
+
+delegation_trampoline:
+	csrr t0, mstatus
+	csrr t1, mcause
+	csrw sstatus, t0
+	csrw scause, t1
+	
+	ld t0, 0x18(a0)
+	add a1, a1, t0
+	csrw sepc, a1
+	
+	csrr t0, stvec
+	csrw mepc, t0
+	
+	li t0, 0x3
+	slli t0, t0, 11
+	csrc mstatus, t0
+	li t0, 0x1
+	slli t0, t0, 11
+	csrs mstatus, t0
+
 	# Set Register States
 	ld  ra, 0x020(a0) # Set  x1
 	ld  sp, 0x028(a0) # Set  x2

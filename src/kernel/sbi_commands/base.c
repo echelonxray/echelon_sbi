@@ -37,11 +37,11 @@ struct sbiret sbi_probe_extension(long extension_id) {
 	} else if (extension_id == SBI_EXT_IPI) {
 		// Returns 1 if exists in QEMU OpenSBI implementation
 		retval.value = 0;
-		retval.value = 1; // DEBUGGING: Lie to the kernel for testing
+		//retval.value = 1; // DEBUGGING: Lie to the kernel for testing
 	} else if (extension_id == SBI_EXT_RFNC) {
 		// Returns 1 if exists in QEMU OpenSBI implementation
 		retval.value = 0;
-		retval.value = 1; // DEBUGGING: Lie to the kernel for testing
+		//retval.value = 1; // DEBUGGING: Lie to the kernel for testing
 	} else if (extension_id == SBI_EXT_HSM) {
 		// Returns 1 if exists in QEMU OpenSBI implementation
 		retval.value = 1;

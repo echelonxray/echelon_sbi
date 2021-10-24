@@ -236,11 +236,13 @@ void interrupt_c_handler(volatile CPU_Context* cpu_context, uintRL_t cpu_context
 		}
 	} else {
 		// Exception caused handler to fire
-		DEBUG_print("[Hart: ");
 		char str[30];
+		/*
+		DEBUG_print("[Hart: ");
 		itoa(mhartid, str, 30, 10, 0);
 		DEBUG_print(str);
 		DEBUG_print("] ");
+		*/
 		
 		if (cause_value == 8) {
 			// User-Mode Environment Exception
@@ -281,13 +283,7 @@ void interrupt_c_handler(volatile CPU_Context* cpu_context, uintRL_t cpu_context
 			DEBUG_print("\n");
 			cpu_context->regs[REG_PC] += 4;
 		} else {
-			DEBUG_print("ESBI Exception!  Lower mcause bits: ");
-			itoa(cause_value, str, 30, 10, 0);
-			DEBUG_print(str);
-			DEBUG_print("\n");
-			DEBUG_print("\tPC: 0x");
-			itoa(cpu_context->regs[REG_PC], str, 30, -16, -8);
-			DEBUG_print(str);
+			uint32_t* instruction;
 			if (cause_value == 2) {
 				sintRL_t page_walk;
 				__asm__ __volatile__ ("csrr %0, satp" : "=r" (page_walk));
@@ -314,48 +310,94 @@ void interrupt_c_handler(volatile CPU_Context* cpu_context, uintRL_t cpu_context
 						shift_ammount -= 9;
 					}
 					page_walk |= cpu_context->regs[REG_PC] & 0xFFF;
-					DEBUG_print(" Phys Address: 0x");
-					itoa(page_walk, str, 30, -16, -16);
-					DEBUG_print(str);
-					uint32_t* instruction = (uint32_t*)page_walk;
-					DEBUG_print(" Value: 0x");
-					itoa(*instruction, str, 30, -16, -8);
-					DEBUG_print(str);
-					DEBUG_print(" mtval: 0x");
-					uintRL_t mtval;
-					__asm__ __volatile__ ("csrr %0, sstatus" : "=r" (mtval));
-					itoa(mtval, str, 30, -16, -8);
-					DEBUG_print(str);
+					instruction = (uint32_t*)page_walk;
 				} else {
-					uint32_t* instruction = (uint32_t*)(cpu_context->regs[REG_PC]);
-					DEBUG_print(" Value: 0x");
-					itoa(*instruction, str, 30, -16, -8);
+					instruction = (uint32_t*)(cpu_context->regs[REG_PC]);
+				}
+				dec_inst dinst;
+				uintRL_t form = decode_instruction(*instruction, &dinst);
+				if (form) {
+					/*
+					DEBUG_print("\n\topcode: ");
+					itoa(dinst.opcode, str, 30, -16, -8);
 					DEBUG_print(str);
-					DEBUG_print(" mtval: 0x");
-					uintRL_t mtval;
-					__asm__ __volatile__ ("csrr %0, sstatus" : "=r" (mtval));
-					itoa(mtval, str, 30, -16, -8);
+					DEBUG_print("\n\trd: ");
+					itoa(dinst.rd, str, 30, -16, -8);
 					DEBUG_print(str);
+					DEBUG_print("\n\tfunct3: ");
+					itoa(dinst.funct3, str, 30, -16, -8);
+					DEBUG_print(str);
+					DEBUG_print("\n\trs1: ");
+					itoa(dinst.rs1, str, 30, -16, -8);
+					DEBUG_print(str);
+					DEBUG_print("\n\timm: ");
+					itoa(dinst.imm, str, 30, -16, -8);
+					DEBUG_print(str);
+					*/
+					if (dinst.opcode == 0x73) {
+						if (dinst.funct3 == 0x2 || dinst.funct3 == 0x3 || dinst.funct3 == 0x6 || dinst.funct3 == 0x7) {
+							if (dinst.rs1 == 0) {
+								if (dinst.imm == 0xC01) {
+									uint64_t* mtime = (void*)(CLINT_BASE + CLINT_MTIME);
+									cpu_context->regs[dinst.rd] = *mtime;
+									cpu_context->regs[REG_PC] += 4;
+									switch_context(cpu_context);
+								}
+							}
+						}
+					}
 				}
 			}
+			DEBUG_print("ESBI Exception!  Lower mcause bits: ");
+			itoa(cause_value, str, 30, 10, 0);
+			DEBUG_print(str);
 			DEBUG_print("\n");
-			uintRL_t mstatus;
-			__asm__ __volatile__ ("csrr %0, mstatus" : "=r" (mstatus));
-			uintRL_t sstatus;
-			__asm__ __volatile__ ("csrr %0, sstatus" : "=r" (sstatus));
-			DEBUG_print("\tmstatus: 0x");
-			itoa(mstatus, str, 30, -16, -8);
+			DEBUG_print("\tPC: 0x");
+			itoa(cpu_context->regs[REG_PC], str, 30, -16, -8);
 			DEBUG_print(str);
-			DEBUG_print(" sstatus: 0x");
-			DEBUG_print(str);
+			if (cause_value == 2) {
+				DEBUG_print("\n\tOpcode 4-Byte Value: 0x");
+				itoa(*instruction, str, 30, -16, -8);
+				DEBUG_print(str);
+			}
 			DEBUG_print("\n");
 			s_delegation_trampoline(cpu_context, 0);
 			idle_loop();
 		}
 	}
-	
 	//idle_loop();
 	return;
+}
+
+uintRL_t decode_instruction(uint32_t einst, dec_inst* dinst) {
+	uint32_t opcode = einst & 0x7F;
+	
+	einst >>= 7;
+	union {
+		struct encoded_type_r enc_r;
+		struct encoded_type_i enc_i;
+		struct encoded_type_s enc_s;
+		struct encoded_type_b enc_b;
+		struct encoded_type_u enc_u;
+		struct encoded_type_j enc_j;
+	} params;
+	memcpy(&params, &einst, sizeof(uint32_t));
+	
+	if (opcode == 0x73) {
+		// OpCode: SYSTEM, Encoding: I-Type
+		
+		dinst->opcode = opcode;
+		dinst->rd = params.enc_i.rd;
+		dinst->funct3 = params.enc_i.funct3;
+		dinst->rs1 = params.enc_i.rs1;
+		dinst->imm = params.enc_i.imm;
+		
+		dinst->rs2 = 0;
+		dinst->funct7 = 0;
+		return 2;
+	}
+	
+	return 0;
 }
 
 void clear_hart_context(volatile CPU_Context* hart_context) {

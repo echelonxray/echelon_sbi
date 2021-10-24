@@ -39,6 +39,9 @@ struct sbiret call_to_sbi(sintRL_t EID, sintRL_t FID, sintRL_t* params) {
 			return sbi_get_mimpid();
 		}
 	} else if (EID == SBI_EXT_TIME) {
+		// Time Extension		
+		DEBUG_print("\tTime Extension\n");
+		
 		if        (FID == SBI_TIME_SET_TIMER) {
 			return sbi_set_timer(params[0]);
 		}

@@ -28,7 +28,7 @@ void clear_hart_context(volatile CPU_Context* hart_context);
 void send_hart_command_que(uintRL_t hart_id, Hart_Command* command);
 void send_hart_command_blk(uintRL_t hart_id, Hart_Command* command);
 void send_hart_command_ret(uintRL_t hart_id, Hart_Command* command);
-void delegation_trampoline(volatile CPU_Context* cpu_context, uintRL_t pc_offset);
+void s_delegation_trampoline(volatile CPU_Context* cpu_context, uintRL_t pc_offset);
 
 #define HARTCMD_SWITCHCONTEXT 1
 #define HARTCMD_GETEXCEPTIONDELEGATION 2

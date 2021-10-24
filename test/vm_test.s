@@ -117,6 +117,8 @@ resume_from_vma_activation:
 	addi a0, a0, %pcrel_lo(1b)
 	call print_string
 	
+	#csrr a5, time
+	
   1: auipc a0, %pcrel_hi(my_string4)
 	addi a0, a0, %pcrel_lo(1b)
 	call print_string

@@ -309,7 +309,11 @@ void interrupt_c_handler(volatile CPU_Context* cpu_context, uintRL_t cpu_context
 					page_walk <<= 10;
 					page_walk >>= 20;
 					page_walk <<= 12;
-					page_walk += cpu_context->regs[REG_PC] & 0xFFF;
+					while (shift_ammount >= 12) {
+						page_walk |= cpu_context->regs[REG_PC] & (0x1FF << shift_ammount);
+						shift_ammount -= 9;
+					}
+					page_walk |= cpu_context->regs[REG_PC] & 0xFFF;
 					DEBUG_print(" Phys Address: 0x");
 					itoa(page_walk, str, 30, -16, -16);
 					DEBUG_print(str);
@@ -345,7 +349,7 @@ void interrupt_c_handler(volatile CPU_Context* cpu_context, uintRL_t cpu_context
 			DEBUG_print(" sstatus: 0x");
 			DEBUG_print(str);
 			DEBUG_print("\n");
-			delegation_trampoline(cpu_context, 0);
+			s_delegation_trampoline(cpu_context, 0);
 			idle_loop();
 		}
 	}

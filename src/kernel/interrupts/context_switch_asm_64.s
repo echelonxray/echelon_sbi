@@ -3,7 +3,7 @@
 .globl interrupt_entry_handler
 .globl hart_start_entry_handler
 .globl switch_context
-.globl delegation_trampoline
+.globl s_delegation_trampoline
 
 .align 2, 0
 hart_start_entry_handler:
@@ -224,7 +224,7 @@ switch_context:
 	# Should be unreachable.  Jump to an infinite loop just in case.
 	j idle_loop
 
-delegation_trampoline:
+s_delegation_trampoline:
 	csrr t0, mcause
 	csrw scause, t0
 	

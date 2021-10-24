@@ -30,9 +30,8 @@ main_code:
 	# Setup the Global Pointer
 	.option push
 	.option norelax
-	global_pointer_pc_rel_0:
-	auipc gp, %pcrel_hi(__global_pointer$)
-	addi gp, gp, %pcrel_lo(global_pointer_pc_rel_0)
+	1: auipc gp, %pcrel_hi(__global_pointer$)
+	addi gp, gp, %pcrel_lo(1b)
 	.option pop
 	
 	lui a1, 0x10010
@@ -42,103 +41,52 @@ main_code:
 	find_my_string:
 	auipc a0, %pcrel_hi(my_string1)
 	addi a0, a0, %pcrel_lo(find_my_string)
-	
 	call print_string
 	
-	# -----------------------------------------
-	mv a0, s0
-	call itoa
-	
-	1: auipc a0, %pcrel_hi(program_end)
-	addi a0, a0, %pcrel_lo(1b)
-	
-	call print_string
-	
-	1: auipc a0, %pcrel_hi(my_string4)
-	addi a0, a0, %pcrel_lo(1b)
-	
-	call print_string
-	# -----------------------------------------
-	# -----------------------------------------
-	mv a0, s1
-	call itoa
-	
-	1: auipc a0, %pcrel_hi(program_end)
-	addi a0, a0, %pcrel_lo(1b)
-	
-	call print_string
-	
-	1: auipc a0, %pcrel_hi(my_string4)
-	addi a0, a0, %pcrel_lo(1b)
-	
-	call print_string
-	# -----------------------------------------
-	# -----------------------------------------
-	mv a0, s2
-	call itoa
-	
-	1: auipc a0, %pcrel_hi(program_end)
-	addi a0, a0, %pcrel_lo(1b)
-	
-	call print_string
-	
-	1: auipc a0, %pcrel_hi(my_string4)
-	addi a0, a0, %pcrel_lo(1b)
-	
-	call print_string
-	# -----------------------------------------
-	# -----------------------------------------
-	mv a0, s3
-	call itoa
-	
-	1: auipc a0, %pcrel_hi(program_end)
-	addi a0, a0, %pcrel_lo(1b)
-	
-	call print_string
-	
-	1: auipc a0, %pcrel_hi(my_string4)
-	addi a0, a0, %pcrel_lo(1b)
-	
-	call print_string
-	# -----------------------------------------
-	# -----------------------------------------
-	mv a0, s4
-	call itoa
-	
-	1: auipc a0, %pcrel_hi(program_end)
-	addi a0, a0, %pcrel_lo(1b)
-	
-	call print_string
-	
-	1: auipc a0, %pcrel_hi(my_string4)
-	addi a0, a0, %pcrel_lo(1b)
-	
-	call print_string
-	# -----------------------------------------
-	
-	j loop
-	
+	li a7, 0x10
+	li a6, 3
+	#li a0, 0x54494D45 # Ext: TIME
+	#li a0, 0x735049   # Ext: IPI
+	#li a0, 0x52464E43 # Ext: RFNC
+	#li a0, 0x48534D   # Ext: HSM
+	#li a0, 0x53525354 # Ext: SRST
+	#li a0, 0x504D55   # Ext: PMU
+	#li a0, 0x11       # Ext: [Does Not Exist]
+	li a0, 0x10       # Ext: [Does Not Exist]
 	ecall
+	
+	mv a4, a1
+	lui a1, 0x10010
+	call itoa
 	
 	1: auipc a0, %pcrel_hi(my_string2)
 	addi a0, a0, %pcrel_lo(1b)
-	
 	call print_string
 	
-	1: auipc a0, %pcrel_hi(trap_handler)
+	1: auipc a0, %pcrel_hi(program_end)
 	addi a0, a0, %pcrel_lo(1b)
-	csrw stvec, a0
+	call print_string
 	
-	1: auipc a0, %pcrel_hi(umode_program)
+	1: auipc a0, %pcrel_hi(my_string4)
 	addi a0, a0, %pcrel_lo(1b)
-	csrw sepc, a0
+	call print_string
 	
-	#li a0, 0x20
-	#csrs sstatus, a0
+	1: auipc a0, %pcrel_hi(my_string3)
+	addi a0, a0, %pcrel_lo(1b)
+	call print_string
 	
-	sret
+	mv a0, a4
+	call itoa
 	
-	loop:
+	1: auipc a0, %pcrel_hi(program_end)
+	addi a0, a0, %pcrel_lo(1b)
+	call print_string
+	
+	1: auipc a0, %pcrel_hi(my_string4)
+	addi a0, a0, %pcrel_lo(1b)
+	call print_string
+
+loop:
 	wfi
 	j loop
 
@@ -182,34 +130,12 @@ itoa:
 
 j loop # Should be unreachable
 
-trap_handler:
-	lui a1, 0x10010
-	
-	1: auipc a0, %pcrel_hi(my_string3)
-	addi a0, a0, %pcrel_lo(1b)
-	
-	call print_string
-	
-	ecall
-	
-	csrr a0, sepc
-	addi a0, a0, 4
-	csrw sepc, a0
-	sret
-	j loop
-
-umode_program:
-	ecall
-	ecall
-	ecall
-	j loop
-
 .section .rodata
 	my_string1: .string "--Test Program Running--\n\x00"
 	my_stringa: .string "<TraceA>\n\x00"
-	my_string2: .string "Switching to U-Mode\n\x00"
+	my_string2: .string "Result REG_A0 Error: \x00"
 	my_stringb: .string "<TraceB>\n\x00"
-	my_string3: .string "ESBI Trap Caught!  Trap Handler: S-Mode\n\x00"
+	my_string3: .string "Result REG_A1 Value: \x00"
 	my_stringc: .string "<TraceC>\n\x00"
 	my_string4: .string "\n\x00"
 	my_stringd: .string "<TraceD>\n\x00"

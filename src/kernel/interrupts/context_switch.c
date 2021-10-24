@@ -288,6 +288,62 @@ void interrupt_c_handler(volatile CPU_Context* cpu_context, uintRL_t cpu_context
 			DEBUG_print("\tPC: 0x");
 			itoa(cpu_context->regs[REG_PC], str, 30, -16, -8);
 			DEBUG_print(str);
+			if (cause_value == 2) {
+				sintRL_t page_walk;
+				__asm__ __volatile__ ("csrr %0, satp" : "=r" (page_walk));
+				if (((uintRL_t)page_walk >> 60) == 8) {
+					page_walk <<= 20;
+					page_walk >>= 8;
+					uintRL_t* page_ptr = 0;
+					page_ptr = (uint64_t*)page_walk;
+					page_walk = page_ptr[(cpu_context->regs[REG_PC] >> (12 + 9 + 9)) & 0x1FF];
+					uintRL_t shift_ammount = 12 + 9;
+					while ((page_walk & 0xF) == 1 && shift_ammount >= 12) {
+						page_walk <<= 10;
+						page_walk >>= 20;
+						page_walk <<= 12;
+						page_ptr = (uint64_t*)page_walk;
+						page_walk = page_ptr[(cpu_context->regs[REG_PC] >> shift_ammount) & 0x1FF];
+						shift_ammount -= 9;
+					}
+					page_walk <<= 10;
+					page_walk >>= 20;
+					page_walk <<= 12;
+					page_walk += cpu_context->regs[REG_PC] & 0xFFF;
+					DEBUG_print(" Phys Address: 0x");
+					itoa(page_walk, str, 30, -16, -16);
+					DEBUG_print(str);
+					uint32_t* instruction = (uint32_t*)page_walk;
+					DEBUG_print(" Value: 0x");
+					itoa(*instruction, str, 30, -16, -8);
+					DEBUG_print(str);
+					DEBUG_print(" mtval: 0x");
+					uintRL_t mtval;
+					__asm__ __volatile__ ("csrr %0, sstatus" : "=r" (mtval));
+					itoa(mtval, str, 30, -16, -8);
+					DEBUG_print(str);
+				} else {
+					uint32_t* instruction = (uint32_t*)(cpu_context->regs[REG_PC]);
+					DEBUG_print(" Value: 0x");
+					itoa(*instruction, str, 30, -16, -8);
+					DEBUG_print(str);
+					DEBUG_print(" mtval: 0x");
+					uintRL_t mtval;
+					__asm__ __volatile__ ("csrr %0, sstatus" : "=r" (mtval));
+					itoa(mtval, str, 30, -16, -8);
+					DEBUG_print(str);
+				}
+			}
+			DEBUG_print("\n");
+			uintRL_t mstatus;
+			__asm__ __volatile__ ("csrr %0, mstatus" : "=r" (mstatus));
+			uintRL_t sstatus;
+			__asm__ __volatile__ ("csrr %0, sstatus" : "=r" (sstatus));
+			DEBUG_print("\tmstatus: 0x");
+			itoa(mstatus, str, 30, -16, -8);
+			DEBUG_print(str);
+			DEBUG_print(" sstatus: 0x");
+			DEBUG_print(str);
 			DEBUG_print("\n");
 			delegation_trampoline(cpu_context, 0);
 			idle_loop();

@@ -253,8 +253,8 @@ void kmain() {
 	clear_hart_context(hart_contexts + TOTAL_HART_COUNT + 0);
 	hart_contexts[TOTAL_HART_COUNT + 0].regs[REG_A0] = 1;
 	hart_contexts[TOTAL_HART_COUNT + 0].regs[REG_A1] = dtb_location_a1;
-	hart_contexts[TOTAL_HART_COUNT + 0].regs[REG_A2] = 0;
-	hart_contexts[TOTAL_HART_COUNT + 0].regs[REG_A3] = 0;
+	hart_contexts[TOTAL_HART_COUNT + 0].regs[REG_A2] = dtb_location_a2;
+	hart_contexts[TOTAL_HART_COUNT + 0].regs[REG_A3] = dtb_location_a3;
 	hart_contexts[TOTAL_HART_COUNT + 0].regs[REG_PC] = load_point;
 	hart_contexts[TOTAL_HART_COUNT + 0].context_id = TOTAL_HART_COUNT + 0;
 	hart_contexts[TOTAL_HART_COUNT + 0].execution_mode = EM_S;
@@ -299,6 +299,7 @@ void kmain() {
 	command.param0 |= (1 <<  0) | (1 <<  1) | (1 <<  2) | (1 <<  3) | (1 <<  4) | (1 <<  5) | (1 <<  6);
 	command.param0 |= (1 <<  7) | (1 <<  8) |                                     (1 << 12) | (1 << 13);
 	command.param0 |=             (1 << 15);
+	command.param0  = 0xb109;
 	command.param0  = 0;
 	send_hart_command_blk(1, &command);
 	
@@ -306,6 +307,7 @@ void kmain() {
 	command.param0  = 0;
 	command.param0 |= (1 <<  0) | (1 <<  1) |                         (1 <<  4) | (1 <<  5)            ;
 	command.param0 |=             (1 <<  8) | (1 <<  9);
+	command.param0  = 0x0222;
 	command.param0  = 0;
 	send_hart_command_blk(1, &command);
 	

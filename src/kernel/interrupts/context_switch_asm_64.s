@@ -7,6 +7,8 @@
 
 .align 2, 0
 hart_start_entry_handler:
+	sfence.vma
+	fence.i
 	# Setup the Global Pointer
 	.option push
 	.option norelax
@@ -53,12 +55,16 @@ hart_start_entry_handler:
 	#not a1, a1
 	#and a0, a0, a1
 	csrw mtvec, a0
+	sfence.vma
+	fence.i
 	mret
 	
 	3:
 	j idle_loop
 
 interrupt_entry_handler:
+	sfence.vma
+	fence.i
 	# Save Register States
 	csrrw a0, mscratch, a0 # Save the context pointer in a0 (arg1)
 	sd  ra, 0x020(a0) # Save  x1
@@ -211,16 +217,16 @@ switch_context:
 	ld  a0, 0x068(a0)
 	
 	# Finally: Jump and switch execution modes
+	sfence.vma
+	fence.i
 	mret
 	
 	# Should be unreachable.  Jump to an infinite loop just in case.
 	j idle_loop
 
 delegation_trampoline:
-	csrr t0, mstatus
-	csrr t1, mcause
-	csrw sstatus, t0
-	csrw scause, t1
+	csrr t0, mcause
+	csrw scause, t0
 	
 	ld t0, 0x18(a0)
 	add a1, a1, t0
@@ -229,11 +235,15 @@ delegation_trampoline:
 	csrr t0, stvec
 	csrw mepc, t0
 	
-	li t0, 0x3
-	slli t0, t0, 11
-	csrc mstatus, t0
-	li t0, 0x1
-	slli t0, t0, 11
+	csrr t0, mstatus
+	srli t0, t0, 3
+	andi t0, t0, 0x100
+	li a1, 0x19
+	li t1, 0x100
+	slli a1, a1, 8
+	slli t1, t1, 3
+	or t0, t0, t1
+	csrc mstatus, a1
 	csrs mstatus, t0
 
 	# Set Register States
@@ -273,6 +283,8 @@ delegation_trampoline:
 	ld  a0, 0x068(a0)
 	
 	# Finally: Jump and switch execution modes
+	sfence.vma
+	fence.i
 	mret
 	
 	# Should be unreachable.  Jump to an infinite loop just in case.

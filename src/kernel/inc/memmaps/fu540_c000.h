@@ -27,11 +27,14 @@
 // CLINT
 #define CLINT_BASE ((void*)0x02000000u)
 // Offsets
+#define CLINT_MSIPS (0x0000u)
 #define CLINT_H0_MSIP (0x0000u)
 #define CLINT_H1_MSIP (0x0004u)
 #define CLINT_H2_MSIP (0x0008u)
 #define CLINT_H3_MSIP (0x000Cu)
 #define CLINT_H4_MSIP (0x0010u)
+#define CLINT_MTIMECMPS (0x4000u)
+#define CLINT_MTIME (0xBFF8u)
 
 // Cache Controller
 #define CACHE_CONTROLLER_BASE ((void*)0x02010000u)

@@ -15,20 +15,16 @@ CFLAGS        := $(CFLAGS) -fno-pie # Do not build position-independent code.  O
 CFLAGS        := $(CFLAGS) -ffreestanding -nostdlib -nostartfiles # Build a freestanding program.  Do not automatically include any other libraries or object files.
 CFLAGS        := $(CFLAGS) -fno-zero-initialized-in-bss # Because this will run on the bare metal, there is nothing to zero the memory.  Do not assume that fresh memory is zeroed.
 
-BFILES        := 
-
-# Files to build
-BFILES        := $(BFILES) test.o
-
 .PHONY: all rebuild clean
 
-all: test.out   test.out.strip   test.out.bin   test.out.strip.bin
+all: test.out     test.out.strip     test.out.bin     test.out.strip.bin \
+     vm_test.out  vm_test.out.strip  vm_test.out.bin  vm_test.out.strip.bin
 
 rebuild: clean
 	$(MAKE) all
 
 clean:
-	rm -f *.out *.strip *.bin $(BFILES)
+	rm -f *.out *.strip *.bin *.o
 
 %.o: %.s
 	$(CC) $(CFLAGS) $(DEFINES) $^ -c -o $@
@@ -39,7 +35,10 @@ clean:
 #%.o: %.c
 #	$(CC) $(CFLAGS) $(DEFINES) $^ -c -o $@
 
-test.out: $(BFILES)
+test.out: test.o
+	$(CC) $(CFLAGS) $^ -T ./test.ld $(LDFLAGS) -o $@
+
+vm_test.out: vm_test.o
 	$(CC) $(CFLAGS) $^ -T ./test.ld $(LDFLAGS) -o $@
 
 %.out.strip: %.out

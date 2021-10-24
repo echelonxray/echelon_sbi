@@ -6,6 +6,8 @@
 
 .align 2, 0
 hart_start_entry_handler:
+	sfence.vma
+	fence.i
 	# Setup the Global Pointer
 	.option push
 	.option norelax
@@ -52,12 +54,16 @@ hart_start_entry_handler:
 	#not a1, a1
 	#and a0, a0, a1
 	csrw mtvec, a0
+	sfence.vma
+	fence.i
 	mret
 	
 	3:
 	j idle_loop
 
 interrupt_entry_handler:
+	sfence.vma
+	fence.i
 	# Save Register States
 	csrrw a0, mscratch, a0 # Save the context pointer in a0 (arg1)
 	sw  ra, 0x010(a0) # Save  x1
@@ -210,6 +216,8 @@ switch_context:
 	lw  a0, 0x034(a0)
 	
 	# Finally: Jump and switch execution modes
+	sfence.vma
+	fence.i
 	mret
 	
 	# Should be unreachable.  Jump to an infinite loop just in case.

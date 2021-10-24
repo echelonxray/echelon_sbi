@@ -38,6 +38,34 @@ struct sbiret call_to_sbi(sintRL_t EID, sintRL_t FID, sintRL_t* params) {
 			DEBUG_print("\tGet machine implementation ID\n");
 			return sbi_get_mimpid();
 		}
+	} else if (EID == SBI_EXT_TIME) {
+		if        (FID == SBI_TIME_SET_TIMER) {
+			return sbi_set_timer(params[0]);
+		}
+	} else if (EID == SBI_EXT_IPI) {
+		/*
+		if        (FID == SBI_IPI_SEND) {
+			return sbi_send_ipi(unsigned long hart_mask, unsigned long hart_mask_base);
+		}
+		*/
+	} else if (EID == SBI_EXT_RFNC) {
+		/*
+		if        (FID == SBI_RFNC_FENCEI) {
+			return sbi_remote_fence_i(unsigned long hart_mask, unsigned long hart_mask_base);
+		} else if (FID == SBI_RFNC_SFENCE_VMA) {
+			return sbi_remote_sfence_vma(unsigned long hart_mask, unsigned long hart_mask_base, unsigned long start_addr, unsigned long size);
+		} else if (FID == SBI_RFNC_SFENCE_VMA_ASID) {
+			return sbi_remote_sfence_vma_asid(unsigned long hart_mask, unsigned long hart_mask_base, unsigned long start_addr, long size, unsigned long asid);
+		} else if (FID == SBI_RFNC_HFENCE_GVMA_VMID) {
+			return sbi_remote_hfence_gvma_vmid(unsigned long hart_mask, unsigned long hart_mask_base, unsigned long start_addr, long size, unsigned long vmid);
+		} else if (FID == SBI_RFNC_HFENCE_GVMA) {
+			return sbi_remote_hfence_gvma(unsigned long hart_mask, unsigned long hart_mask_base, unsigned long start_addr, long size);
+		} else if (FID == SBI_RFNC_HFENCE_VVMA) {
+			return sbi_remote_hfence_vvma_asid(unsigned long hart_mask, unsigned long hart_mask_base, unsigned long start_addr, long size, unsigned long asid);
+		} else if (FID == SBI_RFNC_HFENCE_VVMA_ASID) {
+			return sbi_remote_hfence_vvma(unsigned long hart_mask, unsigned long hart_mask_base, unsigned long start_addr, long size);
+		}
+		*/
 	} else if (EID == SBI_EXT_HSM) {
 		// Hart State Management Extension
 		DEBUG_print("\tHSM Extension\n");
@@ -59,6 +87,12 @@ struct sbiret call_to_sbi(sintRL_t EID, sintRL_t FID, sintRL_t* params) {
 			DEBUG_print("\tSuspend Hart\n");
 			return sbi_hart_suspend(params[0], params[1], params[2]);
 		}
+	} else if (EID == SBI_EXT_SRST) {
+		/*
+		if        (FID == SBI_SRST_RESET) {
+			return sbi_system_reset(uint32_t reset_type, uint32_t reset_reason);
+		}
+		*/
 	}
 	
 	// Not Supported

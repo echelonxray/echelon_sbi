@@ -38,6 +38,7 @@ KFILES        := $(KFILES) src/kernel/interrupts/context_switch.o
 KFILES        := $(KFILES) src/kernel/interrupts/context_switch_asm.o
 #  - SBI Commands
 KFILES        := $(KFILES) src/kernel/sbi_commands/base.o
+KFILES        := $(KFILES) src/kernel/sbi_commands/time.o
 KFILES        := $(KFILES) src/kernel/sbi_commands/hsm.o
 
 .PHONY: all rebuild clean supervisorspace emu emu-debug debug

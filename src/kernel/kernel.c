@@ -13,20 +13,19 @@
 #include "./debug.h"
 
 extern void* mem_block_end;
-
-ksemaphore_t* hart_command_que_locks;
 extern ksemaphore_t* sbi_hsm_locks;
 extern volatile sint32_t* sbi_hsm_states;
+
+__thread uintRL_t mhartid;
+ksemaphore_t* hart_command_que_locks;
 uintRL_t dtb_location_a0;
 uintRL_t dtb_location_a1;
 uintRL_t dtb_location_a2;
 uintRL_t dtb_location_a3;
 uintRL_t hart_context_count;
+uintRL_t load_point;
 volatile CPU_Context* hart_contexts;
 volatile Hart_Command* hart_commands;
-uintRL_t load_point;
-
-__thread uintRL_t mhartid;
 
 void kinit() {
 	kallocinit(&KHEAP_START, &KHEAP_START + 0x10000);
@@ -241,6 +240,7 @@ void kmain() {
 	command.param0 |=             (1 <<  8) | (1 <<  9);
 	command.param0  = 0x0222;
 	command.param0  = 0;
+	//command.param0  = (1 << 5);
 	send_hart_command_blk(1, &command);
 	
 	ksem_wait(sbi_hsm_locks + 1);
@@ -251,10 +251,10 @@ void kmain() {
 	command.param0 = (uintRL_t)(hart_contexts + TOTAL_HART_COUNT + 0);
 	send_hart_command_blk(1, &command);
 	
-	wait_by_spin();
+	//wait_by_spin();
 	
-	DEBUG_print("\n");
-	DEBUG_print("Bye, World!\n");
+	//DEBUG_print("\n");
+	//DEBUG_print("Bye, World!\n");
 	
 	return;
 }

@@ -13,11 +13,14 @@ struct sbiret sbi_hart_start(unsigned long hartid, unsigned long start_addr, uns
 	struct sbiret retval;
 	retval.value = 0;
 	
+	retval.error = SBI_ERR_FAILED;
+	return retval;
+	
 	if (hartid < (TOTAL_HART_COUNT - USE_HART_COUNT) || hartid >= TOTAL_HART_COUNT) {
 		retval.error = SBI_ERR_INVALID_PARAM;
 		return retval;
 	}
-	if (start_addr < load_point || start_addr > ((uintRL_t)MEMORY_AVAILABLE - 4)) {
+	if (start_addr < load_point || start_addr > ((uintRL_t)(MEMORY_BASE + MEMORY_AVAILABLE) - 4)) {
 		retval.error = SBI_ERR_INVALID_ADDRESS;
 		return retval;
 	}
@@ -70,7 +73,7 @@ struct sbiret sbi_hart_get_status(unsigned long hartid) {
 struct sbiret sbi_hart_suspend(uint32_t suspend_type, unsigned long resume_addr, unsigned long opaque) {
 	struct sbiret retval;
 	retval.value = 0;
-	if (resume_addr < load_point || resume_addr > ((uintRL_t)MEMORY_AVAILABLE - 4)) {
+	if (resume_addr < load_point || resume_addr > ((uintRL_t)(MEMORY_BASE + MEMORY_AVAILABLE) - 4)) {
 		retval.error = SBI_ERR_INVALID_ADDRESS;
 		return retval;
 	}

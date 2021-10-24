@@ -31,6 +31,14 @@ void* hart_start_c_handler(uintRL_t hart_context_index, uintRL_t is_interrupt, u
 	__asm__ __volatile__ ("csrw pmpcfg0, %0" : : "r" (0x000000000000000F));
 	*/
 	
+	/*
+	DEBUG_print("Hart INIT: ");
+	char str[20];
+	itoa(mhartid, str, 20, 10, 0);
+	DEBUG_print(str);
+	DEBUG_print("\n");
+	*/
+	
 	if (is_interrupt) {
 		if (cause_value == 3) {
 			// Machine Software Interrupt
@@ -196,6 +204,8 @@ void interrupt_c_handler(volatile CPU_Context* cpu_context, uintRL_t cpu_context
 				clint_hart_msip_ctls[mhartid] = 0;
 				__asm__ __volatile__ ("csrw sstatus, %0" : : "r" (command.param0));
 			} else if (command.command == HARTCMD_STARTHART) {
+				//__asm__ __volatile__ ("csrs mie, %0" : : "r" (1 << 7));
+				
 				__asm__ __volatile__ ("csrw pmpaddr0, %0" : : "r" (0x0000000080000000));
 				__asm__ __volatile__ ("csrw pmpaddr0, %0" : : "r" (load_point));
 				__asm__ __volatile__ ("csrw pmpaddr0, %0" : : "r" (0x003FFFFFFFFFFFFF));
@@ -206,10 +216,13 @@ void interrupt_c_handler(volatile CPU_Context* cpu_context, uintRL_t cpu_context
 				delegation |= (1 <<  0) | (1 <<  1) | (1 <<  2) | (1 <<  3) | (1 <<  4) | (1 <<  5) | (1 <<  6);
 				delegation |= (1 <<  7) | (1 <<  8) |                                     (1 << 12) | (1 << 13);
 				delegation |=             (1 << 15);
+				delegation = 0;
 				__asm__ __volatile__ ("csrw medeleg, %0" : : "r" (delegation));
 				delegation = 0;
 				delegation |= (1 <<  0) | (1 <<  1) |                         (1 <<  4) | (1 <<  5)            ;
 				delegation |=             (1 <<  8) | (1 <<  9);
+				delegation = 0;
+				//delegation = (1 << 5);
 				__asm__ __volatile__ ("csrw mideleg, %0" : : "r" (delegation));
 				
 				__asm__ __volatile__ ("csrw satp, zero");
@@ -221,11 +234,29 @@ void interrupt_c_handler(volatile CPU_Context* cpu_context, uintRL_t cpu_context
 				hart_contexts[USE_HART_COUNT + mhartid].regs[REG_PC] = command.param1;
 				hart_contexts[USE_HART_COUNT + mhartid].regs[REG_A0] = command.param0;
 				hart_contexts[USE_HART_COUNT + mhartid].regs[REG_A1] = command.param2;
+				
 				ksem_wait(sbi_hsm_locks + mhartid);
 				sbi_hsm_states[mhartid] = SBI_HSM_STARTED;
 				ksem_post(sbi_hsm_locks + mhartid);
+				
+				clint_hart_msip_ctls[mhartid] = 0;
 				switch_context(hart_contexts + USE_HART_COUNT + mhartid);
 			}
+		} else if (cause_value == 5) {
+			__asm__ __volatile__ ("csrc mip, %0" : : "r" (0x20));
+			DEBUG_print("S-Mode Timer Int received in M-Mode\n");
+			uintRL_t mie;
+			__asm__ __volatile__ ("csrr %0, mie" : "=r" (mie));
+			if (mie & 0x20) {
+				s_delegation_trampoline(cpu_context, 0);
+			}
+		} else if (cause_value == 7) {
+			__asm__ __volatile__ ("csrs mip, %0" : : "r" (0x20));
+			__asm__ __volatile__ ("csrc mie, %0" : : "r" (0x80));
+			//__asm__ __volatile__ ("csrc mcause, %0" : : "r" (cause_value));
+			//__asm__ __volatile__ ("csrs mcause, %0" : : "r" (5));
+			DEBUG_print("M-Mode Timer Int received in M-Mode\n");
+			//s_delegation_trampoline(cpu_context, 0);
 		} else {
 			DEBUG_print("ESBI Interrupt!  Lower mcause bits: ");
 			char str[30];

@@ -12,7 +12,6 @@ struct sbiret sbi_get_impl_id() {
 	// Get SBI implementation ID
 	struct sbiret retval;
 	retval.value = 6;
-	retval.value = 1; // DEBUGGING: Lie to the kernel and pretend to be OpenSBI
 	retval.error = SBI_SUCCESS;
 	return retval;
 }

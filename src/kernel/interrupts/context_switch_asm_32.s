@@ -16,6 +16,9 @@ hart_start_entry_handler:
 	addi gp, gp, %pcrel_lo(1b)
 	.option pop
 	
+	#li a0, 0x80
+	#csrs mie, a0
+	
 	csrr a0, mhartid
 	
 	1: auipc a1, %pcrel_hi(hart_contexts)

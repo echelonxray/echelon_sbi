@@ -20,8 +20,8 @@ struct sbiret call_to_sbi(sintRL_t EID, sintRL_t FID, sintRL_t* params) {
 		} else if (FID == SBI_BASE_PROBE_EXTENSION) {
 			// Probe SBI extension
 			DEBUG_print("\tProbe SBI extension: 0x");
-			char str[30];
-			itoa(params[0], str, 30, -16, 0);
+			char str[20];
+			itoa(params[0], str, 20, -16, 0);
 			DEBUG_print(str);
 			DEBUG_print("\n");
 			return sbi_probe_extension(params[0]);
@@ -43,6 +43,11 @@ struct sbiret call_to_sbi(sintRL_t EID, sintRL_t FID, sintRL_t* params) {
 		DEBUG_print("\tTime Extension\n");
 		
 		if        (FID == SBI_TIME_SET_TIMER) {
+			DEBUG_print("\tSet Timer: ");
+			char str[20];
+			itoa(params[0], str, 20, -10, 0);
+			DEBUG_print(str);
+			DEBUG_print("\n");
 			return sbi_set_timer(params[0]);
 		}
 	} else if (EID == SBI_EXT_IPI) {
@@ -76,7 +81,29 @@ struct sbiret call_to_sbi(sintRL_t EID, sintRL_t FID, sintRL_t* params) {
 		if        (FID == SBI_HSM_HART_START) {
 			// Start Hart
 			DEBUG_print("\tStart Hart\n");
-			return sbi_hart_start(params[0], params[1], params[2]);
+			
+			/*
+			char str[20];
+			itoa(params[0], str, 20, -10, 0);
+			DEBUG_print(str);
+			DEBUG_print(" 0x");
+			itoa(params[1], str, 20, -16, 0);
+			DEBUG_print(str);
+			DEBUG_print(" ");
+			itoa(params[2], str, 20, -10, 0);
+			DEBUG_print(str);
+			*/
+			struct sbiret sbir = sbi_hart_start(params[0], params[1], params[2]);
+			/*
+			DEBUG_print(" E ");
+			itoa(sbir.error, str, 20, 10, 0);
+			DEBUG_print(str);
+			DEBUG_print(" R ");
+			itoa(sbir.value, str, 20, 10, 0);
+			DEBUG_print(str);
+			DEBUG_print("\n");
+			*/
+			return sbir;
 		} else if (FID == SBI_HSM_HART_STOP) {
 			// Stop Hart
 			DEBUG_print("\tStop Hart\n");

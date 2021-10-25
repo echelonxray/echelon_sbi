@@ -1,10 +1,13 @@
 #include "sbi_commands.h"
+#include "./kernel.h"
+
+extern uintRL_t load_point;
 
 struct sbiret call_to_sbi(sintRL_t EID, sintRL_t FID, sintRL_t* params) {
 	if        (EID == SBI_EXT_BASE) {
 		// Base Extension
 		DEBUG_print("\tBase Extension\n");
-		
+
 		if        (FID == SBI_BASE_GET_SBI_VERSION) {
 			// Get SBI specification version
 			DEBUG_print("\tGet SBI specification version\n");
@@ -39,9 +42,9 @@ struct sbiret call_to_sbi(sintRL_t EID, sintRL_t FID, sintRL_t* params) {
 			return sbi_get_mimpid();
 		}
 	} else if (EID == SBI_EXT_TIME) {
-		// Time Extension		
+		// Time Extension
 		DEBUG_print("\tTime Extension\n");
-		
+
 		if        (FID == SBI_TIME_SET_TIMER) {
 			DEBUG_print("\tSet Timer: ");
 			char str[20];
@@ -57,31 +60,39 @@ struct sbiret call_to_sbi(sintRL_t EID, sintRL_t FID, sintRL_t* params) {
 		}
 		*/
 	} else if (EID == SBI_EXT_RFNC) {
-		/*
+		// Remote Fence Extension
+		DEBUG_print("\tRFNC Extension\n");
+
 		if        (FID == SBI_RFNC_FENCEI) {
-			return sbi_remote_fence_i(unsigned long hart_mask, unsigned long hart_mask_base);
+			DEBUG_print("\tFence.I\n");
+			return sbi_remote_fence_i(params[0], params[1]);
 		} else if (FID == SBI_RFNC_SFENCE_VMA) {
-			return sbi_remote_sfence_vma(unsigned long hart_mask, unsigned long hart_mask_base, unsigned long start_addr, unsigned long size);
+			DEBUG_print("\tSFence.VMA\n");
+			return sbi_remote_sfence_vma(params[0], params[1], params[2], params[3]);
 		} else if (FID == SBI_RFNC_SFENCE_VMA_ASID) {
-			return sbi_remote_sfence_vma_asid(unsigned long hart_mask, unsigned long hart_mask_base, unsigned long start_addr, long size, unsigned long asid);
+			DEBUG_print("\tSFence.VMA_ASID\n");
+			return sbi_remote_sfence_vma_asid(params[0], params[1], params[2], params[3], params[4]);
 		} else if (FID == SBI_RFNC_HFENCE_GVMA_VMID) {
-			return sbi_remote_hfence_gvma_vmid(unsigned long hart_mask, unsigned long hart_mask_base, unsigned long start_addr, long size, unsigned long vmid);
+			DEBUG_print("\tHFence.GVMA_VMID\n");
+			return sbi_remote_hfence_gvma_vmid(params[0], params[1], params[2], params[3], params[4]);
 		} else if (FID == SBI_RFNC_HFENCE_GVMA) {
-			return sbi_remote_hfence_gvma(unsigned long hart_mask, unsigned long hart_mask_base, unsigned long start_addr, long size);
-		} else if (FID == SBI_RFNC_HFENCE_VVMA) {
-			return sbi_remote_hfence_vvma_asid(unsigned long hart_mask, unsigned long hart_mask_base, unsigned long start_addr, long size, unsigned long asid);
+			DEBUG_print("\tHFence.GVMA\n");
+			return sbi_remote_hfence_gvma(params[0], params[1], params[2], params[3]);
 		} else if (FID == SBI_RFNC_HFENCE_VVMA_ASID) {
-			return sbi_remote_hfence_vvma(unsigned long hart_mask, unsigned long hart_mask_base, unsigned long start_addr, long size);
+			DEBUG_print("\tHFence.VVMA_ASID\n");
+			return sbi_remote_hfence_vvma_asid(params[0], params[1], params[2], params[3], params[4]);
+		} else if (FID == SBI_RFNC_HFENCE_VVMA) {
+			DEBUG_print("\tHFence.VVMA\n");
+			return sbi_remote_hfence_vvma(params[0], params[1], params[2], params[3]);
 		}
-		*/
 	} else if (EID == SBI_EXT_HSM) {
 		// Hart State Management Extension
 		DEBUG_print("\tHSM Extension\n");
-		
+
 		if        (FID == SBI_HSM_HART_START) {
 			// Start Hart
 			DEBUG_print("\tStart Hart\n");
-			
+
 			/*
 			char str[20];
 			itoa(params[0], str, 20, -10, 0);
@@ -124,7 +135,7 @@ struct sbiret call_to_sbi(sintRL_t EID, sintRL_t FID, sintRL_t* params) {
 		}
 		*/
 	}
-	
+
 	// Not Supported
 	char str[30];
 	DEBUG_print("ESBI Error.  Not Supported: ");
@@ -138,4 +149,26 @@ struct sbiret call_to_sbi(sintRL_t EID, sintRL_t FID, sintRL_t* params) {
 	retval.value = 0;
 	retval.error = SBI_ERR_NOT_SUPPORTED;
 	return retval;
+}
+
+uintRL_t is_valid_phys_mem_addr(uintRL_t address, uintRL_t required_alignment) {
+	if (address & ((1ul << required_alignment) - 1)) {
+		// Misaligned
+		return 0;
+	}
+	if (address < MEMORY_BASE || address >= (MEMORY_BASE + MEMORY_AVAILABLE)) {
+		// Out of range
+		return 0;
+	}
+	// Is valid
+	return 1;
+}
+
+uintRL_t is_valid_hartid(uintRL_t hartid) {
+	if (hartid < (TOTAL_HART_COUNT - USE_HART_COUNT) || hartid >= TOTAL_HART_COUNT) {
+		// Out of range
+		return 0;
+	}
+	// Is valid
+	return 1;
 }

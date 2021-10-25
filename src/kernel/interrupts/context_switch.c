@@ -241,6 +241,17 @@ void interrupt_c_handler(volatile CPU_Context* cpu_context, uintRL_t cpu_context
 
 				clint_hart_msip_ctls[mhartid] = 0;
 				switch_context(hart_contexts + USE_HART_COUNT + mhartid);
+			} else if (command.command == HARTCMD_REMOTE_FENCE_I) {
+	      __asm__ __volatile__ ("fence.i");
+				clint_hart_msip_ctls[mhartid] = 0;
+			} else if (command.command == HARTCMD_REMOTE_SFENCE_VMA) {
+	      // TODO: Specific parameters
+	      __asm__ __volatile__ ("sfence.vma zero, zero");
+				clint_hart_msip_ctls[mhartid] = 0;
+			} else if (command.command == HARTCMD_REMOTE_SFENCE_VMA_ASID) {
+	      // TODO: Specific parameters
+	      __asm__ __volatile__ ("sfence.vma zero, zero");
+				clint_hart_msip_ctls[mhartid] = 0;
 			}
 		} else if (cause_value == 5) {
 			__asm__ __volatile__ ("csrc mip, %0" : : "r" (0x20));

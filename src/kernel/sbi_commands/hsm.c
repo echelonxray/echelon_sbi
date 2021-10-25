@@ -5,22 +5,21 @@
 
 ksemaphore_t* sbi_hsm_locks;
 volatile sint32_t* sbi_hsm_states;
-extern uintRL_t load_point;
 extern __thread uintRL_t mhartid;
 extern volatile CPU_Context* hart_contexts;
 
 struct sbiret sbi_hart_start(unsigned long hartid, unsigned long start_addr, unsigned long opaque) {
 	struct sbiret retval;
 	retval.value = 0;
-	
-	retval.error = SBI_ERR_FAILED;
-	return retval;
-	
-	if (hartid < (TOTAL_HART_COUNT - USE_HART_COUNT) || hartid >= TOTAL_HART_COUNT) {
+
+	//retval.error = SBI_ERR_FAILED;
+	//return retval;
+
+	if (is_valid_hartid(hartid) == 0) {
 		retval.error = SBI_ERR_INVALID_PARAM;
 		return retval;
 	}
-	if (start_addr < load_point || start_addr > ((uintRL_t)(MEMORY_BASE + MEMORY_AVAILABLE) - 4)) {
+	if (is_valid_phys_mem_addr(start_addr, 2) == 0) {
 		retval.error = SBI_ERR_INVALID_ADDRESS;
 		return retval;
 	}
@@ -60,7 +59,7 @@ struct sbiret sbi_hart_stop() {
 
 struct sbiret sbi_hart_get_status(unsigned long hartid) {
 	struct sbiret retval;
-	if (hartid < (TOTAL_HART_COUNT - USE_HART_COUNT) || hartid >= TOTAL_HART_COUNT) {
+	if (is_valid_hartid(hartid) == 0) {
 		retval.value = 0;
 		retval.error = SBI_ERR_INVALID_PARAM;
 		return retval;
@@ -73,7 +72,7 @@ struct sbiret sbi_hart_get_status(unsigned long hartid) {
 struct sbiret sbi_hart_suspend(uint32_t suspend_type, unsigned long resume_addr, unsigned long opaque) {
 	struct sbiret retval;
 	retval.value = 0;
-	if (resume_addr < load_point || resume_addr > ((uintRL_t)(MEMORY_BASE + MEMORY_AVAILABLE) - 4)) {
+	if (is_valid_phys_mem_addr(resume_addr, 2) == 0) {
 		retval.error = SBI_ERR_INVALID_ADDRESS;
 		return retval;
 	}

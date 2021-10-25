@@ -111,6 +111,9 @@ void s_delegation_trampoline(volatile CPU_Context* cpu_context, uintRL_t pc_offs
 #define HARTCMD_STARTHART 14
 #define HARTCMD_STOPHART 15 // Not a real implemented command
 #define HARTCMD_SUSPENDHART 16 // Not a real implemented command
+#define HARTCMD_REMOTE_FENCE_I 17
+#define HARTCMD_REMOTE_SFENCE_VMA 18
+#define HARTCMD_REMOTE_SFENCE_VMA_ASID 19
 
 #define EM_M 3
 #define EM_S 1

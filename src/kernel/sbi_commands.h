@@ -6,6 +6,7 @@
 #include "./inc/general_oper.h"
 #include "./sbi_commands/base.h"
 #include "./sbi_commands/time.h"
+#include "./sbi_commands/rfnc.h"
 #include "./sbi_commands/hsm.h"
 #include "./debug.h"
 
@@ -33,5 +34,7 @@ struct sbiret {
 };
 
 struct sbiret call_to_sbi(sintRL_t EID, sintRL_t FID, sintRL_t* params);
+uintRL_t is_valid_phys_mem_addr(uintRL_t address, uintRL_t required_alignment);
+uintRL_t is_valid_hartid(uintRL_t hartid);
 
 #endif

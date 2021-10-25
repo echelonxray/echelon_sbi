@@ -4,8 +4,8 @@ OBJCPY        := $(TUPLE)objcopy
 STRIP         := $(TUPLE)strip
 LDFLAGS       := -e my_entry_pt -Wl,-gc-sections -static
 DEFINES       := -D MM_FU540_C000
-CFLAGS        := 
-CFLAGS        := $(CFLAGS) -Wall -Wextra # Turn on all buuld warnings.
+CFLAGS        :=
+CFLAGS        := $(CFLAGS) -Wall -Wextra -Wno-unused-parameter # Turn on all buuld warnings.
 CFLAGS        := $(CFLAGS) -std=c99 # The standards to build to.
 CFLAGS        := $(CFLAGS) -march=rv64ia -mabi=lp64 # The build target architectural information.
 CFLAGS        := $(CFLAGS) -mcmodel=medany # The symbol relocation scheme.
@@ -15,8 +15,8 @@ CFLAGS        := $(CFLAGS) -fno-pic # Do not build position independent code.  O
 CFLAGS        := $(CFLAGS) -ffreestanding -nostdlib -nostartfiles # Build a freestanding program.  Do not automatically include any other libraries or object files.
 CFLAGS        := $(CFLAGS) -fno-zero-initialized-in-bss # Because this will run on the bare metal, there is nothing to zero the memory.  Do not assume that fresh memory is zeroed.
 
-GFILES        := 
-KFILES        := 
+GFILES        :=
+KFILES        :=
 
 # Global Library
 GFILES        := $(GFILES) src/inc/gcc_supp.o
@@ -39,6 +39,7 @@ KFILES        := $(KFILES) src/kernel/interrupts/context_switch_asm.o
 #  - SBI Commands
 KFILES        := $(KFILES) src/kernel/sbi_commands/base.o
 KFILES        := $(KFILES) src/kernel/sbi_commands/time.o
+KFILES        := $(KFILES) src/kernel/sbi_commands/rfnc.o
 KFILES        := $(KFILES) src/kernel/sbi_commands/hsm.o
 
 .PHONY: all rebuild clean supervisorspace emu emu-debug debug

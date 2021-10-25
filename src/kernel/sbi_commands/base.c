@@ -3,7 +3,7 @@
 struct sbiret sbi_get_spec_version() {
 	// Get SBI specification version
 	struct sbiret retval;
-	retval.value = (   0 << 24) | (   2 <<  0);
+	retval.value = (   0 << 24) | (   3 <<  0);
 	retval.error = SBI_SUCCESS;
 	return retval;
 }
@@ -39,8 +39,7 @@ struct sbiret sbi_probe_extension(long extension_id) {
 		//retval.value = 1; // DEBUGGING: Lie to the kernel for testing
 	} else if (extension_id == SBI_EXT_RFNC) {
 		// Returns 1 if exists in QEMU OpenSBI implementation
-		retval.value = 0;
-		//retval.value = 1; // DEBUGGING: Lie to the kernel for testing
+		retval.value = 1;
 	} else if (extension_id == SBI_EXT_HSM) {
 		// Returns 1 if exists in QEMU OpenSBI implementation
 		retval.value = 1;

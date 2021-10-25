@@ -23,14 +23,14 @@ extern __thread uintRL_t mhartid;
 
 void* hart_start_c_handler(uintRL_t hart_context_index, uintRL_t is_interrupt, uintRL_t cause_value) {
 	mhartid = hart_contexts[hart_context_index].context_id;
-	
+
 	/*
 	// Allow all memory access
 	// QEMU will fail when switching to Supervisor mode of no PMP rules are set
 	__asm__ __volatile__ ("csrw pmpaddr0, %0" : : "r" (0x003FFFFFFFFFFFFF));
 	__asm__ __volatile__ ("csrw pmpcfg0, %0" : : "r" (0x000000000000000F));
 	*/
-	
+
 	/*
 	DEBUG_print("Hart INIT: ");
 	char str[20];
@@ -38,7 +38,7 @@ void* hart_start_c_handler(uintRL_t hart_context_index, uintRL_t is_interrupt, u
 	DEBUG_print(str);
 	DEBUG_print("\n");
 	*/
-	
+
 	if (is_interrupt) {
 		if (cause_value == 3) {
 			// Machine Software Interrupt
@@ -47,26 +47,26 @@ void* hart_start_c_handler(uintRL_t hart_context_index, uintRL_t is_interrupt, u
 			return &interrupt_entry_handler;
 		}
 	}
-	
+
 	DEBUG_print("\n__Inside hart_start_c_handler()__\n");
 	DEBUG_print("Unhanded Trap!  Spinning with codes: \n");
 	char buf[20];
-	
+
 	itoa(mhartid, buf, 20, -10, 0);
 	DEBUG_print("mhartid: ");
 	DEBUG_print(buf);
 	DEBUG_print("\n");
-	
+
 	itoa(is_interrupt, buf, 20, -10, 0);
 	DEBUG_print("is_interrupt: ");
 	DEBUG_print(buf);
 	DEBUG_print("\n");
-	
+
 	itoa(cause_value, buf, 20, -10, 0);
 	DEBUG_print("cause_value: ");
 	DEBUG_print(buf);
 	DEBUG_print("\n");
-	
+
 	idle_loop();
 	return 0;
 }
@@ -74,23 +74,23 @@ void* hart_start_c_handler(uintRL_t hart_context_index, uintRL_t is_interrupt, u
 void interrupt_c_handler(volatile CPU_Context* cpu_context, uintRL_t cpu_context_index, uintRL_t is_interrupt, uintRL_t cause_value) {
 	if (is_interrupt) {
 		// Interrupt caused handler to fire
-		
+
 		if (cause_value == 3) {
 			// M-Mode Software Interrupt -- This is a hart command
-			
+
 			// Save the command locally so that it does not get clobbered when the
 			// msip flag is cleared.
 			Hart_Command command = hart_commands[mhartid];
-			
+
 			volatile uint32_t* clint_hart_msip_ctls = (uint32_t*)CLINT_BASE;
-			
+
 			if        (command.command == HARTCMD_SWITCHCONTEXT) {
 				clint_hart_msip_ctls[mhartid] = 0;
 				switch_context((CPU_Context*)(command.param0));
 			} else if (command.command == HARTCMD_GETEXCEPTIONDELEGATION) {
 				__asm__ __volatile__ ("csrr %0, medeleg" : "=r" (hart_commands[mhartid].param0));
 				clint_hart_msip_ctls[mhartid] = 0;
-			} else if (command.command == HARTCMD_SETEXCEPTIONDELEGATION) {				
+			} else if (command.command == HARTCMD_SETEXCEPTIONDELEGATION) {
 				clint_hart_msip_ctls[mhartid] = 0;
 				__asm__ __volatile__ ("csrw medeleg, %0" : : "r" (command.param0));
 			} else if (command.command == HARTCMD_GETINTERRUPTDELEGATION) {
@@ -205,12 +205,12 @@ void interrupt_c_handler(volatile CPU_Context* cpu_context, uintRL_t cpu_context
 				__asm__ __volatile__ ("csrw sstatus, %0" : : "r" (command.param0));
 			} else if (command.command == HARTCMD_STARTHART) {
 				//__asm__ __volatile__ ("csrs mie, %0" : : "r" (1 << 7));
-				
+
 				__asm__ __volatile__ ("csrw pmpaddr0, %0" : : "r" (0x0000000080000000));
 				__asm__ __volatile__ ("csrw pmpaddr0, %0" : : "r" (load_point));
 				__asm__ __volatile__ ("csrw pmpaddr0, %0" : : "r" (0x003FFFFFFFFFFFFF));
 				__asm__ __volatile__ ("csrw pmpcfg0, %0" : : "r" ((0x0F << 16) | (0x08 <<  8) | (0x0F <<  0)));
-				
+
 				uintRL_t delegation;
 				delegation = 0;
 				delegation |= (1 <<  0) | (1 <<  1) | (1 <<  2) | (1 <<  3) | (1 <<  4) | (1 <<  5) | (1 <<  6);
@@ -224,21 +224,21 @@ void interrupt_c_handler(volatile CPU_Context* cpu_context, uintRL_t cpu_context
 				delegation = 0;
 				//delegation = (1 << 5);
 				__asm__ __volatile__ ("csrw mideleg, %0" : : "r" (delegation));
-				
+
 				__asm__ __volatile__ ("csrw satp, zero");
 				__asm__ __volatile__ ("csrc sstatus, %0" : : "r" (1 << 1));
-				
+
 				clear_hart_context(hart_contexts + USE_HART_COUNT + mhartid);
 				hart_contexts[USE_HART_COUNT + mhartid].context_id = USE_HART_COUNT + mhartid;
 				hart_contexts[USE_HART_COUNT + mhartid].execution_mode = EM_S;
 				hart_contexts[USE_HART_COUNT + mhartid].regs[REG_PC] = command.param1;
 				hart_contexts[USE_HART_COUNT + mhartid].regs[REG_A0] = command.param0;
 				hart_contexts[USE_HART_COUNT + mhartid].regs[REG_A1] = command.param2;
-				
+
 				ksem_wait(sbi_hsm_locks + mhartid);
 				sbi_hsm_states[mhartid] = SBI_HSM_STARTED;
 				ksem_post(sbi_hsm_locks + mhartid);
-				
+
 				clint_hart_msip_ctls[mhartid] = 0;
 				switch_context(hart_contexts + USE_HART_COUNT + mhartid);
 			}
@@ -274,8 +274,81 @@ void interrupt_c_handler(volatile CPU_Context* cpu_context, uintRL_t cpu_context
 		DEBUG_print(str);
 		DEBUG_print("] ");
 		*/
-		
-		if (cause_value == 8) {
+
+		if        (cause_value == 2) {
+			uint32_t* instruction;
+			sintRL_t page_walk;
+			__asm__ __volatile__ ("csrr %0, satp" : "=r" (page_walk));
+			if (((uintRL_t)page_walk >> 60) == 8) {
+				page_walk <<= 20;
+				page_walk >>= 8;
+				uintRL_t* page_ptr = 0;
+				page_ptr = (uint64_t*)page_walk;
+				page_walk = page_ptr[(cpu_context->regs[REG_PC] >> (12 + 9 + 9)) & 0x1FF];
+				uintRL_t shift_ammount = 12 + 9;
+				while ((page_walk & 0xF) == 1 && shift_ammount >= 12) {
+					page_walk <<= 10;
+					page_walk >>= 20;
+					page_walk <<= 12;
+					page_ptr = (uint64_t*)page_walk;
+					page_walk = page_ptr[(cpu_context->regs[REG_PC] >> shift_ammount) & 0x1FF];
+					shift_ammount -= 9;
+				}
+				page_walk <<= 10;
+				page_walk >>= 20;
+				page_walk <<= 12;
+				while (shift_ammount >= 12) {
+					page_walk |= cpu_context->regs[REG_PC] & (0x1FF << shift_ammount);
+					shift_ammount -= 9;
+				}
+				page_walk |= cpu_context->regs[REG_PC] & 0xFFF;
+				instruction = (uint32_t*)page_walk;
+			} else {
+				instruction = (uint32_t*)(cpu_context->regs[REG_PC]);
+			}
+			dec_inst dinst;
+			uintRL_t form = decode_instruction(*instruction, &dinst);
+			if (form) {
+				/*
+				DEBUG_print("\n\topcode: ");
+				itoa(dinst.opcode, str, 30, -16, -8);
+				DEBUG_print(str);
+				DEBUG_print("\n\trd: ");
+				itoa(dinst.rd, str, 30, -16, -8);
+				DEBUG_print(str);
+				DEBUG_print("\n\tfunct3: ");
+				itoa(dinst.funct3, str, 30, -16, -8);
+				DEBUG_print(str);
+				DEBUG_print("\n\trs1: ");
+				itoa(dinst.rs1, str, 30, -16, -8);
+				DEBUG_print(str);
+				DEBUG_print("\n\timm: ");
+				itoa(dinst.imm, str, 30, -16, -8);
+				DEBUG_print(str);
+				*/
+				if (dinst.opcode == 0x73) {
+					if (dinst.funct3 == 0x2 || dinst.funct3 == 0x3 || dinst.funct3 == 0x6 || dinst.funct3 == 0x7) {
+						if (dinst.rs1 == 0) {
+							if (dinst.imm == 0xC01) {
+								uint64_t* mtime = (void*)(CLINT_BASE + CLINT_MTIME);
+								cpu_context->regs[dinst.rd] = *mtime;
+								cpu_context->regs[REG_PC] += 4;
+								switch_context(cpu_context);
+							}
+						}
+					}
+				}
+			}
+			DEBUG_print("ESBI Exception!  Illegal instruction.\n");
+			DEBUG_print("\tPC: 0x");
+			itoa(cpu_context->regs[REG_PC], str, 30, -16, -8);
+			DEBUG_print(str);
+			DEBUG_print("\n");
+			DEBUG_print("\tOpcode 4-Byte Value: 0x");
+			itoa(*instruction, str, 30, -16, -8);
+			DEBUG_print(str);
+			DEBUG_print("\n");
+		} else if (cause_value == 8) {
 			// User-Mode Environment Exception
 			DEBUG_print("ESBI Trap Caught!  From: U-Mode.  Trap Handler: M-Mode\n");
 			DEBUG_print("\tPC: 0x");
@@ -291,7 +364,7 @@ void interrupt_c_handler(volatile CPU_Context* cpu_context, uintRL_t cpu_context
 			DEBUG_print(str);
 			DEBUG_print("\n");
 			cpu_context->regs[REG_PC] += 4;
-			
+
 			sintRL_t params[6];
 			params[0] = cpu_context->regs[REG_A0];
 			params[1] = cpu_context->regs[REG_A1];
@@ -299,7 +372,7 @@ void interrupt_c_handler(volatile CPU_Context* cpu_context, uintRL_t cpu_context
 			params[3] = cpu_context->regs[REG_A3];
 			params[4] = cpu_context->regs[REG_A4];
 			params[5] = cpu_context->regs[REG_A5];
-			
+
 			struct sbiret sbi_return;
 			sbi_return = call_to_sbi(cpu_context->regs[REG_A7], cpu_context->regs[REG_A6], params);
 			cpu_context->regs[REG_A1] = sbi_return.value;
@@ -313,72 +386,10 @@ void interrupt_c_handler(volatile CPU_Context* cpu_context, uintRL_t cpu_context
 			DEBUG_print(str);
 			DEBUG_print("\n");
 			cpu_context->regs[REG_PC] += 4;
+		} else if (cause_value == 12) {
+			// Instuction Page Fault
+			s_delegation_trampoline(cpu_context, 0);
 		} else {
-			uint32_t* instruction;
-			if (cause_value == 2) {
-				sintRL_t page_walk;
-				__asm__ __volatile__ ("csrr %0, satp" : "=r" (page_walk));
-				if (((uintRL_t)page_walk >> 60) == 8) {
-					page_walk <<= 20;
-					page_walk >>= 8;
-					uintRL_t* page_ptr = 0;
-					page_ptr = (uint64_t*)page_walk;
-					page_walk = page_ptr[(cpu_context->regs[REG_PC] >> (12 + 9 + 9)) & 0x1FF];
-					uintRL_t shift_ammount = 12 + 9;
-					while ((page_walk & 0xF) == 1 && shift_ammount >= 12) {
-						page_walk <<= 10;
-						page_walk >>= 20;
-						page_walk <<= 12;
-						page_ptr = (uint64_t*)page_walk;
-						page_walk = page_ptr[(cpu_context->regs[REG_PC] >> shift_ammount) & 0x1FF];
-						shift_ammount -= 9;
-					}
-					page_walk <<= 10;
-					page_walk >>= 20;
-					page_walk <<= 12;
-					while (shift_ammount >= 12) {
-						page_walk |= cpu_context->regs[REG_PC] & (0x1FF << shift_ammount);
-						shift_ammount -= 9;
-					}
-					page_walk |= cpu_context->regs[REG_PC] & 0xFFF;
-					instruction = (uint32_t*)page_walk;
-				} else {
-					instruction = (uint32_t*)(cpu_context->regs[REG_PC]);
-				}
-				dec_inst dinst;
-				uintRL_t form = decode_instruction(*instruction, &dinst);
-				if (form) {
-					/*
-					DEBUG_print("\n\topcode: ");
-					itoa(dinst.opcode, str, 30, -16, -8);
-					DEBUG_print(str);
-					DEBUG_print("\n\trd: ");
-					itoa(dinst.rd, str, 30, -16, -8);
-					DEBUG_print(str);
-					DEBUG_print("\n\tfunct3: ");
-					itoa(dinst.funct3, str, 30, -16, -8);
-					DEBUG_print(str);
-					DEBUG_print("\n\trs1: ");
-					itoa(dinst.rs1, str, 30, -16, -8);
-					DEBUG_print(str);
-					DEBUG_print("\n\timm: ");
-					itoa(dinst.imm, str, 30, -16, -8);
-					DEBUG_print(str);
-					*/
-					if (dinst.opcode == 0x73) {
-						if (dinst.funct3 == 0x2 || dinst.funct3 == 0x3 || dinst.funct3 == 0x6 || dinst.funct3 == 0x7) {
-							if (dinst.rs1 == 0) {
-								if (dinst.imm == 0xC01) {
-									uint64_t* mtime = (void*)(CLINT_BASE + CLINT_MTIME);
-									cpu_context->regs[dinst.rd] = *mtime;
-									cpu_context->regs[REG_PC] += 4;
-									switch_context(cpu_context);
-								}
-							}
-						}
-					}
-				}
-			}
 			DEBUG_print("ESBI Exception!  Lower mcause bits: ");
 			itoa(cause_value, str, 30, 10, 0);
 			DEBUG_print(str);
@@ -386,13 +397,7 @@ void interrupt_c_handler(volatile CPU_Context* cpu_context, uintRL_t cpu_context
 			DEBUG_print("\tPC: 0x");
 			itoa(cpu_context->regs[REG_PC], str, 30, -16, -8);
 			DEBUG_print(str);
-			if (cause_value == 2) {
-				DEBUG_print("\n\tOpcode 4-Byte Value: 0x");
-				itoa(*instruction, str, 30, -16, -8);
-				DEBUG_print(str);
-			}
 			DEBUG_print("\n");
-			s_delegation_trampoline(cpu_context, 0);
 			idle_loop();
 		}
 	}
@@ -402,7 +407,7 @@ void interrupt_c_handler(volatile CPU_Context* cpu_context, uintRL_t cpu_context
 
 uintRL_t decode_instruction(uint32_t einst, dec_inst* dinst) {
 	uint32_t opcode = einst & 0x7F;
-	
+
 	einst >>= 7;
 	union {
 		struct encoded_type_r enc_r;
@@ -413,21 +418,21 @@ uintRL_t decode_instruction(uint32_t einst, dec_inst* dinst) {
 		struct encoded_type_j enc_j;
 	} params;
 	memcpy(&params, &einst, sizeof(uint32_t));
-	
+
 	if (opcode == 0x73) {
 		// OpCode: SYSTEM, Encoding: I-Type
-		
+
 		dinst->opcode = opcode;
 		dinst->rd = params.enc_i.rd;
 		dinst->funct3 = params.enc_i.funct3;
 		dinst->rs1 = params.enc_i.rs1;
 		dinst->imm = params.enc_i.imm;
-		
+
 		dinst->rs2 = 0;
 		dinst->funct7 = 0;
 		return 2;
 	}
-	
+
 	return 0;
 }
 

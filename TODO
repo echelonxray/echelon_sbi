@@ -1,3 +1,13 @@
 TODO: 
 --Clean Up typing for portability across XLEN sizes
 --Implement format string outputs: printf, dprintf, sprintf, etc...
+--s_delegation_trampoline Does not work because it interrupts supervisor execution.  
+  It needs to be reworked so that it only fires when supervisor mode can accept interrupts
+  and it's fireing can be deferred until then.
+--Remove the C handler for core initialization.  It is simple enough to do more cleanly in 
+  just assembly.
+--Use send_hart_command() to Setup the Hart for initial entry to supervisor mode
+--Implement granular sfence.vma and granular remote sfence.vma
+--Implement hypervisor support and hypervisor remove memory fences
+--Make memory and hart id validation more flexible and robust
+--General clean up

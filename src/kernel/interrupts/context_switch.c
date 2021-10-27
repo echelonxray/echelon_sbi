@@ -72,10 +72,11 @@ void* hart_start_c_handler(uintRL_t hart_context_index, uintRL_t is_interrupt, u
 }
 
 void interrupt_c_handler(volatile CPU_Context* cpu_context, uintRL_t cpu_context_index, uintRL_t is_interrupt, uintRL_t cause_value) {
+	char str[30];
 	if (is_interrupt) {
 		// Interrupt caused handler to fire
 
-		if (cause_value == 3) {
+		if        (cause_value == 3) {
 			// M-Mode Software Interrupt -- This is a hart command
 
 			// Save the command locally so that it does not get clobbered when the
@@ -204,6 +205,10 @@ void interrupt_c_handler(volatile CPU_Context* cpu_context, uintRL_t cpu_context
 				clint_hart_msip_ctls[mhartid] = 0;
 				__asm__ __volatile__ ("csrw sstatus, %0" : : "r" (command.param0));
 			} else if (command.command == HARTCMD_STARTHART) {
+				DEBUG_print("\tStarted: ");
+				itoa(mhartid, str, 30, 10, 0);
+				DEBUG_print(str);
+				DEBUG_print("\n");
 				//__asm__ __volatile__ ("csrs mie, %0" : : "r" (1 << 7));
 
 				__asm__ __volatile__ ("csrw pmpaddr0, %0" : : "r" (0x0000000080000000));
@@ -217,12 +222,13 @@ void interrupt_c_handler(volatile CPU_Context* cpu_context, uintRL_t cpu_context
 				delegation |= (1 <<  7) | (1 <<  8) |                                     (1 << 12) | (1 << 13);
 				delegation |=             (1 << 15);
 				delegation = 0;
+				delegation = (1 << 12);
 				__asm__ __volatile__ ("csrw medeleg, %0" : : "r" (delegation));
 				delegation = 0;
 				delegation |= (1 <<  0) | (1 <<  1) |                         (1 <<  4) | (1 <<  5)            ;
 				delegation |=             (1 <<  8) | (1 <<  9);
 				delegation = 0;
-				//delegation = (1 << 5);
+				delegation = (1 <<  1) | (1 <<  5);
 				__asm__ __volatile__ ("csrw mideleg, %0" : : "r" (delegation));
 
 				__asm__ __volatile__ ("csrw satp, zero");
@@ -240,37 +246,42 @@ void interrupt_c_handler(volatile CPU_Context* cpu_context, uintRL_t cpu_context
 				ksem_post(sbi_hsm_locks + mhartid);
 
 				clint_hart_msip_ctls[mhartid] = 0;
+				//DEBUG_print("Started\n");
 				switch_context(hart_contexts + USE_HART_COUNT + mhartid);
 			} else if (command.command == HARTCMD_REMOTE_FENCE_I) {
-	      __asm__ __volatile__ ("fence.i");
+				__asm__ __volatile__ ("fence.i");
 				clint_hart_msip_ctls[mhartid] = 0;
 			} else if (command.command == HARTCMD_REMOTE_SFENCE_VMA) {
-	      // TODO: Specific parameters
-	      __asm__ __volatile__ ("sfence.vma zero, zero");
+				// TODO: Specific parameters
+				__asm__ __volatile__ ("sfence.vma zero, zero");
 				clint_hart_msip_ctls[mhartid] = 0;
 			} else if (command.command == HARTCMD_REMOTE_SFENCE_VMA_ASID) {
-	      // TODO: Specific parameters
-	      __asm__ __volatile__ ("sfence.vma zero, zero");
+				// TODO: Specific parameters
+				__asm__ __volatile__ ("sfence.vma zero, zero");
 				clint_hart_msip_ctls[mhartid] = 0;
-			}
-		} else if (cause_value == 5) {
-			__asm__ __volatile__ ("csrc mip, %0" : : "r" (0x20));
-			DEBUG_print("S-Mode Timer Int received in M-Mode\n");
-			uintRL_t mie;
-			__asm__ __volatile__ ("csrr %0, mie" : "=r" (mie));
-			if (mie & 0x20) {
-				s_delegation_trampoline(cpu_context, 0);
+			} else if (command.command == HARTCMD_SMODE_SOFTINT) {
+				//__asm__ __volatile__ ("csrw mcause, %0" : : "r" (0x8000000000000001)); // 0x8000_0000_0000_0001
+				__asm__ __volatile__ ("csrs mip, %0" : : "r" (0x2));
+				clint_hart_msip_ctls[mhartid] = 0;
+				/*
+				DEBUG_print("\tHARTCMD_SMODE_SOFTINT [Hart: ");
+				itoa(mhartid, str, 30, 10, 0);
+				DEBUG_print(str);
+				DEBUG_print("]\n");
+				*/
+				return;
+			} else {
+				goto not_handled_interrupt;
 			}
 		} else if (cause_value == 7) {
-			__asm__ __volatile__ ("csrs mip, %0" : : "r" (0x20));
+			//DEBUG_print("M-Mode Timer Int received in M-Mode\n");
 			__asm__ __volatile__ ("csrc mie, %0" : : "r" (0x80));
-			//__asm__ __volatile__ ("csrc mcause, %0" : : "r" (cause_value));
-			//__asm__ __volatile__ ("csrs mcause, %0" : : "r" (5));
-			DEBUG_print("M-Mode Timer Int received in M-Mode\n");
-			//s_delegation_trampoline(cpu_context, 0);
+			if (sbi_hsm_states[mhartid] == SBI_HSM_STARTED) {
+				__asm__ __volatile__ ("csrs mip, %0" : : "r" (0x20));
+			}
 		} else {
+			not_handled_interrupt:
 			DEBUG_print("ESBI Interrupt!  Lower mcause bits: ");
-			char str[30];
 			itoa(cause_value, str, 30, 10, 0);
 			DEBUG_print(str);
 			DEBUG_print("\n");
@@ -278,15 +289,16 @@ void interrupt_c_handler(volatile CPU_Context* cpu_context, uintRL_t cpu_context
 		}
 	} else {
 		// Exception caused handler to fire
-		char str[30];
 		/*
+		char str[30];
 		DEBUG_print("[Hart: ");
 		itoa(mhartid, str, 30, 10, 0);
 		DEBUG_print(str);
-		DEBUG_print("] ");
+		DEBUG_print("]\n");
 		*/
 
 		if        (cause_value == 2) {
+			// Illegal Instruction Exception
 			uint32_t* instruction;
 			sintRL_t page_walk;
 			__asm__ __volatile__ ("csrr %0, satp" : "=r" (page_walk));
@@ -344,12 +356,17 @@ void interrupt_c_handler(volatile CPU_Context* cpu_context, uintRL_t cpu_context
 								uint64_t* mtime = (void*)(CLINT_BASE + CLINT_MTIME);
 								cpu_context->regs[dinst.rd] = *mtime;
 								cpu_context->regs[REG_PC] += 4;
+								//DEBUG_print("Return\n");
 								switch_context(cpu_context);
 							}
 						}
 					}
 				}
 			}
+			DEBUG_print("[Hart: ");
+			itoa(mhartid, str, 30, 10, 0);
+			DEBUG_print(str);
+			DEBUG_print("] ");
 			DEBUG_print("ESBI Exception!  Illegal instruction.\n");
 			DEBUG_print("\tPC: 0x");
 			itoa(cpu_context->regs[REG_PC], str, 30, -16, -8);
@@ -359,21 +376,26 @@ void interrupt_c_handler(volatile CPU_Context* cpu_context, uintRL_t cpu_context
 			itoa(*instruction, str, 30, -16, -8);
 			DEBUG_print(str);
 			DEBUG_print("\n");
+			idle_loop();
 		} else if (cause_value == 8) {
 			// User-Mode Environment Exception
+			/*
 			DEBUG_print("ESBI Trap Caught!  From: U-Mode.  Trap Handler: M-Mode\n");
 			DEBUG_print("\tPC: 0x");
 			itoa(cpu_context->regs[REG_PC], str, 30, -16, -8);
 			DEBUG_print(str);
 			DEBUG_print("\n");
+			*/
 			cpu_context->regs[REG_PC] += 4;
 		} else if (cause_value == 9) {
 			// Supervisor-Mode Environment Exception
-			DEBUG_print("ESBI Trap Caught!  From: S-Mode.  Trap Handler: M-Mode\n");
+			/*
+			DEBUG_print("\tESBI Trap Caught!  From: S-Mode.  Trap Handler: M-Mode\n");
 			DEBUG_print("\tPC: 0x");
 			itoa(cpu_context->regs[REG_PC], str, 30, -16, -8);
 			DEBUG_print(str);
 			DEBUG_print("\n");
+			*/
 			cpu_context->regs[REG_PC] += 4;
 
 			sintRL_t params[6];
@@ -388,21 +410,23 @@ void interrupt_c_handler(volatile CPU_Context* cpu_context, uintRL_t cpu_context
 			sbi_return = call_to_sbi(cpu_context->regs[REG_A7], cpu_context->regs[REG_A6], params);
 			cpu_context->regs[REG_A1] = sbi_return.value;
 			cpu_context->regs[REG_A0] = sbi_return.error;
-			return;
 		} else if (cause_value == 11) {
 			// Machine-Mode Environment Exception
+			/*
 			DEBUG_print("ESBI Trap Caught!  From: M-Mode.  Trap Handler: M-Mode\n");
 			DEBUG_print("\tPC: 0x");
 			itoa(cpu_context->regs[REG_PC], str, 30, -16, -8);
 			DEBUG_print(str);
 			DEBUG_print("\n");
+			*/
 			cpu_context->regs[REG_PC] += 4;
-		} else if (cause_value == 12) {
-			// Instuction Page Fault
-			s_delegation_trampoline(cpu_context, 0);
 		} else {
 			DEBUG_print("ESBI Exception!  Lower mcause bits: ");
 			itoa(cause_value, str, 30, 10, 0);
+			DEBUG_print(str);
+			DEBUG_print("\n");
+			DEBUG_print("\tHart ID: ");
+			itoa(mhartid, str, 30, -10, 0);
 			DEBUG_print(str);
 			DEBUG_print("\n");
 			DEBUG_print("\tPC: 0x");
@@ -411,6 +435,7 @@ void interrupt_c_handler(volatile CPU_Context* cpu_context, uintRL_t cpu_context
 			DEBUG_print("\n");
 			idle_loop();
 		}
+		//DEBUG_print("Return\n");
 	}
 	//idle_loop();
 	return;
@@ -464,6 +489,15 @@ void send_hart_command_que(uintRL_t hart_id, Hart_Command* command) {
 	hart_commands[hart_id] = *command;
 	clint_hart_msip_ctls[hart_id] = 1;
 	ksem_post(hart_command_que_locks + hart_id);
+	return;
+}
+
+void send_hart_command_lck(uintRL_t hart_id, Hart_Command* command) {
+	ksem_wait(hart_command_que_locks + hart_id);
+	volatile uint32_t* clint_hart_msip_ctls = (uint32_t*)CLINT_BASE;
+	while (clint_hart_msip_ctls[hart_id]) {}
+	hart_commands[hart_id] = *command;
+	clint_hart_msip_ctls[hart_id] = 1;
 	return;
 }
 

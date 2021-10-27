@@ -5,7 +5,7 @@ STRIP         := $(TUPLE)strip
 LDFLAGS       := -e my_entry_pt -Wl,-gc-sections -static
 DEFINES       := -D MM_FU540_C000
 CFLAGS        :=
-CFLAGS        := $(CFLAGS) -Wall -Wextra -Wno-unused-parameter # Turn on all buuld warnings.
+CFLAGS        := $(CFLAGS) -Wall -Wextra -Wno-unused-parameter # Set build warnings
 CFLAGS        := $(CFLAGS) -std=c99 # The standards to build to.
 CFLAGS        := $(CFLAGS) -march=rv64ia -mabi=lp64 # The build target architectural information.
 CFLAGS        := $(CFLAGS) -mcmodel=medany # The symbol relocation scheme.
@@ -39,6 +39,7 @@ KFILES        := $(KFILES) src/kernel/interrupts/context_switch_asm.o
 #  - SBI Commands
 KFILES        := $(KFILES) src/kernel/sbi_commands/base.o
 KFILES        := $(KFILES) src/kernel/sbi_commands/time.o
+KFILES        := $(KFILES) src/kernel/sbi_commands/ipi.o
 KFILES        := $(KFILES) src/kernel/sbi_commands/rfnc.o
 KFILES        := $(KFILES) src/kernel/sbi_commands/hsm.o
 

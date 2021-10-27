@@ -38,10 +38,26 @@ main_code:
 	li a0, 1
 	sw a0, 0x08(a1)
 	
-	find_my_string:
-	auipc a0, %pcrel_hi(my_string1)
-	addi a0, a0, %pcrel_lo(find_my_string)
+	1: auipc a0, %pcrel_hi(my_string1)
+	addi a0, a0, %pcrel_lo(1b)
+	mv s0, a0
+	1: auipc a0, %pcrel_hi(my_stringa)
+	addi a0, a0, %pcrel_lo(1b)
+	mv s1, a0
+	
 	call print_string
+	mv a0, s0
+	call print_string
+	
+	add zero, zero, zero
+	
+	ebreak
+	
+	add zero, zero, zero
+	
+	call print_string
+	
+	j loop
 	
 	li a7, 0x10
 	li a6, 3

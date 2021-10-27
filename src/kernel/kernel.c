@@ -232,6 +232,7 @@ void kmain() {
 	command.param0 |=             (1 << 15);
 	command.param0  = 0xb109;
 	command.param0  = 0;
+	command.param0  = (1 << 12);
 	send_hart_command_blk(1, &command);
 	
 	command.command = HARTCMD_SETINTERRUPTDELEGATION;
@@ -240,7 +241,7 @@ void kmain() {
 	command.param0 |=             (1 <<  8) | (1 <<  9);
 	command.param0  = 0x0222;
 	command.param0  = 0;
-	//command.param0  = (1 << 5);
+	command.param0  = (1 <<  1) | (1 <<  5);
 	send_hart_command_blk(1, &command);
 	
 	ksem_wait(sbi_hsm_locks + 1);

@@ -6,6 +6,7 @@
 #include "./inc/general_oper.h"
 #include "./sbi_commands/base.h"
 #include "./sbi_commands/time.h"
+#include "./sbi_commands/ipi.h"
 #include "./sbi_commands/rfnc.h"
 #include "./sbi_commands/hsm.h"
 #include "./debug.h"

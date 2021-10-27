@@ -286,7 +286,7 @@ s_delegation_trampoline:
 	ld  a0, 0x068(a0)
 	
 	# Finally: Jump and switch execution modes
-	sfence.vma
+	sfence.vma zero, zero
 	fence.i
 	mret
 	

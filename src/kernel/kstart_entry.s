@@ -68,7 +68,8 @@ setup_int_and_spin:
 	1: auipc a0, %pcrel_hi(hart_start_entry_handler)
 	addi a0, a0, %pcrel_lo(1b)
 	csrw mtvec, a0
-	li a0, 0x08
+	li a0, 0x0A
 	csrs mie, a0
+	li a0, 0x08
 	csrs mstatus, a0
 	j idle_loop

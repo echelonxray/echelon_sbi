@@ -24,6 +24,7 @@ struct sbiret sbi_send_ipi(unsigned long hart_mask, unsigned long hart_mask_base
 		if (hart_mask & 0x1) {
 			uintRL_t hartid = hart_mask_base + hart_count;
 			if (is_valid_hartid(hartid) == 0) {
+				DEBUG_print("SBI FAILURE: SEND_IPI\n");
 				struct sbiret retval;
 				retval.value = 0;
 				retval.error = SBI_ERR_INVALID_PARAM;
@@ -43,6 +44,8 @@ struct sbiret sbi_send_ipi(unsigned long hart_mask, unsigned long hart_mask_base
 			command.param0 = harts[i];
 			send_hart_command_que(harts[i], &command);
 			//send_hart_command_lck(harts[i], &command);
+		} else {
+			__asm__ __volatile__ ("csrs mip, %0" : : "r" (0x2));
 		}
 	}
 	/*

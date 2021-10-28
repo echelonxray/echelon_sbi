@@ -24,6 +24,7 @@ struct sbiret sbi_remote_fence_i(unsigned long hart_mask, unsigned long hart_mas
 		if (hart_mask & 0x1) {
 			uintRL_t hartid = hart_mask_base + hart_count;
 			if (is_valid_hartid(hartid) == 0) {
+				DEBUG_print("SBI FAILURE: Fence.I\n");
 				struct sbiret retval;
 				retval.value = 0;
 				retval.error = SBI_ERR_INVALID_PARAM;
@@ -79,6 +80,7 @@ struct sbiret sbi_remote_sfence_vma(unsigned long hart_mask, unsigned long hart_
 		if (hart_mask & 0x1) {
 			uintRL_t hartid = hart_mask_base + hart_count;
 			if (is_valid_hartid(hartid) == 0) {
+				DEBUG_print("SBI FAILURE: SFence.VMA\n");
 				struct sbiret retval;
 				retval.value = 0;
 				retval.error = SBI_ERR_INVALID_PARAM;
@@ -137,6 +139,7 @@ struct sbiret sbi_remote_sfence_vma_asid(unsigned long hart_mask, unsigned long 
 		if (hart_mask & 0x1) {
 			uintRL_t hartid = hart_mask_base + hart_count;
 			if (is_valid_hartid(hartid) == 0) {
+				DEBUG_print("SBI FAILURE: SFence.VMA_ASID\n");
 				struct sbiret retval;
 				retval.value = 0;
 				retval.error = SBI_ERR_INVALID_PARAM;
@@ -181,6 +184,7 @@ struct sbiret sbi_remote_sfence_vma_asid(unsigned long hart_mask, unsigned long 
 }
 
 struct sbiret sbi_remote_hfence_gvma_vmid(unsigned long hart_mask, unsigned long hart_mask_base, unsigned long start_addr, long size, unsigned long vmid) {
+	DEBUG_print("SBI FAILURE: HFence.GVMA_VMID\n");
 	struct sbiret retval;
 	retval.value = 0;
 	retval.error = SBI_ERR_NOT_SUPPORTED;
@@ -188,6 +192,7 @@ struct sbiret sbi_remote_hfence_gvma_vmid(unsigned long hart_mask, unsigned long
 }
 
 struct sbiret sbi_remote_hfence_gvma(unsigned long hart_mask, unsigned long hart_mask_base, unsigned long start_addr, long size) {
+	DEBUG_print("SBI FAILURE: HFence.GVMA\n");
 	struct sbiret retval;
 	retval.value = 0;
 	retval.error = SBI_ERR_NOT_SUPPORTED;
@@ -195,6 +200,7 @@ struct sbiret sbi_remote_hfence_gvma(unsigned long hart_mask, unsigned long hart
 }
 
 struct sbiret sbi_remote_hfence_vvma_asid(unsigned long hart_mask, unsigned long hart_mask_base, unsigned long start_addr, long size, unsigned long asid) {
+	DEBUG_print("SBI FAILURE: HFence.VVMA_ASID\n");
 	struct sbiret retval;
 	retval.value = 0;
 	retval.error = SBI_ERR_NOT_SUPPORTED;
@@ -202,6 +208,7 @@ struct sbiret sbi_remote_hfence_vvma_asid(unsigned long hart_mask, unsigned long
 }
 
 struct sbiret sbi_remote_hfence_vvma(unsigned long hart_mask, unsigned long hart_mask_base, unsigned long start_addr, long size) {
+	DEBUG_print("SBI FAILURE: HFence.VVMA\n");
 	struct sbiret retval;
 	retval.value = 0;
 	retval.error = SBI_ERR_NOT_SUPPORTED;

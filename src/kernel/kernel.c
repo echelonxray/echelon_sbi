@@ -7,6 +7,7 @@
 #include "./interrupts/context_switch.h"
 #include "./memalloc.h"
 #include "./kernel.h"
+#include "./kstart_entry.h"
 #include "./thread_locking.h"
 #include "./sbi_commands.h"
 #include "./globals.h"
@@ -18,16 +19,31 @@ extern volatile sint32_t* sbi_hsm_states;
 
 __thread uintRL_t mhartid;
 ksemaphore_t* hart_command_que_locks;
-uintRL_t dtb_location_a0;
 uintRL_t dtb_location_a1;
-uintRL_t dtb_location_a2;
-uintRL_t dtb_location_a3;
 uintRL_t hart_context_count;
 uintRL_t load_point;
 volatile CPU_Context* hart_contexts;
+volatile CPU_Context* hart_contexts_exception;
+volatile CPU_Context* hart_contexts_user;
 volatile Hart_Command* hart_commands;
 
-void kinit() {
+void test_funct(uintRL_t arg1, uintRL_t arg2, uintRL_t arg3) {
+	char buf[20];
+	DEBUG_print("arg1: 0x");
+	itoa(arg1, buf, 20, -16, -16);
+	DEBUG_print(buf);
+	DEBUG_print(" arg2: ");
+	itoa(arg2, buf, 20, -10, 0);
+	DEBUG_print(buf);
+	DEBUG_print(" arg3: ");
+	itoa(arg3, buf, 20, -10, 0);
+	DEBUG_print(buf);
+	DEBUG_print("\n");
+	idle_loop();
+	return;
+}
+
+void kinit(uintRL_t hartid) {
 	kallocinit(&KHEAP_START, &KHEAP_START + 0x10000);
 	//kalloc_pageinit(&KHEAP_START + 0x8000, &KHEAP_START + 0x8000 + 0x10000000);
 	
@@ -56,27 +72,14 @@ void kinit() {
 	uintRL_t tls_init_size = (uintRL_t)(&THI_tdata_END) - (uintRL_t)(&THI_tdata_START);
 	uintRL_t tls_null_size = (uintRL_t)(&THI_tbss_END) - (uintRL_t)(&THI_tbss_START);
 	uintRL_t tls_null_offt = (uintRL_t)(&THI_tbss_START) - (uintRL_t)(&THI_START);
-	hart_context_count = (TOTAL_HART_COUNT + (USE_HART_COUNT * 1));
+	hart_context_count = TOTAL_HART_COUNT * 3;
 	hart_contexts = kmalloc(hart_context_count * sizeof(CPU_Context));
-	
-	// Setup this hart's (Hart 0) context struct
-	void* ptr;
-	ptr = kmalloc(tls_size);
-	memcpy(ptr, &THI_tdata_START, tls_init_size);
-	memset(ptr + tls_null_offt, 0, tls_null_size);
-	clear_hart_context(hart_contexts + 0);
-	hart_contexts[0].context_id = 0;
-	hart_contexts[0].execution_mode = EM_M;
-	hart_contexts[0].regs[REG_TP] = (uintRL_t)ptr;
-	hart_contexts[0].regs[REG_SP] = (uintRL_t)&KISTACK_TOP;
-	// Now that we actually have TLS memory allocated and setup for this
-	// hart(M-Mode thread), set the Thread Pointer to it so that we can
-	// actually use it.
-	__asm__ __volatile__ ("mv tp, %0" : : "r" (ptr) : "memory");
-	mhartid = 0;
+	hart_contexts_exception = hart_contexts + TOTAL_HART_COUNT;
+	hart_contexts_user = hart_contexts_exception + TOTAL_HART_COUNT;
 	
 	// Setup the other hart's context structs
-	for (uintRL_t i = 1; i < TOTAL_HART_COUNT; i++) {
+	for (uintRL_t i = 0; i < TOTAL_HART_COUNT; i++) {
+		void* ptr;
 		ptr = kmalloc(tls_size);
 		memcpy(ptr, &THI_tdata_START, tls_init_size);
 		memset(ptr + tls_null_offt, 0, tls_null_size);
@@ -90,12 +93,34 @@ void kinit() {
 		// them from their current spinning/halted state.
 	}
 	
+	char buf[20];
+	DEBUG_print("Trac: 0x");
+	itoa((uintRL_t)(hart_contexts + 1), buf, 20, -16, -16);
+	DEBUG_print(buf);
+	DEBUG_print("\n");
+	DEBUG_print("Trac: 0x");
+	itoa(&(hart_contexts[1].regs[REG_SP]), buf, 20, -16, -16);
+	DEBUG_print(buf);
+	DEBUG_print("\n");
+	DEBUG_print("Trac: 0x");
+	itoa(hart_contexts[1].regs[REG_SP], buf, 20, -16, -16);
+	DEBUG_print(buf);
+	DEBUG_print("\n");
+	DEBUG_print("\n");
+	
+	__asm__ __volatile__ ("csrw mscratch, %0" : : "r" (hart_contexts_exception + hartid) : "memory");
+	
 	// Start and wait for other harts to initialize
 	volatile uint32_t* clint_hart_msip_ctls = (uint32_t*)CLINT_BASE;
-	for (uintRL_t i = 1; i < TOTAL_HART_COUNT; i++) {
+	for (uintRL_t i = 0; i < TOTAL_HART_COUNT; i++) {
 		clint_hart_msip_ctls[i] = 0x1;
 	}
-	for (uintRL_t i = 1; i < TOTAL_HART_COUNT; i++) {
+	
+	for (uintRL_t i = TOTAL_HART_COUNT; i < (TOTAL_HART_COUNT * 3); i++) {
+		clear_hart_context(hart_contexts + i);
+	}
+	
+	for (uintRL_t i = 0; i < TOTAL_HART_COUNT; i++) {
 		while (clint_hart_msip_ctls[i]) {}
 	}
 	
@@ -177,15 +202,26 @@ void kmain() {
 	DEBUG_print(buf);
 	DEBUG_print("\n");
 	
+	itoa(dtb_location_a1 >> 32, buf, 20, -16, 8);
+	DEBUG_print("    dtb_locati: 0x");
+	DEBUG_print(buf);
+	DEBUG_print("_");
+	itoa(dtb_location_a1 & 0xFFFFFFFF, buf, 20, -16, 8);
+	DEBUG_print(buf);
+	DEBUG_print("\n");
+	
 	DEBUG_print("\n");
 	
 	memcpy((void*)load_point, (void*)0x20000000, image_size);
 	
+	/*
 	clear_hart_context(hart_contexts + TOTAL_HART_COUNT + 0);
 	hart_contexts[TOTAL_HART_COUNT + 0].regs[REG_A0] = 1;
 	hart_contexts[TOTAL_HART_COUNT + 0].regs[REG_A1] = dtb_location_a1;
-	hart_contexts[TOTAL_HART_COUNT + 0].regs[REG_A2] = dtb_location_a2;
-	hart_contexts[TOTAL_HART_COUNT + 0].regs[REG_A3] = dtb_location_a3;
+	hart_contexts[TOTAL_HART_COUNT + 0].regs[REG_A2] = 0;
+	hart_contexts[TOTAL_HART_COUNT + 0].regs[REG_A3] = 0;
+	//hart_contexts[TOTAL_HART_COUNT + 0].regs[REG_A2] = dtb_location_a2;
+	//hart_contexts[TOTAL_HART_COUNT + 0].regs[REG_A3] = dtb_location_a3;
 	hart_contexts[TOTAL_HART_COUNT + 0].regs[REG_PC] = load_point;
 	hart_contexts[TOTAL_HART_COUNT + 0].context_id = TOTAL_HART_COUNT + 0;
 	hart_contexts[TOTAL_HART_COUNT + 0].execution_mode = EM_S;
@@ -219,7 +255,7 @@ void kmain() {
 		send_hart_command_blk(i, &command);
 		
 		command.command = HARTCMD_GETSSTATUS;
-		send_hart_command_blk(i, &command);
+		send_hart_command_ret(i, &command);
 		command.param0 &= ~((uintRL_t)0x2);
 		command.command = HARTCMD_SETSSTATUS;
 		send_hart_command_blk(i, &command);
@@ -227,20 +263,20 @@ void kmain() {
 	
 	command.command = HARTCMD_SETEXCEPTIONDELEGATION;
 	command.param0  = 0;
-	command.param0 |= (1 <<  0) | (1 <<  1) | (1 <<  2) | (1 <<  3) | (1 <<  4) | (1 <<  5) | (1 <<  6);
+	command.param0 |= (1 <<  0) | (1 <<  1) | (0 <<  2) | (1 <<  3) | (1 <<  4) | (1 <<  5) | (1 <<  6);
 	command.param0 |= (1 <<  7) | (1 <<  8) |                                     (1 << 12) | (1 << 13);
 	command.param0 |=             (1 << 15);
-	command.param0  = 0xb109;
-	command.param0  = 0;
-	command.param0  = (1 << 12);
+	//command.param0  = 0xb109;
+	//command.param0  = 0;
+	//command.param0  = (1 << 12);
 	send_hart_command_blk(1, &command);
 	
 	command.command = HARTCMD_SETINTERRUPTDELEGATION;
 	command.param0  = 0;
 	command.param0 |= (1 <<  0) | (1 <<  1) |                         (1 <<  4) | (1 <<  5)            ;
 	command.param0 |=             (1 <<  8) | (1 <<  9);
-	command.param0  = 0x0222;
-	command.param0  = 0;
+	//command.param0  = (1 <<  1) | (1 <<  2);
+	//command.param0  = 0;
 	command.param0  = (1 <<  1) | (1 <<  5);
 	send_hart_command_blk(1, &command);
 	
@@ -251,6 +287,15 @@ void kmain() {
 	command.command = HARTCMD_SWITCHCONTEXT;
 	command.param0 = (uintRL_t)(hart_contexts + TOTAL_HART_COUNT + 0);
 	send_hart_command_blk(1, &command);
+	*/
+	
+	DEBUG_print("--Start Hart--\n");	
+	Hart_Command command;
+	command.command = HARTCMD_STARTHART;
+	command.param0 = 1;
+	command.param1 = load_point;
+	command.param2 = dtb_location_a1;
+	send_hart_command_que(1, &command);
 	
 	//wait_by_spin();
 	

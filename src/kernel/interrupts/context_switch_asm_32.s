@@ -1,12 +1,12 @@
 .section .text
 
 .globl interrupt_entry_handler
-.globl hart_start_entry_handler
+.globl hart_init_handler
 .globl switch_context
 .globl s_delegation_trampoline
 
 .align 2, 0
-hart_start_entry_handler:
+hart_init_handler:
 	sfence.vma
 	fence.i
 	# Setup the Global Pointer
@@ -259,7 +259,7 @@ s_delegation_trampoline:
 	lw  t2, 0x028(a0) # Set  x7
 	lw  s0, 0x02C(a0) # Set  x8
 	lw  s1, 0x030(a0) # Set  x9
-	# Placeholder for " Set x10 " -- Actually saved below
+	# Placeholder for " Set x10 " -- Actually set below
 	lw  a1, 0x038(a0) # Set x11
 	lw  a2, 0x03C(a0) # Set x12
 	lw  a3, 0x040(a0) # Set x13

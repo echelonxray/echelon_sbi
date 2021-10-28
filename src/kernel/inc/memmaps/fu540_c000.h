@@ -25,7 +25,8 @@
 #define S54_H4_ITIM_BASE ((void*)0x01820000u)
 
 // CLINT
-#define CLINT_BASE ((void*)0x02000000u)
+#define CLINT_BASE 0x02000000
+//#define CLINT_BASE ((void*)0x02000000u)
 // Offsets
 #define CLINT_MSIPS (0x0000u)
 #define CLINT_H0_MSIP (0x0000u)

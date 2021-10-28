@@ -47,6 +47,7 @@ struct sbiret sbi_hart_start(unsigned long hartid, unsigned long start_addr, uns
 }
 
 struct sbiret sbi_hart_stop() {
+	DEBUG_print("SBI FAILURE: HSM_STOP\n");
 	ksem_wait(sbi_hsm_locks + mhartid);
 	sbi_hsm_states[mhartid] = SBI_HSM_STOPPED;
 	ksem_post(sbi_hsm_locks + mhartid);
@@ -58,6 +59,7 @@ struct sbiret sbi_hart_stop() {
 }
 
 struct sbiret sbi_hart_get_status(unsigned long hartid) {
+	DEBUG_print("SBI FAILURE: HSM_STATUS\n");
 	struct sbiret retval;
 	if (is_valid_hartid(hartid) == 0) {
 		retval.value = 0;
@@ -70,6 +72,7 @@ struct sbiret sbi_hart_get_status(unsigned long hartid) {
 }
 
 struct sbiret sbi_hart_suspend(uint32_t suspend_type, unsigned long resume_addr, unsigned long opaque) {
+	DEBUG_print("SBI FAILURE: HSM_SUSPEND\n");
 	struct sbiret retval;
 	retval.value = 0;
 	if (is_valid_phys_mem_addr(resume_addr, 2) == 0) {

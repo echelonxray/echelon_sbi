@@ -1,3 +1,5 @@
+#include "./../inc/memmap.h"
+
 #if   __riscv_xlen == 128
 	#error context_switch_asm_128.s is not implemented.  128-bit port required.
 #elif __riscv_xlen == 64

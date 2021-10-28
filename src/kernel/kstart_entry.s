@@ -11,35 +11,39 @@ my_entry_pt:
 	addi gp, gp, %pcrel_lo(1b)
 	.option pop
 	
-	# Spin/Halt all harts except for hart 0
-	csrr t0, mhartid
-	bne t0, zero, setup_int_and_spin
+	1: auipc a0, %pcrel_hi(hart_init_handler)
+	addi a0, a0, %pcrel_lo(1b)
+	csrw mtvec, a0
 	
-	1: auipc t1, %pcrel_hi(dtb_location_a0)
-	sd a0, %pcrel_lo(1b)(t1)
+	li a0, 0x08
+	csrw mscratch, zero
+	csrw mie, a0
+	csrs mstatus, a0
+	
+	# Spin/Halt all harts except for hart specified
+	li t1, 0
+	csrr a0, mhartid
+	bne a0, t1, idle_loop
+	
 	1: auipc t1, %pcrel_hi(dtb_location_a1)
 	sd a1, %pcrel_lo(1b)(t1)
-	1: auipc t1, %pcrel_hi(dtb_location_a2)
-	sd a2, %pcrel_lo(1b)(t1)
-	1: auipc t1, %pcrel_hi(dtb_location_a3)
-	sd a3, %pcrel_lo(1b)(t1)
 	
 	# Initialize global variables if needed
-	1: auipc a0, %pcrel_hi(INIT_DATA_PROGAMIMAGE_START)
-	addi a0, a0, %pcrel_lo(1b)
+	1: auipc t0, %pcrel_hi(INIT_DATA_PROGAMIMAGE_START)
+	addi t0, t0, %pcrel_lo(1b)
 	1: auipc a1, %pcrel_hi(INIT_DATA_RUNTIME_START)
 	addi a1, a1, %pcrel_lo(1b)
 	# If the addresses are different, the global variables
 	# are separate from the program binary.  Copy over
 	# the image of to initialized values to memory in order
 	# to initialize the global variables in RAM.
-	beq a0, a1, 2f
+	beq t0, a1, 2f
 	1: auipc a2, %pcrel_hi(INIT_DATA_RUNTIME_END)
 	addi a2, a2, %pcrel_lo(1b)
 	3: beq a1, a2, 2f
-	lb a3, (a0)
+	lb a3, (t0)
 	sb a3, (a1)
-	addi a0, a0, 1
+	addi t0, t0, 1
 	addi a1, a1, 1
 	j 3b
 	2:
@@ -61,15 +65,4 @@ my_entry_pt:
 
 idle_loop:
 	wfi
-	j idle_loop
-
-setup_int_and_spin:
-	# Setup the interrupt vector
-	1: auipc a0, %pcrel_hi(hart_start_entry_handler)
-	addi a0, a0, %pcrel_lo(1b)
-	csrw mtvec, a0
-	li a0, 0x0A
-	csrs mie, a0
-	li a0, 0x08
-	csrs mstatus, a0
 	j idle_loop

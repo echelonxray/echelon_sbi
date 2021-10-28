@@ -136,7 +136,6 @@ struct sbiret call_to_sbi(sintRL_t EID, sintRL_t FID, sintRL_t* params) {
 			return sbir;
 		} else if (FID == SBI_HSM_HART_STOP) {
 			// Stop Hart
-			//DEBUG_print("\tStop Hart\n");
 			return sbi_hart_stop();
 		} else if (FID == SBI_HSM_GET_HART_STATUS) {
 			// Get Hart Power Status

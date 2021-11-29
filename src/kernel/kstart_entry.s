@@ -11,6 +11,8 @@ my_entry_pt:
 	addi gp, gp, %pcrel_lo(1b)
 	.option pop
 	
+	mv t0, a0
+	
 	1: auipc a0, %pcrel_hi(hart_init_handler)
 	addi a0, a0, %pcrel_lo(1b)
 	csrw mtvec, a0
@@ -25,8 +27,18 @@ my_entry_pt:
 	csrr a0, mhartid
 	bne a0, t1, idle_loop
 	
-	1: auipc t1, %pcrel_hi(dtb_location_a1)
+	1: auipc t1, %pcrel_hi(init_reg_a0)
+	sd t0, %pcrel_lo(1b)(t1)
+	1: auipc t1, %pcrel_hi(init_reg_a1)
 	sd a1, %pcrel_lo(1b)(t1)
+	1: auipc t1, %pcrel_hi(init_reg_a2)
+	sd a2, %pcrel_lo(1b)(t1)
+	1: auipc t1, %pcrel_hi(init_reg_a3)
+	sd a3, %pcrel_lo(1b)(t1)
+	1: auipc t1, %pcrel_hi(init_reg_a4)
+	sd a4, %pcrel_lo(1b)(t1)
+	1: auipc t1, %pcrel_hi(init_reg_a5)
+	sd a5, %pcrel_lo(1b)(t1)
 	
 	# Initialize global variables if needed
 	1: auipc t0, %pcrel_hi(INIT_DATA_PROGAMIMAGE_START)

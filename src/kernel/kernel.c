@@ -13,13 +13,63 @@
 #include "./globals.h"
 #include "./debug.h"
 
+/** Expected value of info magic ('OSBI' ascii string in hex) */
+#define FW_DYNAMIC_INFO_MAGIC_VALUE     0x4942534f
+// 0x  01 23 45 67  89 AB CD EF
+// 0x  EF CD AB 89  67 45 23 01
+
+// 0x  4F 53 42 49  00 00 00 00
+// 0x  00 00 00 00  49 42 53 4F
+
+/** Maximum supported info version */
+#define FW_DYNAMIC_INFO_VERSION         0x2
+
+/** Possible next mode values */
+#define FW_DYNAMIC_INFO_NEXT_MODE_U     0x0
+#define FW_DYNAMIC_INFO_NEXT_MODE_S     0x1
+#define FW_DYNAMIC_INFO_NEXT_MODE_M     0x3
+
+struct fw_dynamic_info {
+	/** Info magic */
+	uintRL_t magic;
+	/** Info version */
+	uintRL_t version;
+	/** Next booting stage address */
+	uintRL_t next_addr;
+	/** Next booting stage mode */
+	uintRL_t next_mode;
+	/** Options for OpenSBI library */
+	uintRL_t options;
+	/**
+	 * Preferred boot HART id
+	 *
+	 * It is possible that the previous booting stage uses same link
+	 * address as the FW_DYNAMIC firmware. In this case, the relocation
+	 * lottery mechanism can potentially overwrite the previous booting
+	 * stage while other HARTs are still running in the previous booting
+	 * stage leading to boot-time crash. To avoid this boot-time crash,
+	 * the previous booting stage can specify last HART that will jump
+	 * to the FW_DYNAMIC firmware as the preferred boot HART.
+	 *
+	 * To avoid specifying a preferred boot HART, the previous booting
+	 * stage can set it to -1UL which will force the FW_DYNAMIC firmware
+	 * to use the relocation lottery mechanism.
+	 */
+	uintRL_t boot_hart;
+};
+
 extern void* mem_block_end;
 extern ksemaphore_t* sbi_hsm_locks;
 extern volatile sint32_t* sbi_hsm_states;
 
 __thread uintRL_t mhartid;
 ksemaphore_t* hart_command_que_locks;
-uintRL_t dtb_location_a1;
+uintRL_t init_reg_a0;
+uintRL_t init_reg_a1;
+uintRL_t init_reg_a2;
+uintRL_t init_reg_a3;
+uintRL_t init_reg_a4;
+uintRL_t init_reg_a5;
 uintRL_t hart_context_count;
 uintRL_t load_point;
 volatile CPU_Context* hart_contexts;
@@ -93,6 +143,7 @@ void kinit(uintRL_t hartid) {
 		// them from their current spinning/halted state.
 	}
 	
+	/*
 	char buf[20];
 	DEBUG_print("Trac: 0x");
 	itoa((uintRL_t)(hart_contexts + 1), buf, 20, -16, -16);
@@ -107,6 +158,7 @@ void kinit(uintRL_t hartid) {
 	DEBUG_print(buf);
 	DEBUG_print("\n");
 	DEBUG_print("\n");
+	*/
 	
 	__asm__ __volatile__ ("csrw mscratch, %0" : : "r" (hart_contexts_exception + hartid) : "memory");
 	
@@ -162,8 +214,64 @@ void kmain() {
 		uint32_t res3;
 	};
 	
+	unsigned char* byte = (void*)(init_reg_a2);
+	DEBUG_print("0x  ");
+	for (uintRL_t i = 0; i < 8; i++) {
+		char buf[20];
+		itoa(byte[i], buf, 20, -16, 2);
+		DEBUG_print(buf);
+		DEBUG_print(" ");
+	}
+	for (uintRL_t i = 8; i < 16; i++) {
+		DEBUG_print(" ");
+		char buf[20];
+		itoa(byte[i], buf, 20, -16, 2);
+		DEBUG_print(buf);
+	}
+	DEBUG_print("\n");
+	
+	DEBUG_print("\n");
 	struct kboot_header* bkh = (void*)(0x20000000);
+	DEBUG_print("TraceA\n");
+	if (init_reg_a2) {
+		DEBUG_print("TraceB\n");
+		struct fw_dynamic_info fw_dyninfo;
+		memcpy(&fw_dyninfo, (void*)init_reg_a2, sizeof(uintRL_t));
+		if (fw_dyninfo.magic == FW_DYNAMIC_INFO_MAGIC_VALUE) {
+			DEBUG_print("TraceC\n");
+			memcpy(&fw_dyninfo, (void*)init_reg_a2, sizeof(struct fw_dynamic_info));
+			bkh = (void*)(fw_dyninfo.next_addr);
+		}
+	}
+	DEBUG_print("\n");
+	
 	char buf[20];
+	itoa(init_reg_a2 >> 32, buf, 20, -16, 8);
+	DEBUG_print("        reg_a2: 0x");
+	DEBUG_print(buf);
+	DEBUG_print("_");
+	itoa(init_reg_a2 & 0xFFFFFFFF, buf, 20, -16, 8);
+	DEBUG_print(buf);
+	DEBUG_print("\n");
+	
+	struct fw_dynamic_info* fw_dyninfo = (void*)(init_reg_a2);
+	itoa(fw_dyninfo->magic >> 32, buf, 20, -16, 8);
+	DEBUG_print("         magic: 0x");
+	DEBUG_print(buf);
+	DEBUG_print("_");
+	itoa(fw_dyninfo->magic & 0xFFFFFFFF, buf, 20, -16, 8);
+	DEBUG_print(buf);
+	DEBUG_print("\n");
+	
+	itoa((uintRL_t)bkh >> 32, buf, 20, -16, 8);
+	DEBUG_print("kernel_locatio: 0x");
+	DEBUG_print(buf);
+	DEBUG_print("_");
+	itoa((uintRL_t)bkh & 0xFFFFFFFF, buf, 20, -16, 8);
+	DEBUG_print(buf);
+	DEBUG_print("\n");
+	
+	DEBUG_print("\n");
 	itoa(bkh->text_offset_b, buf, 20, -16, 8);
 	DEBUG_print("bkh.text_offse: 0x");
 	DEBUG_print(buf);
@@ -202,26 +310,71 @@ void kmain() {
 	DEBUG_print(buf);
 	DEBUG_print("\n");
 	
-	itoa(dtb_location_a1 >> 32, buf, 20, -16, 8);
+	itoa(init_reg_a1 >> 32, buf, 20, -16, 8);
 	DEBUG_print("    dtb_locati: 0x");
 	DEBUG_print(buf);
 	DEBUG_print("_");
-	itoa(dtb_location_a1 & 0xFFFFFFFF, buf, 20, -16, 8);
+	itoa(init_reg_a1 & 0xFFFFFFFF, buf, 20, -16, 8);
 	DEBUG_print(buf);
 	DEBUG_print("\n");
 	
 	DEBUG_print("\n");
 	
-	memcpy((void*)load_point, (void*)0x20000000, image_size);
+	itoa(init_reg_a0 >> 32, buf, 20, -16, 8);
+	DEBUG_print("            a0: 0x");
+	DEBUG_print(buf);
+	DEBUG_print("_");
+	itoa(init_reg_a0 & 0xFFFFFFFF, buf, 20, -16, 8);
+	DEBUG_print(buf);
+	DEBUG_print("\n");
+	itoa(init_reg_a1 >> 32, buf, 20, -16, 8);
+	DEBUG_print("            a1: 0x");
+	DEBUG_print(buf);
+	DEBUG_print("_");
+	itoa(init_reg_a1 & 0xFFFFFFFF, buf, 20, -16, 8);
+	DEBUG_print(buf);
+	DEBUG_print("\n");
+	itoa(init_reg_a2 >> 32, buf, 20, -16, 8);
+	DEBUG_print("            a2: 0x");
+	DEBUG_print(buf);
+	DEBUG_print("_");
+	itoa(init_reg_a2 & 0xFFFFFFFF, buf, 20, -16, 8);
+	DEBUG_print(buf);
+	DEBUG_print("\n");
+	itoa(init_reg_a3 >> 32, buf, 20, -16, 8);
+	DEBUG_print("            a3: 0x");
+	DEBUG_print(buf);
+	DEBUG_print("_");
+	itoa(init_reg_a3 & 0xFFFFFFFF, buf, 20, -16, 8);
+	DEBUG_print(buf);
+	DEBUG_print("\n");
+	itoa(init_reg_a4 >> 32, buf, 20, -16, 8);
+	DEBUG_print("            a4: 0x");
+	DEBUG_print(buf);
+	DEBUG_print("_");
+	itoa(init_reg_a4 & 0xFFFFFFFF, buf, 20, -16, 8);
+	DEBUG_print(buf);
+	DEBUG_print("\n");
+	itoa(init_reg_a5 >> 32, buf, 20, -16, 8);
+	DEBUG_print("            a5: 0x");
+	DEBUG_print(buf);
+	DEBUG_print("_");
+	itoa(init_reg_a5 & 0xFFFFFFFF, buf, 20, -16, 8);
+	DEBUG_print(buf);
+	DEBUG_print("\n");
+	
+	DEBUG_print("\n");
+	
+	memcpy((void*)load_point, bkh, image_size);
 	
 	/*
 	clear_hart_context(hart_contexts + TOTAL_HART_COUNT + 0);
 	hart_contexts[TOTAL_HART_COUNT + 0].regs[REG_A0] = 1;
-	hart_contexts[TOTAL_HART_COUNT + 0].regs[REG_A1] = dtb_location_a1;
+	hart_contexts[TOTAL_HART_COUNT + 0].regs[REG_A1] = init_reg_a1;
 	hart_contexts[TOTAL_HART_COUNT + 0].regs[REG_A2] = 0;
 	hart_contexts[TOTAL_HART_COUNT + 0].regs[REG_A3] = 0;
-	//hart_contexts[TOTAL_HART_COUNT + 0].regs[REG_A2] = dtb_location_a2;
-	//hart_contexts[TOTAL_HART_COUNT + 0].regs[REG_A3] = dtb_location_a3;
+	//hart_contexts[TOTAL_HART_COUNT + 0].regs[REG_A2] = init_reg_a2;
+	//hart_contexts[TOTAL_HART_COUNT + 0].regs[REG_A3] = init_reg_a3;
 	hart_contexts[TOTAL_HART_COUNT + 0].regs[REG_PC] = load_point;
 	hart_contexts[TOTAL_HART_COUNT + 0].context_id = TOTAL_HART_COUNT + 0;
 	hart_contexts[TOTAL_HART_COUNT + 0].execution_mode = EM_S;
@@ -294,7 +447,7 @@ void kmain() {
 	command.command = HARTCMD_STARTHART;
 	command.param0 = 1;
 	command.param1 = load_point;
-	command.param2 = dtb_location_a1;
+	command.param2 = init_reg_a1;
 	send_hart_command_que(1, &command);
 	
 	//wait_by_spin();

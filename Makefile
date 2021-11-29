@@ -95,16 +95,16 @@ prog-%.elf.strip: prog-%.elf
 	$(OBJCPY) -O ihex $^ $@
 
 emu:
-	qemu-system-riscv64 -cpu sifive-u54 -smp 5 -bios ./prog-emu.elf.strip.bin -M sifive_u -m 1G -serial stdio -display none -device loader,file=./ignore/kernel,addr=0x20000000
+	qemu-system-riscv64 -cpu sifive-u54 -smp 5 -bios ./prog-emu.elf.strip.bin -kernel ./ignore/kernel -M sifive_u -m 1G -serial stdio -display none
 
 emu-debug:
-	qemu-system-riscv64 -cpu sifive-u54 -smp 5 -bios ./prog-emu.elf.strip.bin -M sifive_u -m 1G -serial stdio -display none -device loader,file=./ignore/kernel,addr=0x20000000 -gdb tcp::1234 -S
+	qemu-system-riscv64 -cpu sifive-u54 -smp 5 -bios ./prog-emu.elf.strip.bin -kernel ./ignore/kernel -M sifive_u -m 1G -serial stdio -display none -gdb tcp::1234 -S
 
 emu-test:
-	qemu-system-riscv64 -cpu sifive-u54 -smp 5 -bios ./prog-emu.elf.strip.bin -M sifive_u -m 1G -serial stdio -display none -device loader,file=./test/test.out.strip.bin,addr=0x20000000
+	qemu-system-riscv64 -cpu sifive-u54 -smp 5 -bios ./prog-emu.elf.strip.bin -kernel ./test/test.out.strip.bin -M sifive_u -m 1G -serial stdio -display none
 
 emu-test-debug:
-	qemu-system-riscv64 -cpu sifive-u54 -smp 5 -bios ./prog-emu.elf.strip.bin -M sifive_u -m 1G -serial stdio -display none -device loader,file=./test/test.out.strip.bin,addr=0x20000000 -gdb tcp::1234 -S
+	qemu-system-riscv64 -cpu sifive-u54 -smp 5 -bios ./prog-emu.elf.strip.bin -kernel ./test/test.out.strip.bin -M sifive_u -m 1G -serial stdio -display none -gdb tcp::1234 -S
 
 emu-linux:
 	qemu-system-riscv64 -cpu sifive-u54 -smp 5 -kernel ./ignore/kernel -M sifive_u -m 1G -serial stdio -display none

@@ -5,6 +5,7 @@
 
 ksemaphore_t* sbi_hsm_locks;
 volatile sint32_t* sbi_hsm_states;
+
 extern __thread uintRL_t mhartid;
 extern volatile CPU_Context* hart_contexts;
 

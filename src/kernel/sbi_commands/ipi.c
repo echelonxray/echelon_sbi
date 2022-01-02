@@ -5,7 +5,6 @@
 #include "./../thread_locking.h"
 
 extern ksemaphore_t* hart_command_que_locks;
-
 extern __thread uintRL_t mhartid;
 
 struct sbiret sbi_send_ipi(unsigned long hart_mask, unsigned long hart_mask_base) {
@@ -20,6 +19,7 @@ struct sbiret sbi_send_ipi(unsigned long hart_mask, unsigned long hart_mask_base
 		}
 		goto iterate_the_harts;
 	}
+	
 	for (uintRL_t i = 0; i < 32; i++) {
 		if (hart_mask & 0x1) {
 			uintRL_t hartid = hart_mask_base + hart_count;

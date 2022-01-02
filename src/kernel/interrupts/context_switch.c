@@ -246,36 +246,9 @@ void exception_c_handler(volatile CPU_Context* cpu_context, uintRL_t cause_value
 
 	if        (cause_value == 2) {
 		// Illegal Instruction Exception
-		uint32_t* instruction;
-		sintRL_t page_walk;
-		__asm__ __volatile__ ("csrr %0, satp" : "=r" (page_walk));
-		if (((uintRL_t)page_walk >> 60) == 8) {
-			page_walk <<= 20;
-			page_walk >>= 8;
-			uintRL_t* page_ptr = 0;
-			page_ptr = (uint64_t*)page_walk;
-			page_walk = page_ptr[(cpu_context->regs[REG_PC] >> (12 + 9 + 9)) & 0x1FF];
-			uintRL_t shift_ammount = 12 + 9;
-			while ((page_walk & 0xF) == 1 && shift_ammount >= 12) {
-				page_walk <<= 10;
-				page_walk >>= 20;
-				page_walk <<= 12;
-				page_ptr = (uint64_t*)page_walk;
-				page_walk = page_ptr[(cpu_context->regs[REG_PC] >> shift_ammount) & 0x1FF];
-				shift_ammount -= 9;
-			}
-			page_walk <<= 10;
-			page_walk >>= 20;
-			page_walk <<= 12;
-			while (shift_ammount >= 12) {
-				page_walk |= cpu_context->regs[REG_PC] & (0x1FF << shift_ammount);
-				shift_ammount -= 9;
-			}
-			page_walk |= cpu_context->regs[REG_PC] & 0xFFF;
-			instruction = (uint32_t*)page_walk;
-		} else {
-			instruction = (uint32_t*)(cpu_context->regs[REG_PC]);
-		}
+		uintRL_t csr_satp;
+		__asm__ __volatile__ ("csrr %0, satp" : "=r" (csr_satp));
+		uint32_t* instruction = (void*)walk_pts(cpu_context->regs[REG_PC], csr_satp);
 		dec_inst dinst;
 		uintRL_t form = decode_instruction(*instruction, &dinst);
 		if (form) {
@@ -296,6 +269,7 @@ void exception_c_handler(volatile CPU_Context* cpu_context, uintRL_t cause_value
 			itoa(dinst.imm, str, 30, -16, -8);
 			DEBUG_print(str);
 			*/
+			/*
 			if (dinst.opcode == 0x73) {
 				if (dinst.funct3 == 0x2 || dinst.funct3 == 0x3 || dinst.funct3 == 0x6 || dinst.funct3 == 0x7) {
 					if (dinst.rs1 == 0 && dinst.rd != 0) {
@@ -309,6 +283,7 @@ void exception_c_handler(volatile CPU_Context* cpu_context, uintRL_t cause_value
 					}
 				}
 			}
+			*/
 		}
 		s_delegation_trampoline(cpu_context, 0);
 		/*
@@ -421,6 +396,116 @@ uintRL_t decode_instruction(uint32_t einst, dec_inst* dinst) {
 	}
 
 	return 0;
+}
+
+// This function assumes the PT structure is valid.  Do not call it if that is not guaranteed.
+// This function assumes the PT structures are not changed (Such as by other cores).
+// This function makes no security checks.  It assumes PTs structure is safe.  A malicious
+// kernel could exploit it.
+uintRL_t walk_pts(uintRL_t location, uintRL_t csr_satp) {
+	uintRL_t mem_addr;
+	
+#if   __riscv_xlen == 128
+	// 128-Bit XLEN
+	
+	#error "Virtual Memory parsing is not implemented for 128-bit XLEN"
+	
+#elif __riscv_xlen == 64
+	// 64-Bit XLEN
+	
+	sint64_t page_walk = (sint64_t)csr_satp;
+	// Is Virtual Memory Active?
+	if (((uintRL_t)page_walk >> 60) == 8) { // Sv39
+		// Shift to match PTE entry offset to ready for entry to the PT Walk loop
+		page_walk <<= 10;
+		
+		// Walk the PTs
+		uintRL_t shift_ammount = 9 + 9 + 12;
+		do {
+			// Correct Offset: Left Shift and then Right Arithmetic Shift for Sign Extension
+			page_walk <<= 10;
+			page_walk >>= 8;
+			
+			sint64_t* page_ptr = (sint64_t*)page_walk;
+			page_walk = page_ptr[(location >> shift_ammount) & 0x1FF];
+			shift_ammount -= 9;
+		} while ((page_walk & 0xF) == 1 && shift_ammount >= 12);
+		
+		// Correct Offset: Left Shift and then Right Arithmetic Shift for Sign Extension
+		// Clear the Lower 12 Bits: Over Right Shift by 12 and then Shift back Left by 12 Bits
+		page_walk <<= 10;
+		page_walk >>= 20;
+		page_walk <<= 12;
+		
+		// Is this a Superpage?
+		// Append the additional lower bits if so.
+		// Note: A Superpage is only valid per the RISC-V Privileged Specification if properly 
+		//       aligned.  If an omitted PPN is non-zero, the Superpage is considered misaligned.
+		//       This will cause the Hardware to raise a Page-Fault Exception.  Therefore, we 
+		//       do not need to clear them.  We can assume they are already set to 
+		//       zero in the page_walk variable and just Binary OR against it.
+		while (shift_ammount >= 12) {
+			page_walk |= (sint64_t)(location & (0x1FF << shift_ammount));
+			shift_ammount -= 9;
+		}
+		
+		// Binary OR the last 12 bits of the address to the computed physical memory page.
+		page_walk |= location & 0xFFF;
+		mem_addr = (uintRL_t)page_walk;
+	} else {
+		mem_addr = (uintRL_t)location;
+	}
+	
+#else
+	// 32-Bit XLEN
+	
+	// Get the inital value of the satp CSR
+	sint32_t page_walk = (sint32_t)csr_satp;
+	
+	// Is Virtual Memory Active?
+	if (((uintRL_t)page_walk >> 31) == 1) {
+		// Shift to match PTE entry offset to ready for entry to the PT Walk loop
+		page_walk <<= 10;
+		
+		// Walk the PTs
+		uintRL_t shift_ammount = 10 + 12;
+		do {
+			// Correct Offset: Left Shift and then Right Arithmetic Shift for Sign Extension
+			page_walk <<= 2;
+			page_walk >>= 0;
+			
+			sint32_t* page_ptr = (sint32_t*)page_walk;
+			page_walk = page_ptr[(location >> shift_ammount) & 0x3FF];
+			shift_ammount -= 10;
+		} while ((page_walk & 0xF) == 1 && shift_ammount >= 12);
+		
+		// Clear the Lower 12 Bits
+		// Correct Offset
+		page_walk >>= 10;
+		page_walk <<= 12;
+		
+		// Is this a Superpage?
+		// Append the additional lower bits if so.
+		// Note: A Superpage is only valid per the RISC-V Privileged Specification if properly 
+		//       aligned.  If an omitted PPN is non-zero, the Superpage is considered misaligned.
+		//       This will cause the Hardware to raise a Page-Fault Exception.  Therefore, we 
+		//       do not need to clear them.  We can assume they are already set to 
+		//       zero in the page_walk variable and just Binary OR against it.
+		while (shift_ammount >= 12) {
+			page_walk |= (sint32_t)(location & (0x3FF << shift_ammount));
+			shift_ammount -= 10;
+		}
+		
+		// Binary OR the last 12 bits of the address to the computed physical memory page.
+		page_walk |= location & 0xFFF;
+		mem_addr = (uintRL_t)page_walk;
+	} else {
+		mem_addr = (uintRL_t)location;
+	}
+	
+#endif
+	
+	return mem_addr;
 }
 
 void clear_hart_context(volatile CPU_Context* hart_context) {

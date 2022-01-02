@@ -57,7 +57,17 @@ struct sbiret call_to_sbi(sintRL_t EID, sintRL_t FID, sintRL_t* params) {
 			DEBUG_print(str);
 			DEBUG_print("\n");
 			*/
-			return sbi_set_timer(params[0]);
+			#if   __riscv_xlen == 128
+				#error "SBI Time Extension: Not supported on 128-bit XLEN"
+			#elif __riscv_xlen == 64
+				return sbi_set_timer(params[0]);
+			#else
+				uint64_t tmp_param;
+				tmp_param = (uint32_t)params[1];
+				tmp_param <<= 32;
+				tmp_param |= (uint32_t)params[0];
+				return sbi_set_timer(tmp_param);
+			#endif
 		}
 	} else if (EID == SBI_EXT_IPI) {
 		// IPI Extension

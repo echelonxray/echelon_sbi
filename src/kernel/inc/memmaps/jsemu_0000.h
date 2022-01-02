@@ -10,3 +10,8 @@
 #define UART_IE 0x10u
 #define UART_IP 0x14u
 #define UART_DIV 0x18u
+
+// UART
+#define CLINT_BASE 0x38000000
+#define CLINT_MTIMECMP 0x00u
+#define CLINT_MTIMECMPHI 0x04u

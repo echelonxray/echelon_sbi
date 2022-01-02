@@ -95,6 +95,7 @@ hart_init_handler:
 	ld a3, %pcrel_lo(1b)(a3)
 	add a3, a3, a5
 	csrw mscratch, a3
+	ld sp, 0x28(a1)
 	ld tp, 0x38(a1)
 	lui a2, %tprel_hi(mhartid)
 	add a2, a2, tp, %tprel_add(mhartid)
@@ -109,7 +110,7 @@ hart_init_handler:
 	ld  ra, 0x020(s0) # Set  x1
 	ld  sp, 0x028(s0) # Set  x2
 	ld  gp, 0x030(s0) # Set  x3
-	ld  tp, 0x038(s0) # Set  x4
+	#ld  tp, 0x038(s0) # Set  x4
 	ld  t0, 0x040(s0) # Set  x5
 	ld  t1, 0x048(s0) # Set  x6
 	ld  t2, 0x050(s0) # Set  x7

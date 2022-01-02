@@ -9,15 +9,53 @@
 hart_init_handler:
 	sfence.vma
 	fence.i
+	
+	# Save registers only if mscratch is already setup
+	csrrw s0, mscratch, s0
+	beq s0, zero, 2f
+	sw  ra, 0x010(s0) # Save  x1
+	sw  sp, 0x014(s0) # Save  x2
+	sw  gp, 0x018(s0) # Save  x3
+	sw  tp, 0x01C(s0) # Save  x4
+	sw  t0, 0x020(s0) # Save  x5
+	sw  t1, 0x024(s0) # Save  x6
+	sw  t2, 0x028(s0) # Save  x7
+	# Placeholder for " Save  x8 " -- Actually saved below
+	sw  s1, 0x030(s0) # Save  x9
+	sw  a0, 0x034(s0) # Save x10
+	sw  a1, 0x038(s0) # Save x11
+	sw  a2, 0x03C(s0) # Save x12
+	sw  a3, 0x040(s0) # Save x13
+	sw  a4, 0x044(s0) # Save x14
+	sw  a5, 0x048(s0) # Save x15
+	sw  a6, 0x04C(s0) # Save x16
+	sw  a7, 0x050(s0) # Save x17
+	sw  s2, 0x054(s0) # Save x18
+	sw  s3, 0x058(s0) # Save x19
+	sw  s4, 0x05C(s0) # Save x20
+	sw  s5, 0x060(s0) # Save x21
+	sw  s6, 0x064(s0) # Save x22
+	sw  s7, 0x068(s0) # Save x23
+	sw  s8, 0x06C(s0) # Save x24
+	sw  s9, 0x070(s0) # Save x25
+	sw s10, 0x074(s0) # Save x26
+	sw s11, 0x078(s0) # Save x27
+	sw  t3, 0x07C(s0) # Save x28
+	sw  t4, 0x080(s0) # Save x29
+	sw  t5, 0x084(s0) # Save x30
+	sw  t6, 0x088(s0) # Save x31
+	
+	# Save x8 -- Actually saved here
+	csrrw a0, mscratch, s0
+	sw  a0, 0x02C(s0)
+	2:
+	
 	# Setup the Global Pointer
 	.option push
 	.option norelax
 	1: auipc gp, %pcrel_hi(__global_pointer$)
 	addi gp, gp, %pcrel_lo(1b)
 	.option pop
-	
-	#li a0, 0x80
-	#csrs mie, a0
 	
 	csrr a0, mhartid
 	
@@ -28,42 +66,88 @@ hart_init_handler:
 	lw a2, %pcrel_lo(1b)(a2)
 	
 	li a3, 0
+	li a5, 0
 	2: # loop start
 	beq a2, a3, 3f # Error: mhartid not found in array
 	lw a4, 0x00(a1)
 	beq a0, a4, 2f
-	addi a1, a1, 0x8C
+	addi a1, a1, 0x08C
+	addi a5, a5, 0x08C
 	addi a3, a3, 1
 	j 2b
 	2: # loop end
 	
+	li a3, 0
+	li a4, 0
+	2: # loop start
+	beq a0, a3, 2f
+	addi a3, a3, 1
+	addi a4, a4, 4
+	j 2b
+	2: # loop end
+	
+	li a3, CLINT_BASE
+	#li a3, 0x02000000
+	add a3, a3, a4
+	sw zero, (a3)
+	
+	1: auipc a3, %pcrel_hi(hart_contexts_exception)
+	lw a3, %pcrel_lo(1b)(a3)
+	add a3, a3, a5
+	csrw mscratch, a3
 	lw sp, 0x14(a1)
 	lw tp, 0x1C(a1)
-	csrw mscratch, a1
-	mv a0, a3
+	lui a2, %tprel_hi(mhartid)
+	add a2, a2, tp, %tprel_add(mhartid)
+	sw a0, %tprel_lo(mhartid)(a2)
 	
-	# Find the cause of the interrupt
-	csrr a2, mcause
-	slti a1, a2, 0 # Save the interrupt flag in a1 (arg2)
-	not a4, zero
-	srli a4, a4, 1
-	and a2, a2, a4 # Save the cause value in a2 (arg3)
-	
-	#li a3, 1
-	#slli a4, a3, 8
-	#csrs medeleg, a4
-	
-	call hart_start_c_handler
-	#li a1, 3
-	#not a1, a1
-	#and a0, a0, a1
+	1: auipc a0, %pcrel_hi(interrupt_entry_handler)
+	addi a0, a0, %pcrel_lo(1b)
 	csrw mtvec, a0
+	
+	# Set registers only if mscratch was already setup
+	beq s0, zero, 2f
+	lw  ra, 0x010(s0) # Set  x1
+	lw  sp, 0x014(s0) # Set  x2
+	lw  gp, 0x018(s0) # Set  x3
+	#lw  tp, 0x01C(s0) # Set  x4
+	lw  t0, 0x020(s0) # Set  x5
+	lw  t1, 0x024(s0) # Set  x6
+	lw  t2, 0x028(s0) # Set  x7
+	# Placeholder for " Set  x8 " -- Actually set below
+	lw  s1, 0x030(s0) # Set  x9
+	lw  a0, 0x034(s0) # Set x10
+	lw  a1, 0x038(s0) # Set x11
+	lw  a2, 0x03C(s0) # Set x12
+	lw  a3, 0x040(s0) # Set x13
+	lw  a4, 0x044(s0) # Set x14
+	lw  a5, 0x048(s0) # Set x15
+	lw  a6, 0x04C(s0) # Set x16
+	lw  a7, 0x050(s0) # Set x17
+	lw  s2, 0x054(s0) # Set x18
+	lw  s3, 0x058(s0) # Set x19
+	lw  s4, 0x05C(s0) # Set x20
+	lw  s5, 0x060(s0) # Set x21
+	lw  s6, 0x064(s0) # Set x22
+	lw  s7, 0x068(s0) # Set x23
+	lw  s8, 0x06C(s0) # Set x24
+	lw  s9, 0x070(s0) # Set x25
+	lw s10, 0x074(s0) # Set x26
+	lw s11, 0x078(s0) # Set x27
+	lw  t3, 0x07C(s0) # Set x28
+	lw  t4, 0x080(s0) # Set x29
+	lw  t5, 0x084(s0) # Set x30
+	lw  t6, 0x088(s0) # Set x31
+	
+	# Set x8 -- Actually set here
+	lw  s0, 0x02C(s0)
+	2:
+	
 	sfence.vma
 	fence.i
 	mret
 	
-	3:
-	j idle_loop
+3: j idle_loop
 
 interrupt_entry_handler:
 	sfence.vma

@@ -84,6 +84,7 @@ typedef struct {
 	uintRL_t imm;
 } dec_inst;
 
+uintRL_t walk_pts(uintRL_t location, uintRL_t csr_satp);
 uintRL_t decode_instruction(uint32_t einst, dec_inst* dinst);
 void interrupt_c_handler(volatile CPU_Context* cpu_context, uintRL_t cause_value);
 void exception_c_handler(volatile CPU_Context* cpu_context, uintRL_t cause_value);

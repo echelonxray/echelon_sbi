@@ -5,7 +5,6 @@
 #include "./../thread_locking.h"
 
 extern ksemaphore_t* hart_command_que_locks;
-
 extern __thread uintRL_t mhartid;
 
 struct sbiret sbi_remote_fence_i(unsigned long hart_mask, unsigned long hart_mask_base) {

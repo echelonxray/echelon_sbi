@@ -48,7 +48,7 @@ KFILES        := $(KFILES) src/kernel/sbi_commands/hsm.o
 
 .PHONY: all rebuild clean supervisorspace emu emu-debug debug
 
-all: prog-emu.elf   prog-emu.elf.strip   prog-emu.elf.bin   prog-emu.elf.hex   prog-emu.elf.strip.bin   prog-emu.elf.strip.hex supervisorspace
+all: prog-emu.elf   prog-emu.elf.strip   prog-emu.elf.bin   prog-emu.elf.hex   prog-emu.elf.strip.bin   prog-emu.elf.strip.hex
 #    prog-metal.elf prog-metal.elf.strip prog-metal.elf.bin prog-metal.elf.hex prog-metal.elf.strip.bin prog-metal.elf.strip.hex
 
 rebuild: clean
@@ -56,10 +56,6 @@ rebuild: clean
 
 clean:
 	rm -f *.elf *.strip *.bin *.hex prog-partial.o prog-prerelax.o $(GFILES) $(KFILES)
-	$(MAKE) -C ./test clean
-
-supervisorspace:
-	$(MAKE) -C ./test all
 
 %.o: %.c
 	$(CC) $(CFLAGS) $(DEFINES) $^ -c -o $@

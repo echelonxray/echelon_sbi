@@ -13,41 +13,7 @@ hart_init_handler:
 	# Save registers only if mscratch is already setup
 	csrrw s0, mscratch, s0
 	beq s0, zero, 2f
-	sd  ra, 0x020(s0) # Save  x1
-	sd  sp, 0x028(s0) # Save  x2
-	sd  gp, 0x030(s0) # Save  x3
-	sd  tp, 0x038(s0) # Save  x4
-	sd  t0, 0x040(s0) # Save  x5
-	sd  t1, 0x048(s0) # Save  x6
-	sd  t2, 0x050(s0) # Save  x7
-	# Placeholder for " Save  x8 " -- Actually saved below
-	sd  s1, 0x060(s0) # Save  x9
-	sd  a0, 0x068(s0) # Save x10
-	sd  a1, 0x070(s0) # Save x11
-	sd  a2, 0x078(s0) # Save x12
-	sd  a3, 0x080(s0) # Save x13
-	sd  a4, 0x088(s0) # Save x14
-	sd  a5, 0x090(s0) # Save x15
-	sd  a6, 0x098(s0) # Save x16
-	sd  a7, 0x0A0(s0) # Save x17
-	sd  s2, 0x0A8(s0) # Save x18
-	sd  s3, 0x0B0(s0) # Save x19
-	sd  s4, 0x0B8(s0) # Save x20
-	sd  s5, 0x0C0(s0) # Save x21
-	sd  s6, 0x0C8(s0) # Save x22
-	sd  s7, 0x0D0(s0) # Save x23
-	sd  s8, 0x0D8(s0) # Save x24
-	sd  s9, 0x0E0(s0) # Save x25
-	sd s10, 0x0E8(s0) # Save x26
-	sd s11, 0x0F0(s0) # Save x27
-	sd  t3, 0x0F8(s0) # Save x28
-	sd  t4, 0x100(s0) # Save x29
-	sd  t5, 0x108(s0) # Save x30
-	sd  t6, 0x110(s0) # Save x31
-	
-	# Save x8 -- Actually saved here
-	csrrw a0, mscratch, s0
-	sd  a0, 0x058(s0)
+	SAVE_REGS_S0
 	2:
 	
 	# Setup the Global Pointer
@@ -60,16 +26,16 @@ hart_init_handler:
 	csrr a0, mhartid
 	
 	1: auipc a1, %pcrel_hi(hart_contexts)
-	ld a1, %pcrel_lo(1b)(a1)
+	LX a1, %pcrel_lo(1b)(a1)
 	
 	1: auipc a2, %pcrel_hi(hart_context_count)
-	ld a2, %pcrel_lo(1b)(a2)
+	LX a2, %pcrel_lo(1b)(a2)
 	
 	li a3, 0
 	li a5, 0
 	2: # loop start
 	beq a2, a3, 3f # Error: mhartid not found in array
-	ld a4, 0x00(a1)
+	LX a4, 0x00(a1)
 	beq a0, a4, 2f
 	addi a1, a1, 0x118
 	addi a5, a5, 0x118
@@ -92,14 +58,18 @@ hart_init_handler:
 	sw zero, (a3)
 	
 	1: auipc a3, %pcrel_hi(hart_contexts_exception)
-	ld a3, %pcrel_lo(1b)(a3)
+	LX a3, %pcrel_lo(1b)(a3)
 	add a3, a3, a5
 	csrw mscratch, a3
-	ld sp, 0x28(a1)
-	ld tp, 0x38(a1)
+	LX sp, 0x28(a1)
+	LX tp, 0x38(a1)
+	beq s0, zero, 2f
+	SX sp, 0x28(s0)
+	SX tp, 0x38(s0)
+	2:
 	lui a2, %tprel_hi(mhartid)
 	add a2, a2, tp, %tprel_add(mhartid)
-	sd a0, %tprel_lo(mhartid)(a2)
+	SX a0, %tprel_lo(mhartid)(a2)
 	
 	1: auipc a0, %pcrel_hi(interrupt_entry_handler)
 	addi a0, a0, %pcrel_lo(1b)
@@ -107,40 +77,7 @@ hart_init_handler:
 	
 	# Save registers only if mscratch was already setup
 	beq s0, zero, 2f
-	ld  ra, 0x020(s0) # Set  x1
-	ld  sp, 0x028(s0) # Set  x2
-	ld  gp, 0x030(s0) # Set  x3
-	#ld  tp, 0x038(s0) # Set  x4
-	ld  t0, 0x040(s0) # Set  x5
-	ld  t1, 0x048(s0) # Set  x6
-	ld  t2, 0x050(s0) # Set  x7
-	# Placeholder for " Set  x8 " -- Actually set below
-	ld  s1, 0x060(s0) # Set  x9
-	ld  a0, 0x068(s0) # Set x10
-	ld  a1, 0x070(s0) # Set x11
-	ld  a2, 0x078(s0) # Set x12
-	ld  a3, 0x080(s0) # Set x13
-	ld  a4, 0x088(s0) # Set x14
-	ld  a5, 0x090(s0) # Set x15
-	ld  a6, 0x098(s0) # Set x16
-	ld  a7, 0x0A0(s0) # Set x17
-	ld  s2, 0x0A8(s0) # Set x18
-	ld  s3, 0x0B0(s0) # Set x19
-	ld  s4, 0x0B8(s0) # Set x20
-	ld  s5, 0x0C0(s0) # Set x21
-	ld  s6, 0x0C8(s0) # Set x22
-	ld  s7, 0x0D0(s0) # Set x23
-	ld  s8, 0x0D8(s0) # Set x24
-	ld  s9, 0x0E0(s0) # Set x25
-	ld s10, 0x0E8(s0) # Set x26
-	ld s11, 0x0F0(s0) # Set x27
-	ld  t3, 0x0F8(s0) # Set x28
-	ld  t4, 0x100(s0) # Set x29
-	ld  t5, 0x108(s0) # Set x30
-	ld  t6, 0x110(s0) # Set x31
-	
-	# Set x8 -- Actually set here
-	ld  s0, 0x058(s0)
+	LOAD_REGS_S0
 	2:
 	
 	sfence.vma

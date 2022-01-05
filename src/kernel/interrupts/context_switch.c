@@ -37,7 +37,7 @@ void interrupt_c_handler(volatile CPU_Context* cpu_context, uintRL_t cause_value
 		if        (command.command == HARTCMD_SWITCHCONTEXT) {
 			clint_hart_msip_ctls[mhartid] = 0;
 			switch_context((CPU_Context*)(command.param0));
-		} else if (command.command == HARTCMD_GETEXCEPTIONDELEGATION) {
+		} /* else if (command.command == HARTCMD_GETEXCEPTIONDELEGATION) {
 			__asm__ __volatile__ ("csrr %0, medeleg" : "=r" (hart_commands[mhartid].param0));
 			clint_hart_msip_ctls[mhartid] = 0;
 		} else if (command.command == HARTCMD_SETEXCEPTIONDELEGATION) {
@@ -153,51 +153,56 @@ void interrupt_c_handler(volatile CPU_Context* cpu_context, uintRL_t cause_value
 		} else if (command.command == HARTCMD_SETSSTATUS) {
 			clint_hart_msip_ctls[mhartid] = 0;
 			__asm__ __volatile__ ("csrw sstatus, %0" : : "r" (command.param0));
-		} else if (command.command == HARTCMD_STARTHART) {
+		} */ else if (command.command == HARTCMD_STARTHART) {
 			DEBUG_print("\tStarted: ");
 			itoa(mhartid, str, 30, 10, 0);
 			DEBUG_print(str);
 			DEBUG_print("\n");
 			//__asm__ __volatile__ ("csrs mie, %0" : : "r" (1 << 7));
-
+			
+#if   __riscv_xlen == 64 
 			__asm__ __volatile__ ("csrw pmpaddr0, %0" : : "r" (0x0000000080000000));
-			__asm__ __volatile__ ("csrw pmpaddr0, %0" : : "r" (load_point));
-			__asm__ __volatile__ ("csrw pmpaddr0, %0" : : "r" (0x003FFFFFFFFFFFFF));
+			__asm__ __volatile__ ("csrw pmpaddr1, %0" : : "r" (load_point));
+			__asm__ __volatile__ ("csrw pmpaddr2, %0" : : "r" (0x003FFFFFFFFFFFFF));
 			__asm__ __volatile__ ("csrw pmpcfg0, %0" : : "r" ((0x0F << 16) | (0x08 <<  8) | (0x0F <<  0)));
-
-			uintRL_t delegation;
+#endif
+			
+			//uintRL_t delegation;
+			/*
 			delegation  = 0;
 			delegation |= (1 <<  0) | (1 <<  1) | (0 <<  2) | (1 <<  3) | (1 <<  4) | (1 <<  5) | (1 <<  6);
 			delegation |= (1 <<  7) | (1 <<  8) |                                     (1 << 12) | (1 << 13);
 			delegation |=             (1 << 15);
+			*/
 			//delegation = 0;
 			//delegation = (1 << 12);
-			__asm__ __volatile__ ("csrw medeleg, %0" : : "r" (delegation));
+			__asm__ __volatile__ ("csrw medeleg, %0" : : "r" (0x000));
 			//delegation = 0;
 			//delegation |= (1 <<  0) | (1 <<  1) |                         (1 <<  4) | (1 <<  5)            ;
 			//delegation |=             (1 <<  8) | (1 <<  9);
-			delegation  = 0;
-			delegation |= (1 <<  1) | (1 <<  5);
-			__asm__ __volatile__ ("csrw mideleg, %0" : : "r" (delegation));
+			//delegation = 0;
+			//delegation |= (1 <<  1) | (1 <<  5);
+			__asm__ __volatile__ ("csrw mideleg, %0" : : "r" (0x222));
 			
 			//__asm__ __volatile__ ("csrc mie, %0" : : "r" (0x22));
 			//__asm__ __volatile__ ("csrw mie, zero");
-			__asm__ __volatile__ ("csrw mie, %0" : : "r" (0x2A));
-
+			__asm__ __volatile__ ("csrw mie, %0"     : : "r" (0x022));
+			
 			__asm__ __volatile__ ("csrw satp, zero");
-			__asm__ __volatile__ ("csrc mstatus, %0" : : "r" (1 << 1));
-
+			__asm__ __volatile__ ("csrc mstatus, %0" : : "r" (0x0A));
+			__asm__ __volatile__ ("csrs mstatus, %0" : : "r" (0x80));
+			
 			clear_hart_context(hart_contexts_user + mhartid);
 			hart_contexts_user[mhartid].context_id = mhartid;
 			hart_contexts_user[mhartid].execution_mode = EM_S;
 			hart_contexts_user[mhartid].regs[REG_PC] = command.param1;
 			hart_contexts_user[mhartid].regs[REG_A0] = command.param0;
 			hart_contexts_user[mhartid].regs[REG_A1] = command.param2;
-
+			
 			//ksem_wait(sbi_hsm_locks + mhartid);
 			sbi_hsm_states[mhartid] = SBI_HSM_STARTED;
 			//ksem_post(sbi_hsm_locks + mhartid);
-
+			
 			clint_hart_msip_ctls[mhartid] = 0;
 			//DEBUG_print("Started\n");
 			switch_context(hart_contexts_user + mhartid);
@@ -225,9 +230,17 @@ void interrupt_c_handler(volatile CPU_Context* cpu_context, uintRL_t cause_value
 			goto not_handled_interrupt;
 		}
 	} else if (cause_value == 7) {
+		// M-Mode Timer Interrupt
+		
 		//DEBUG_print("M-Mode Timer Int received in M-Mode\n");
 		__asm__ __volatile__ ("csrc mie, %0" : : "r" (0x80));
 		__asm__ __volatile__ ("csrs mip, %0" : : "r" (0x20));
+	} else if (cause_value == 11) {
+		// M-Mode External Interrupt
+		
+		DEBUG_print("M-Mode External Int received in M-Mode\n");
+		__asm__ __volatile__ ("csrc mie, %0" : : "r" (0x80));
+		//__asm__ __volatile__ ("csrs mip, %0" : : "r" (0x20));
 	} else {
 		not_handled_interrupt:
 		DEBUG_print("ESBI Interrupt!  Lower mcause bits: ");
@@ -243,9 +256,21 @@ void interrupt_c_handler(volatile CPU_Context* cpu_context, uintRL_t cause_value
 void exception_c_handler(volatile CPU_Context* cpu_context, uintRL_t cause_value) {
 	//char str[30];
 	//DEBUG_print("exception_c_handler\n");
-
-	if        (cause_value == 2) {
-		// Illegal Instruction Exception
+	
+	if (cpu_context->execution_mode == 3) {
+		__asm__ __volatile__ ("csrc mstatus, %0" : : "r" (0x8));
+		DEBUG_print("ESBI Trap Caught!  Exception!  From: M-Mode.  Trap Handler: M-Mode\n");
+		idle_loop();
+	}
+	
+	if        (cause_value == 0) {
+		// Instruction Address Misaligned
+		s_delegation_trampoline(cpu_context, 0, 0);
+	} else if (cause_value == 1) {
+		// Instruction Access Fault
+		s_delegation_trampoline(cpu_context, 0, 0);
+	} else if (cause_value == 2) {
+		// Illegal Instruction
 		uintRL_t csr_satp;
 		__asm__ __volatile__ ("csrr %0, satp" : "=r" (csr_satp));
 		uint32_t* instruction = (void*)walk_pts(cpu_context->regs[REG_PC], csr_satp);
@@ -285,7 +310,7 @@ void exception_c_handler(volatile CPU_Context* cpu_context, uintRL_t cause_value
 			}
 			*/
 		}
-		s_delegation_trampoline(cpu_context, 0);
+		s_delegation_trampoline(cpu_context, 0, *instruction);
 		/*
 		DEBUG_print("[Hart: ");
 		itoa(mhartid, str, 30, 10, 0);
@@ -302,6 +327,23 @@ void exception_c_handler(volatile CPU_Context* cpu_context, uintRL_t cause_value
 		DEBUG_print("\n");
 		idle_loop();
 		*/
+	} else if (cause_value == 3) {
+		// Breakpoint
+		__asm__ __volatile__ ("csrc mstatus, %0" : : "r" (0x8));
+		DEBUG_print("ESBI Trap Caught!  Breakpoint Exception.  Trap Handler: M-Mode\n");
+		idle_loop();
+	} else if (cause_value == 4) {
+		// Load Address Misaligned
+		s_delegation_trampoline(cpu_context, 0, 0);
+	} else if (cause_value == 5) {
+		// Load Access Fault
+		s_delegation_trampoline(cpu_context, 0, 0);
+	} else if (cause_value == 6) {
+		// Store/AMO Address Misaligned
+		s_delegation_trampoline(cpu_context, 0, 0);
+	} else if (cause_value == 7) {
+		// Store/AMO Access Fault
+		s_delegation_trampoline(cpu_context, 0, 0);
 	} else if (cause_value == 8) {
 		// User-Mode Environment Exception
 		/*
@@ -312,6 +354,7 @@ void exception_c_handler(volatile CPU_Context* cpu_context, uintRL_t cause_value
 		DEBUG_print("\n");
 		*/
 		cpu_context->regs[REG_PC] += 4;
+		s_delegation_trampoline(cpu_context, 0, 0);
 	} else if (cause_value == 9) {
 		// Supervisor-Mode Environment Exception
 		/*
@@ -337,31 +380,43 @@ void exception_c_handler(volatile CPU_Context* cpu_context, uintRL_t cause_value
 		cpu_context->regs[REG_A0] = sbi_return.error;
 	} else if (cause_value == 11) {
 		// Machine-Mode Environment Exception
+		__asm__ __volatile__ ("csrc mstatus, %0" : : "r" (0x8));
+		DEBUG_print("ESBI Trap Caught!  Machine-Mode Environment Exception.  Trap Handler: M-Mode\n");
+		idle_loop();
 		/*
-		DEBUG_print("ESBI Trap Caught!  From: M-Mode.  Trap Handler: M-Mode\n");
 		DEBUG_print("\tPC: 0x");
 		itoa(cpu_context->regs[REG_PC], str, 30, -16, -8);
 		DEBUG_print(str);
 		DEBUG_print("\n");
 		*/
 		cpu_context->regs[REG_PC] += 4;
+	} else if (cause_value == 12) {
+		// Instruction Page Fault
+		s_delegation_trampoline(cpu_context, 0, 0);
+	} else if (cause_value == 13) {
+		// Load Page Fault
+		s_delegation_trampoline(cpu_context, 0, 0);
+	} else if (cause_value == 15) {
+		// Store/AMO Page Fault
+		s_delegation_trampoline(cpu_context, 0, 0);
 	} else {
-		/*
+		__asm__ __volatile__ ("csrc mstatus, %0" : : "r" (0x8));
+		char buf[20];
+		memset(buf, 0, 20);
 		DEBUG_print("ESBI Exception!  Lower mcause bits: ");
-		itoa(cause_value, str, 30, 10, 0);
-		DEBUG_print(str);
+		itoa(cause_value, buf, 20, 10, 0);
+		DEBUG_print(buf);
 		DEBUG_print("\n");
 		DEBUG_print("\tHart ID: ");
-		itoa(mhartid, str, 30, -10, 0);
-		DEBUG_print(str);
+		itoa(mhartid, buf, 20, -10, 0);
+		DEBUG_print(buf);
 		DEBUG_print("\n");
 		DEBUG_print("\tPC: 0x");
-		itoa(cpu_context->regs[REG_PC], str, 30, -16, -8);
-		DEBUG_print(str);
+		itoa(cpu_context->regs[REG_PC], buf, 20, -16, -8);
+		DEBUG_print(buf);
 		DEBUG_print("\n");
 		idle_loop();
-		*/
-		s_delegation_trampoline(cpu_context, 0);
+		//s_delegation_trampoline(cpu_context, 0, 0);
 	}
 	
 	return;

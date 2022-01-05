@@ -9,7 +9,7 @@ struct sbiret sbi_set_timer(uint64_t stime_value) {
 	
 	uint32_t mtime;
 	uint32_t mtimeh;
-	__asm__ __volatile__ ("csrr %0, time" : "=r" (mtime));
+	__asm__ __volatile__ ("csrr %0, time"  : "=r" (mtime));
 	__asm__ __volatile__ ("csrr %0, timeh" : "=r" (mtimeh));
 	
 	uint64_t ttime;

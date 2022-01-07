@@ -160,7 +160,7 @@ void interrupt_c_handler(volatile CPU_Context* cpu_context, uintRL_t cause_value
 			DEBUG_print("\n");
 			//__asm__ __volatile__ ("csrs mie, %0" : : "r" (1 << 7));
 			
-#if   __riscv_xlen == 64 
+#ifdef MM_FU540_C000
 			__asm__ __volatile__ ("csrw pmpaddr0, %0" : : "r" (0x0000000080000000));
 			__asm__ __volatile__ ("csrw pmpaddr1, %0" : : "r" (load_point));
 			__asm__ __volatile__ ("csrw pmpaddr2, %0" : : "r" (0x003FFFFFFFFFFFFF));
@@ -186,7 +186,7 @@ void interrupt_c_handler(volatile CPU_Context* cpu_context, uintRL_t cause_value
 			
 			//__asm__ __volatile__ ("csrc mie, %0" : : "r" (0x22));
 			//__asm__ __volatile__ ("csrw mie, zero");
-			__asm__ __volatile__ ("csrw mie, %0"     : : "r" (0x022));
+			__asm__ __volatile__ ("csrw mie, %0"     : : "r" (0x02A));
 			
 			__asm__ __volatile__ ("csrw satp, zero");
 			__asm__ __volatile__ ("csrc mstatus, %0" : : "r" (0x0A));
@@ -232,7 +232,14 @@ void interrupt_c_handler(volatile CPU_Context* cpu_context, uintRL_t cause_value
 	} else if (cause_value == 7) {
 		// M-Mode Timer Interrupt
 		
-		//DEBUG_print("M-Mode Timer Int received in M-Mode\n");
+		/*
+		char buf[20];
+		DEBUG_print("\tM-Mode Timer Int received in M-Mode.  mhartid: ");
+		itoa(mhartid, buf, 20, 10, 0);
+		DEBUG_print(buf);
+		DEBUG_print("\n");
+		*/
+		
 		__asm__ __volatile__ ("csrc mie, %0" : : "r" (0x80));
 		__asm__ __volatile__ ("csrs mip, %0" : : "r" (0x20));
 	} else if (cause_value == 11) {
@@ -260,6 +267,154 @@ void exception_c_handler(volatile CPU_Context* cpu_context, uintRL_t cause_value
 	if (cpu_context->execution_mode == 3) {
 		__asm__ __volatile__ ("csrc mstatus, %0" : : "r" (0x8));
 		DEBUG_print("ESBI Trap Caught!  Exception!  From: M-Mode.  Trap Handler: M-Mode\n");
+		
+		char buf[20];
+		memset(buf, 0, 20);
+		DEBUG_print("ESBI Exception!  Lower mcause bits: ");
+		itoa(cause_value, buf, 20, 10, 0);
+		DEBUG_print(buf);
+		DEBUG_print("\n");
+		DEBUG_print("\tHart ID: ");
+		itoa(mhartid, buf, 20, -10, 0);
+		DEBUG_print(buf);
+		DEBUG_print("\n");
+		DEBUG_print("\tPC: 0x");
+		itoa(cpu_context->regs[REG_PC], buf, 20, -16, -8);
+		DEBUG_print(buf);
+		DEBUG_print("\n");
+		uint32_t* inst = (uint32_t*)(cpu_context->regs[REG_PC]);
+		DEBUG_print("\tINST: 0x");
+		itoa(*inst, buf, 20, -16, -8);
+		DEBUG_print(buf);
+		DEBUG_print("\n");
+		
+		DEBUG_print("\n");
+		
+		DEBUG_print("\t x1: ");
+		itoa(cpu_context->regs[REG_X1], buf, 20, -16, 0);
+		DEBUG_print(buf);
+		DEBUG_print("\n");
+		DEBUG_print("\t x2: ");
+		itoa(cpu_context->regs[REG_X2], buf, 20, -16, 0);
+		DEBUG_print(buf);
+		DEBUG_print("\n");
+		DEBUG_print("\t x3: ");
+		itoa(cpu_context->regs[REG_X3], buf, 20, -16, 0);
+		DEBUG_print(buf);
+		DEBUG_print("\n");
+		DEBUG_print("\t x4: ");
+		itoa(cpu_context->regs[REG_X4], buf, 20, -16, 0);
+		DEBUG_print(buf);
+		DEBUG_print("\n");
+		DEBUG_print("\t x5: ");
+		itoa(cpu_context->regs[REG_X5], buf, 20, -16, 0);
+		DEBUG_print(buf);
+		DEBUG_print("\n");
+		DEBUG_print("\t x6: ");
+		itoa(cpu_context->regs[REG_X6], buf, 20, -16, 0);
+		DEBUG_print(buf);
+		DEBUG_print("\n");
+		DEBUG_print("\t x7: ");
+		itoa(cpu_context->regs[REG_X7], buf, 20, -16, 0);
+		DEBUG_print(buf);
+		DEBUG_print("\n");
+		DEBUG_print("\t x8: ");
+		itoa(cpu_context->regs[REG_X8], buf, 20, -16, 0);
+		DEBUG_print(buf);
+		DEBUG_print("\n");
+		DEBUG_print("\t x9: ");
+		itoa(cpu_context->regs[REG_X9], buf, 20, -16, 0);
+		DEBUG_print(buf);
+		DEBUG_print("\n");
+		DEBUG_print("\tx10: ");
+		itoa(cpu_context->regs[REG_X10], buf, 20, -16, 0);
+		DEBUG_print(buf);
+		DEBUG_print("\n");
+		DEBUG_print("\tx11: ");
+		itoa(cpu_context->regs[REG_X11], buf, 20, -16, 0);
+		DEBUG_print(buf);
+		DEBUG_print("\n");
+		DEBUG_print("\tx12: ");
+		itoa(cpu_context->regs[REG_X12], buf, 20, -16, 0);
+		DEBUG_print(buf);
+		DEBUG_print("\n");
+		DEBUG_print("\tx13: ");
+		itoa(cpu_context->regs[REG_X13], buf, 20, -16, 0);
+		DEBUG_print(buf);
+		DEBUG_print("\n");
+		DEBUG_print("\tx14: ");
+		itoa(cpu_context->regs[REG_X14], buf, 20, -16, 0);
+		DEBUG_print(buf);
+		DEBUG_print("\n");
+		DEBUG_print("\tx15: ");
+		itoa(cpu_context->regs[REG_X15], buf, 20, -16, 0);
+		DEBUG_print(buf);
+		DEBUG_print("\n");
+		DEBUG_print("\tx16: ");
+		itoa(cpu_context->regs[REG_X16], buf, 20, -16, 0);
+		DEBUG_print(buf);
+		DEBUG_print("\n");
+		DEBUG_print("\tx17: ");
+		itoa(cpu_context->regs[REG_X17], buf, 20, -16, 0);
+		DEBUG_print(buf);
+		DEBUG_print("\n");
+		DEBUG_print("\tx18: ");
+		itoa(cpu_context->regs[REG_X18], buf, 20, -16, 0);
+		DEBUG_print(buf);
+		DEBUG_print("\n");
+		DEBUG_print("\tx19: ");
+		itoa(cpu_context->regs[REG_X19], buf, 20, -16, 0);
+		DEBUG_print(buf);
+		DEBUG_print("\n");
+		DEBUG_print("\tx20: ");
+		itoa(cpu_context->regs[REG_X20], buf, 20, -16, 0);
+		DEBUG_print(buf);
+		DEBUG_print("\n");
+		DEBUG_print("\tx21: ");
+		itoa(cpu_context->regs[REG_X21], buf, 20, -16, 0);
+		DEBUG_print(buf);
+		DEBUG_print("\n");
+		DEBUG_print("\tx22: ");
+		itoa(cpu_context->regs[REG_X22], buf, 20, -16, 0);
+		DEBUG_print(buf);
+		DEBUG_print("\n");
+		DEBUG_print("\tx23: ");
+		itoa(cpu_context->regs[REG_X23], buf, 20, -16, 0);
+		DEBUG_print(buf);
+		DEBUG_print("\n");
+		DEBUG_print("\tx24: ");
+		itoa(cpu_context->regs[REG_X24], buf, 20, -16, 0);
+		DEBUG_print(buf);
+		DEBUG_print("\n");
+		DEBUG_print("\tx25: ");
+		itoa(cpu_context->regs[REG_X25], buf, 20, -16, 0);
+		DEBUG_print(buf);
+		DEBUG_print("\n");
+		DEBUG_print("\tx26: ");
+		itoa(cpu_context->regs[REG_X26], buf, 20, -16, 0);
+		DEBUG_print(buf);
+		DEBUG_print("\n");
+		DEBUG_print("\tx27: ");
+		itoa(cpu_context->regs[REG_X27], buf, 20, -16, 0);
+		DEBUG_print(buf);
+		DEBUG_print("\n");
+		DEBUG_print("\tx28: ");
+		itoa(cpu_context->regs[REG_X28], buf, 20, -16, 0);
+		DEBUG_print(buf);
+		DEBUG_print("\n");
+		DEBUG_print("\tx29: ");
+		itoa(cpu_context->regs[REG_X29], buf, 20, -16, 0);
+		DEBUG_print(buf);
+		DEBUG_print("\n");
+		DEBUG_print("\tx30: ");
+		itoa(cpu_context->regs[REG_X30], buf, 20, -16, 0);
+		DEBUG_print(buf);
+		DEBUG_print("\n");
+		DEBUG_print("\tx31: ");
+		itoa(cpu_context->regs[REG_X31], buf, 20, -16, 0);
+		DEBUG_print(buf);
+		DEBUG_print("\n");
+		
 		idle_loop();
 	}
 	
@@ -277,6 +432,7 @@ void exception_c_handler(volatile CPU_Context* cpu_context, uintRL_t cause_value
 		dec_inst dinst;
 		uintRL_t form = decode_instruction(*instruction, &dinst);
 		if (form) {
+			//DEBUG_print("TraceA\n");
 			/*
 			DEBUG_print("\n\topcode: ");
 			itoa(dinst.opcode, str, 30, -16, -8);
@@ -294,11 +450,11 @@ void exception_c_handler(volatile CPU_Context* cpu_context, uintRL_t cause_value
 			itoa(dinst.imm, str, 30, -16, -8);
 			DEBUG_print(str);
 			*/
-			/*
 			if (dinst.opcode == 0x73) {
 				if (dinst.funct3 == 0x2 || dinst.funct3 == 0x3 || dinst.funct3 == 0x6 || dinst.funct3 == 0x7) {
 					if (dinst.rs1 == 0 && dinst.rd != 0) {
 						if (dinst.imm == 0xC01) {
+							//DEBUG_print("TraceB\n");
 							uint64_t* mtime = (void*)(CLINT_BASE + CLINT_MTIME);
 							cpu_context->regs[dinst.rd] = *mtime;
 							cpu_context->regs[REG_PC] += 4;
@@ -308,7 +464,6 @@ void exception_c_handler(volatile CPU_Context* cpu_context, uintRL_t cause_value
 					}
 				}
 			}
-			*/
 		}
 		s_delegation_trampoline(cpu_context, 0, *instruction);
 		/*
@@ -381,7 +536,11 @@ void exception_c_handler(volatile CPU_Context* cpu_context, uintRL_t cause_value
 	} else if (cause_value == 11) {
 		// Machine-Mode Environment Exception
 		__asm__ __volatile__ ("csrc mstatus, %0" : : "r" (0x8));
-		DEBUG_print("ESBI Trap Caught!  Machine-Mode Environment Exception.  Trap Handler: M-Mode\n");
+		DEBUG_print("ESBI Trap Caught!  Machine-Mode Environment Exception.  Trap Handler: M-Mode. mhartid: \n");
+		char buf[20];
+		itoa(mhartid, buf, 20, -10, 0);
+		DEBUG_print(buf);
+		DEBUG_print("\n");
 		idle_loop();
 		/*
 		DEBUG_print("\tPC: 0x");
@@ -424,7 +583,7 @@ void exception_c_handler(volatile CPU_Context* cpu_context, uintRL_t cause_value
 
 uintRL_t decode_instruction(uint32_t einst, dec_inst* dinst) {
 	uint32_t opcode = einst & 0x7F;
-
+	
 	einst >>= 7;
 	union {
 		struct encoded_type_r enc_r;
@@ -434,22 +593,24 @@ uintRL_t decode_instruction(uint32_t einst, dec_inst* dinst) {
 		struct encoded_type_u enc_u;
 		struct encoded_type_j enc_j;
 	} params;
+	//DEBUG_Print("Trace Start");
 	memcpy(&params, &einst, sizeof(uint32_t));
-
+	//DEBUG_print(" -- End\n");
+	
 	if (opcode == 0x73) {
 		// OpCode: SYSTEM, Encoding: I-Type
-
+		
 		dinst->opcode = opcode;
 		dinst->rd = params.enc_i.rd;
 		dinst->funct3 = params.enc_i.funct3;
 		dinst->rs1 = params.enc_i.rs1;
 		dinst->imm = params.enc_i.imm;
-
+		
 		dinst->rs2 = 0;
 		dinst->funct7 = 0;
 		return 2;
 	}
-
+	
 	return 0;
 }
 
@@ -481,7 +642,7 @@ uintRL_t walk_pts(uintRL_t location, uintRL_t csr_satp) {
 			page_walk <<= 10;
 			page_walk >>= 8;
 			
-			sint64_t* page_ptr = (sint64_t*)page_walk;
+			sint64_t* page_ptr = (sint64_t*)(page_walk & ~((uintRL_t)0xFFF));
 			page_walk = page_ptr[(location >> shift_ammount) & 0x1FF];
 			shift_ammount -= 9;
 		} while ((page_walk & 0xF) == 1 && shift_ammount >= 12);
@@ -529,7 +690,7 @@ uintRL_t walk_pts(uintRL_t location, uintRL_t csr_satp) {
 			page_walk <<= 2;
 			page_walk >>= 0;
 			
-			sint32_t* page_ptr = (sint32_t*)page_walk;
+			sint32_t* page_ptr = (sint32_t*)(page_walk & ~((uintRL_t)0xFFF));
 			page_walk = page_ptr[(location >> shift_ammount) & 0x3FF];
 			shift_ammount -= 10;
 		} while ((page_walk & 0xF) == 1 && shift_ammount >= 12);
@@ -579,7 +740,9 @@ void send_hart_command_que(uintRL_t hart_id, Hart_Command* command) {
 	while (clint_hart_msip_ctls[hart_id]) {}
 	hart_commands[hart_id] = *command;
 	clint_hart_msip_ctls[hart_id] = 1;
+	//DEBUG_Print("TRACE_K\n");
 	ksem_post(hart_command_que_locks + hart_id);
+	//DEBUG_Print("TRACE_L\n");
 	return;
 }
 
@@ -599,7 +762,9 @@ void send_hart_command_blk(uintRL_t hart_id, Hart_Command* command) {
 	hart_commands[hart_id] = *command;
 	clint_hart_msip_ctls[hart_id] = 1;
 	while (clint_hart_msip_ctls[hart_id]) {}
+	//DEBUG_Print("TRACE_I\n");
 	ksem_post(hart_command_que_locks + hart_id);
+	//DEBUG_Print("TRACE_J\n");
 	return;
 }
 
@@ -611,6 +776,8 @@ void send_hart_command_ret(uintRL_t hart_id, Hart_Command* command) {
 	clint_hart_msip_ctls[hart_id] = 1;
 	while (clint_hart_msip_ctls[hart_id]) {}
 	*command = hart_commands[hart_id];
+	//DEBUG_Print("TRACE_G\n");
 	ksem_post(hart_command_que_locks + hart_id);
+	//DEBUG_Print("TRACE_H\n");
 	return;
 }

@@ -46,7 +46,7 @@ hart_init_handler:
 	li a5, 0
 	2: # loop start
 	beq a2, a3, 3f # Error: mhartid not found in array
-	LX a4, 0x00(a1)
+	LX a4, (a1)
 	beq a0, a4, 2f
 	addi a1, a1, CT_SIZE
 	addi a5, a5, CT_SIZE
@@ -64,18 +64,15 @@ hart_init_handler:
 	2: # loop end
 	
 	li a3, CLINT_BASE
-	#li a3, 0x02000000
 	add a3, a3, a4
 	sw zero, (a3)
 	
-	1: auipc a3, %pcrel_hi(hart_contexts_exception)
+	1: auipc a3, %pcrel_hi(hart_contexts_user)
 	LX a3, %pcrel_lo(1b)(a3)
 	add a3, a3, a5
 	csrw mscratch, a3
-	LX sp, (CT_R_ST + (XLEN_BYTES * REG_SP))(a1)
 	LX tp, (CT_R_ST + (XLEN_BYTES * REG_TP))(a1)
 	beq s0, zero, 2f
-	SX sp, (CT_R_ST + (XLEN_BYTES * REG_SP))(s0)
 	SX tp, (CT_R_ST + (XLEN_BYTES * REG_TP))(s0)
 	2:
 	lui a2, %tprel_hi(mhartid)
@@ -153,12 +150,18 @@ interrupt_entry_handler:
 	LX tp, (CT_R_ST + (XLEN_BYTES * REG_TP))(t1)
 	
 	bne a2, zero, 2f # Jump if interrupt
+	/*
 	addi sp, sp, -0x800
 	1: auipc a3, %pcrel_hi(hart_contexts_exception)
-	addi a3, a3, %pcrel_lo(1b)
+	LX a3, %pcrel_lo(1b)(a3)
 	add a3, a3, a5
 	csrw mscratch, a3
-	csrsi mstatus, 0x8
+	LX a3, 0x08(a0)
+	li a4, 3
+	beq a3, a4, 4f
+	#csrsi mstatus, 0x8
+	4:
+	*/
 	call exception_c_handler
 	j 3f
 	

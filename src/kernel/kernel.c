@@ -65,14 +65,12 @@ extern volatile sint32_t* sbi_hsm_states;
 
 __thread uintRL_t mhartid;
 ksemaphore_t* hart_command_que_locks;
-/*
 uintRL_t init_reg_a0;
 uintRL_t init_reg_a1;
 uintRL_t init_reg_a2;
 uintRL_t init_reg_a3;
 uintRL_t init_reg_a4;
 uintRL_t init_reg_a5;
-*/
 uintRL_t load_point;
 uintRL_t hart_context_count;
 volatile CPU_Context* hart_contexts;
@@ -138,7 +136,7 @@ void kinit(uintRL_t hartid) {
 	__asm__ __volatile__ ("fence.i" : : : "memory");
 	
 	// Start and wait for harts to initialize
-	volatile uint32_t* clint_hart_msip_ctls = (uint32_t*)CLINT_BASE;
+	volatile uint32_t* clint_hart_msip_ctls = (void*)CLINT_BASE;
 	for (uintRL_t i = 0; i < TOTAL_HART_COUNT; i++) {
 		clint_hart_msip_ctls[i] = 0x1;
 	}
@@ -163,7 +161,7 @@ void kmain() {
 	
 	DEBUG_print("Hello, World!\n");
 	
-	return;
+	//return;
 	
 	struct __attribute__((__packed__)) kernel_boot_header {
 		uint32_t code0;
@@ -185,7 +183,8 @@ void kmain() {
 		uint32_t res3;
 	};
 	
-	/*
+	char buf[20];
+	
 	unsigned char* byte = (void*)(init_reg_a2);
 	DEBUG_print("0x  ");
 	for (uintRL_t i = 0; i < 8; i++) {
@@ -203,7 +202,7 @@ void kmain() {
 	DEBUG_print("\n");
 	
 	DEBUG_print("\n");
-	struct kboot_header* bkh = (void*)(0x20000000);
+	struct kernel_boot_header* bkh = 0;
 	if (init_reg_a2) {
 		struct fw_dynamic_info fw_dyninfo;
 		memcpy(&fw_dyninfo, (void*)init_reg_a2, sizeof(uintRL_t));
@@ -212,20 +211,75 @@ void kmain() {
 			bkh = (void*)(fw_dyninfo.next_addr);
 		}
 	}
+	if (bkh == 0) {
+		struct header_pwb_cpio {
+			uint16_t h_magic;
+			uint16_t h_dev;
+			uint16_t h_ino;
+			uint16_t h_mode;
+			uint16_t h_uid;
+			uint16_t h_gid;
+			uint16_t h_nlink;
+			uint16_t h_majmin;
+			uint32_t h_mtime;
+			uint16_t h_namesize;
+			uint32_t h_filesize;
+		};
+		struct header_pwb_cpio bin_header;
+	}
 	DEBUG_print("\n");
 	
-	char buf[20];
+	itoa(init_reg_a0 >> 32, buf, 20, -16, 8);
+	DEBUG_print("             reg_a0: 0x");
+	DEBUG_print(buf);
+	DEBUG_print("_");
+	itoa(init_reg_a0 & 0xFFFFFFFF, buf, 20, -16, 8);
+	DEBUG_print(buf);
+	DEBUG_print("\n");
+	
+	itoa(init_reg_a1 >> 32, buf, 20, -16, 8);
+	DEBUG_print("             reg_a1: 0x");
+	DEBUG_print(buf);
+	DEBUG_print("_");
+	itoa(init_reg_a1 & 0xFFFFFFFF, buf, 20, -16, 8);
+	DEBUG_print(buf);
+	DEBUG_print("\n");
+	
 	itoa(init_reg_a2 >> 32, buf, 20, -16, 8);
-	DEBUG_print("        reg_a2: 0x");
+	DEBUG_print("             reg_a2: 0x");
 	DEBUG_print(buf);
 	DEBUG_print("_");
 	itoa(init_reg_a2 & 0xFFFFFFFF, buf, 20, -16, 8);
 	DEBUG_print(buf);
 	DEBUG_print("\n");
 	
+	itoa(init_reg_a3 >> 32, buf, 20, -16, 8);
+	DEBUG_print("             reg_a3: 0x");
+	DEBUG_print(buf);
+	DEBUG_print("_");
+	itoa(init_reg_a3 & 0xFFFFFFFF, buf, 20, -16, 8);
+	DEBUG_print(buf);
+	DEBUG_print("\n");
+	
+	itoa(init_reg_a4 >> 32, buf, 20, -16, 8);
+	DEBUG_print("             reg_a4: 0x");
+	DEBUG_print(buf);
+	DEBUG_print("_");
+	itoa(init_reg_a4 & 0xFFFFFFFF, buf, 20, -16, 8);
+	DEBUG_print(buf);
+	DEBUG_print("\n");
+	
+	itoa(init_reg_a5 >> 32, buf, 20, -16, 8);
+	DEBUG_print("             reg_a5: 0x");
+	DEBUG_print(buf);
+	DEBUG_print("_");
+	itoa(init_reg_a5 & 0xFFFFFFFF, buf, 20, -16, 8);
+	DEBUG_print(buf);
+	DEBUG_print("\n");
+	
 	struct fw_dynamic_info* fw_dyninfo = (void*)(init_reg_a2);
 	itoa(fw_dyninfo->magic >> 32, buf, 20, -16, 8);
-	DEBUG_print("         magic: 0x");
+	DEBUG_print("              magic: 0x");
 	DEBUG_print(buf);
 	DEBUG_print("_");
 	itoa(fw_dyninfo->magic & 0xFFFFFFFF, buf, 20, -16, 8);
@@ -233,7 +287,7 @@ void kmain() {
 	DEBUG_print("\n");
 	
 	itoa((uintRL_t)bkh >> 32, buf, 20, -16, 8);
-	DEBUG_print("kernel_locatio: 0x");
+	DEBUG_print("     kernel_locatio: 0x");
 	DEBUG_print(buf);
 	DEBUG_print("_");
 	itoa((uintRL_t)bkh & 0xFFFFFFFF, buf, 20, -16, 8);
@@ -241,8 +295,9 @@ void kmain() {
 	DEBUG_print("\n");
 	
 	DEBUG_print("\n");
+	
 	itoa(bkh->text_offset_b, buf, 20, -16, 8);
-	DEBUG_print("bkh.text_offse: 0x");
+	DEBUG_print("     bkh.text_offse: 0x");
 	DEBUG_print(buf);
 	DEBUG_print("_");
 	itoa(bkh->text_offset_a, buf, 20, -16, 8);
@@ -250,7 +305,7 @@ void kmain() {
 	DEBUG_print("\n");
 	
 	itoa(bkh->image_size_b, buf, 20, -16, 8);
-	DEBUG_print("bkh.image_size: 0x");
+	DEBUG_print("     bkh.image_size: 0x");
 	DEBUG_print(buf);
 	DEBUG_print("_");
 	itoa(bkh->image_size_a, buf, 20, -16, 8);
@@ -263,8 +318,8 @@ void kmain() {
 	uintRL_t image_size = bkh->image_size_b;
 	image_size <<= 32;
 	image_size |= bkh->image_size_a;
-	*/
 	
+	/*
 	struct kernel_boot_header bkh;
 	// TODO: Locate kernel
 	// TODO: Load Kernel Header into "bkh"
@@ -275,8 +330,9 @@ void kmain() {
 	uintRL_t image_size = bkh.image_size_b;
 	image_size <<= 32;
 	image_size |= bkh.image_size_a;
+	*/
 	
-	load_point = &PROGAMIMAGE_START; // 0x8000_0000
+	load_point = (uintRL_t)&PROGAMIMAGE_START; // 0x8000_0000
 	load_point += text_offset;
 	if (load_point & 0x001FFFFF) {
 		load_point &= ~((uintRL_t)0x001FFFFF);
@@ -286,45 +342,42 @@ void kmain() {
 		load_point += 0x00200000; // 0x0020_0000
 	}
 	
-	char buf[20];
-	
-	itoa(load_point >> 32, buf, 20, -16, 8);
+	itoa((load_point >> 32) & 0xFFFFFFFF, buf, 20, -16, 8);
 	DEBUG_print("    Loading Kernel @ 0x");
 	DEBUG_print(buf);
 	DEBUG_print("_");
-	itoa(load_point & 0xFFFFFFFF, buf, 20, -16, 8);
+	itoa((load_point >>  0) & 0xFFFFFFFF, buf, 20, -16, 8);
 	DEBUG_print(buf);
 	DEBUG_print("\n");
 	
 	// TODO: Load Kernel into main memory per the location in load_point
 	
-	itoa(0 >> 32, buf, 20, -16, 8);
+	itoa((init_reg_a1 >> 32) & 0xFFFFFFFF, buf, 20, -16, 8);
 	DEBUG_print("       Loading DTB @ 0x");
 	DEBUG_print(buf);
 	DEBUG_print("_");
-	itoa(0 & 0xFFFFFFFF, buf, 20, -16, 8);
+	itoa((init_reg_a1 >>  0) & 0xFFFFFFFF, buf, 20, -16, 8);
 	DEBUG_print(buf);
 	DEBUG_print("\n");
 	
-	itoa(0 >> 32, buf, 20, -16, 8);
-	DEBUG_print("   Loading Initramfs @ 0x");
+	itoa((0 >> 32) & 0xFFFFFFFF, buf, 20, -16, 8);
+	DEBUG_print(" Loading Initramfs @ 0x");
 	DEBUG_print(buf);
 	DEBUG_print("_");
-	itoa(0 & 0xFFFFFFFF, buf, 20, -16, 8);
+	itoa((0 >>  0) & 0xFFFFFFFF, buf, 20, -16, 8);
 	DEBUG_print(buf);
 	DEBUG_print("\n");
 	
 	DEBUG_print("\n");
 	
-	//memcpy((void*)load_point, bkh, image_size);
+	memcpy((void*)load_point, bkh, image_size);
 	
 	DEBUG_print("--Start Hart--\n");
-	DEBUG_print("\n");
 	Hart_Command command;
 	command.command = HARTCMD_STARTHART;
 	command.param0 = 1;
 	command.param1 = load_point;
-	//command.param2 = init_reg_a1;
+	command.param2 = init_reg_a1;
 	send_hart_command_que(1, &command);
 	
 	return;

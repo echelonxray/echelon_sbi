@@ -3,14 +3,14 @@ CC            := $(TUPLE)gcc
 OBJCPY        := $(TUPLE)objcopy
 STRIP         := $(TUPLE)strip
 LDFLAGS       := -e my_entry_pt -Wl,-gc-sections -static
-#DEFINES       := -D MM_FU540_C000
-DEFINES       := -D MM_JSEMU_0000
+DEFINES       := -D MM_FU540_C000
+#DEFINES       := -D MM_JSEMU_0000
 CFLAGS        :=
 CFLAGS        := $(CFLAGS) -Wall -Wextra -Wno-unused-parameter # Set build warnings
 CFLAGS        := $(CFLAGS) -std=c99 # The standards to build to.
-#CFLAGS        := $(CFLAGS) -march=rv64ia -mabi=lp64 # The build target architectural information.
+CFLAGS        := $(CFLAGS) -march=rv64ia -mabi=lp64 # The build target architectural information.
 #CFLAGS        := $(CFLAGS) -march=rv32ia -mabi=ilp32 -mbig-endian # The build target architectural information.
-CFLAGS        := $(CFLAGS) -march=rv32ia -mabi=ilp32 -mlittle-endian # The build target architectural information.
+#CFLAGS        := $(CFLAGS) -march=rv32ia -mabi=ilp32 -mlittle-endian # The build target architectural information.
 CFLAGS        := $(CFLAGS) -mcmodel=medany # The symbol relocation scheme.
 CFLAGS        := $(CFLAGS) -O2 -mrelax -fno-stack-check -fno-stack-protector -fomit-frame-pointer # Optimizations to make and unused features/cruft.
 CFLAGS        := $(CFLAGS) -ftls-model=local-exec # Thread Local Store (TLS) scheme: Final TLS offsets are known at linktime. (local-exec)

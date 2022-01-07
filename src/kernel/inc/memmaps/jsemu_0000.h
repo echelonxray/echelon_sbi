@@ -1,4 +1,4 @@
-// Memory Map of the SiFive FE310-G002 SOC
+// Memory Map of my Custom Javascript Emulator
 
 // UART
 #define UART0_BASE ((void*)0x10000000u)
@@ -11,7 +11,7 @@
 #define UART_IP 0x14u
 #define UART_DIV 0x18u
 
-// UART
+// CLINT
 #define CLINT_BASE 0x38000000
 #define CLINT_MTIMECMP 0x00u
 #define CLINT_MTIMECMPHI 0x04u

@@ -37,123 +37,7 @@ void interrupt_c_handler(volatile CPU_Context* cpu_context, uintRL_t cause_value
 		if        (command.command == HARTCMD_SWITCHCONTEXT) {
 			clint_hart_msip_ctls[mhartid] = 0;
 			switch_context((CPU_Context*)(command.param0));
-		} /* else if (command.command == HARTCMD_GETEXCEPTIONDELEGATION) {
-			__asm__ __volatile__ ("csrr %0, medeleg" : "=r" (hart_commands[mhartid].param0));
-			clint_hart_msip_ctls[mhartid] = 0;
-		} else if (command.command == HARTCMD_SETEXCEPTIONDELEGATION) {
-			clint_hart_msip_ctls[mhartid] = 0;
-			__asm__ __volatile__ ("csrw medeleg, %0" : : "r" (command.param0));
-		} else if (command.command == HARTCMD_GETINTERRUPTDELEGATION) {
-			__asm__ __volatile__ ("csrr %0, mideleg" : "=r" (hart_commands[mhartid].param0));
-			clint_hart_msip_ctls[mhartid] = 0;
-		} else if (command.command == HARTCMD_SETINTERRUPTDELEGATION) {
-			clint_hart_msip_ctls[mhartid] = 0;
-			__asm__ __volatile__ ("csrw mideleg, %0" : : "r" (command.param0));
-		} else if (command.command == HARTCMD_GETPMPADDR) {
-			if        (command.param1 ==  0) {
-				__asm__ __volatile__ ("csrr %0, pmpaddr0 " : "=r" (hart_commands[mhartid].param0));
-			} else if (command.param1 ==  1) {
-				__asm__ __volatile__ ("csrr %0, pmpaddr1 " : "=r" (hart_commands[mhartid].param0));
-			} else if (command.param1 ==  2) {
-				__asm__ __volatile__ ("csrr %0, pmpaddr2 " : "=r" (hart_commands[mhartid].param0));
-			} else if (command.param1 ==  3) {
-				__asm__ __volatile__ ("csrr %0, pmpaddr3 " : "=r" (hart_commands[mhartid].param0));
-			} else if (command.param1 ==  4) {
-				__asm__ __volatile__ ("csrr %0, pmpaddr4 " : "=r" (hart_commands[mhartid].param0));
-			} else if (command.param1 ==  5) {
-				__asm__ __volatile__ ("csrr %0, pmpaddr5 " : "=r" (hart_commands[mhartid].param0));
-			} else if (command.param1 ==  6) {
-				__asm__ __volatile__ ("csrr %0, pmpaddr6 " : "=r" (hart_commands[mhartid].param0));
-			} else if (command.param1 ==  7) {
-				__asm__ __volatile__ ("csrr %0, pmpaddr7 " : "=r" (hart_commands[mhartid].param0));
-			} else if (command.param1 ==  8) {
-				__asm__ __volatile__ ("csrr %0, pmpaddr8 " : "=r" (hart_commands[mhartid].param0));
-			} else if (command.param1 ==  9) {
-				__asm__ __volatile__ ("csrr %0, pmpaddr9 " : "=r" (hart_commands[mhartid].param0));
-			} else if (command.param1 == 10) {
-				__asm__ __volatile__ ("csrr %0, pmpaddr10" : "=r" (hart_commands[mhartid].param0));
-			} else if (command.param1 == 11) {
-				__asm__ __volatile__ ("csrr %0, pmpaddr11" : "=r" (hart_commands[mhartid].param0));
-			} else if (command.param1 == 12) {
-				__asm__ __volatile__ ("csrr %0, pmpaddr12" : "=r" (hart_commands[mhartid].param0));
-			} else if (command.param1 == 13) {
-				__asm__ __volatile__ ("csrr %0, pmpaddr13" : "=r" (hart_commands[mhartid].param0));
-			} else if (command.param1 == 14) {
-				__asm__ __volatile__ ("csrr %0, pmpaddr14" : "=r" (hart_commands[mhartid].param0));
-			} else if (command.param1 == 15) {
-				__asm__ __volatile__ ("csrr %0, pmpaddr15" : "=r" (hart_commands[mhartid].param0));
-			}
-			clint_hart_msip_ctls[mhartid] = 0;
-		} else if (command.command == HARTCMD_SETPMPADDR) {
-			clint_hart_msip_ctls[mhartid] = 0;
-			if        (command.param1 ==  0) {
-				__asm__ __volatile__ ("csrw pmpaddr0, %0 " : : "r" (command.param0));
-			} else if (command.param1 ==  1) {
-				__asm__ __volatile__ ("csrw pmpaddr1, %0 " : : "r" (command.param0));
-			} else if (command.param1 ==  2) {
-				__asm__ __volatile__ ("csrw pmpaddr2, %0 " : : "r" (command.param0));
-			} else if (command.param1 ==  3) {
-				__asm__ __volatile__ ("csrw pmpaddr3, %0 " : : "r" (command.param0));
-			} else if (command.param1 ==  4) {
-				__asm__ __volatile__ ("csrw pmpaddr4, %0 " : : "r" (command.param0));
-			} else if (command.param1 ==  5) {
-				__asm__ __volatile__ ("csrw pmpaddr5, %0 " : : "r" (command.param0));
-			} else if (command.param1 ==  6) {
-				__asm__ __volatile__ ("csrw pmpaddr6, %0 " : : "r" (command.param0));
-			} else if (command.param1 ==  7) {
-				__asm__ __volatile__ ("csrw pmpaddr7, %0 " : : "r" (command.param0));
-			} else if (command.param1 ==  8) {
-				__asm__ __volatile__ ("csrw pmpaddr8, %0 " : : "r" (command.param0));
-			} else if (command.param1 ==  9) {
-				__asm__ __volatile__ ("csrw pmpaddr9, %0 " : : "r" (command.param0));
-			} else if (command.param1 == 10) {
-				__asm__ __volatile__ ("csrw pmpaddr10, %0" : : "r" (command.param0));
-			} else if (command.param1 == 11) {
-				__asm__ __volatile__ ("csrw pmpaddr11, %0" : : "r" (command.param0));
-			} else if (command.param1 == 12) {
-				__asm__ __volatile__ ("csrw pmpaddr12, %0" : : "r" (command.param0));
-			} else if (command.param1 == 13) {
-				__asm__ __volatile__ ("csrw pmpaddr13, %0" : : "r" (command.param0));
-			} else if (command.param1 == 14) {
-				__asm__ __volatile__ ("csrw pmpaddr14, %0" : : "r" (command.param0));
-			} else if (command.param1 == 15) {
-				__asm__ __volatile__ ("csrw pmpaddr15, %0" : : "r" (command.param0));
-			}
-		} else if (command.command == HARTCMD_GETPMPCFG) {
-			if        (command.param1 ==  0) {
-				__asm__ __volatile__ ("csrr %0, pmpcfg0" : "=r" (hart_commands[mhartid].param0));
-			} else if (command.param1 ==  1) {
-				__asm__ __volatile__ ("csrr %0, pmpcfg1" : "=r" (hart_commands[mhartid].param0));
-			} else if (command.param1 ==  2) {
-				__asm__ __volatile__ ("csrr %0, pmpcfg2" : "=r" (hart_commands[mhartid].param0));
-			} else if (command.param1 ==  3) {
-				__asm__ __volatile__ ("csrr %0, pmpcfg3" : "=r" (hart_commands[mhartid].param0));
-			}
-			clint_hart_msip_ctls[mhartid] = 0;
-		} else if (command.command == HARTCMD_SETPMPCFG) {
-			clint_hart_msip_ctls[mhartid] = 0;
-			if        (command.param1 ==  0) {
-				__asm__ __volatile__ ("csrw pmpcfg0, %0" : : "r" (command.param0));
-			} else if (command.param1 ==  1) {
-				__asm__ __volatile__ ("csrw pmpcfg1, %0" : : "r" (command.param0));
-			} else if (command.param1 ==  2) {
-				__asm__ __volatile__ ("csrw pmpcfg2, %0" : : "r" (command.param0));
-			} else if (command.param1 ==  3) {
-				__asm__ __volatile__ ("csrw pmpcfg3, %0" : : "r" (command.param0));
-			}
-		} else if (command.command == HARTCMD_GETSATP) {
-			__asm__ __volatile__ ("csrr %0, satp" : "=r" (hart_commands[mhartid].param0));
-			clint_hart_msip_ctls[mhartid] = 0;
-		} else if (command.command == HARTCMD_SETSATP) {
-			clint_hart_msip_ctls[mhartid] = 0;
-			__asm__ __volatile__ ("csrw satp, %0" : : "r" (command.param0));
-		} else if (command.command == HARTCMD_GETSSTATUS) {
-			__asm__ __volatile__ ("csrr %0, sstatus" : "=r" (hart_commands[mhartid].param0));
-			clint_hart_msip_ctls[mhartid] = 0;
-		} else if (command.command == HARTCMD_SETSSTATUS) {
-			clint_hart_msip_ctls[mhartid] = 0;
-			__asm__ __volatile__ ("csrw sstatus, %0" : : "r" (command.param0));
-		} */ else if (command.command == HARTCMD_STARTHART) {
+		} else if (command.command == HARTCMD_STARTHART) {
 			DEBUG_print("\tStarted: ");
 			itoa(mhartid, str, 30, 10, 0);
 			DEBUG_print(str);
@@ -167,25 +51,9 @@ void interrupt_c_handler(volatile CPU_Context* cpu_context, uintRL_t cause_value
 			__asm__ __volatile__ ("csrw pmpcfg0, %0" : : "r" ((0x0F << 16) | (0x08 <<  8) | (0x0F <<  0)));
 #endif
 			
-			//uintRL_t delegation;
-			/*
-			delegation  = 0;
-			delegation |= (1 <<  0) | (1 <<  1) | (0 <<  2) | (1 <<  3) | (1 <<  4) | (1 <<  5) | (1 <<  6);
-			delegation |= (1 <<  7) | (1 <<  8) |                                     (1 << 12) | (1 << 13);
-			delegation |=             (1 << 15);
-			*/
-			//delegation = 0;
-			//delegation = (1 << 12);
 			__asm__ __volatile__ ("csrw medeleg, %0" : : "r" (0x000));
-			//delegation = 0;
-			//delegation |= (1 <<  0) | (1 <<  1) |                         (1 <<  4) | (1 <<  5)            ;
-			//delegation |=             (1 <<  8) | (1 <<  9);
-			//delegation = 0;
-			//delegation |= (1 <<  1) | (1 <<  5);
 			__asm__ __volatile__ ("csrw mideleg, %0" : : "r" (0x222));
 			
-			//__asm__ __volatile__ ("csrc mie, %0" : : "r" (0x22));
-			//__asm__ __volatile__ ("csrw mie, zero");
 			__asm__ __volatile__ ("csrw mie, %0"     : : "r" (0x02A));
 			
 			__asm__ __volatile__ ("csrw satp, zero");
@@ -220,25 +88,11 @@ void interrupt_c_handler(volatile CPU_Context* cpu_context, uintRL_t cause_value
 		} else if (command.command == HARTCMD_SMODE_SOFTINT) {
 			clint_hart_msip_ctls[mhartid] = 0;
 			__asm__ __volatile__ ("csrs mip, %0" : : "r" (0x2));
-			/*
-			DEBUG_print("\tHARTCMD_SMODE_SOFTINT [Hart: ");
-			itoa(mhartid, str, 30, 10, 0);
-			DEBUG_print(str);
-			DEBUG_print("]\n");
-			*/
 		} else {
 			goto not_handled_interrupt;
 		}
 	} else if (cause_value == 7) {
 		// M-Mode Timer Interrupt
-		
-		/*
-		char buf[20];
-		DEBUG_print("\tM-Mode Timer Int received in M-Mode.  mhartid: ");
-		itoa(mhartid, buf, 20, 10, 0);
-		DEBUG_print(buf);
-		DEBUG_print("\n");
-		*/
 		
 		__asm__ __volatile__ ("csrc mie, %0" : : "r" (0x80));
 		__asm__ __volatile__ ("csrs mip, %0" : : "r" (0x20));
@@ -261,9 +115,6 @@ void interrupt_c_handler(volatile CPU_Context* cpu_context, uintRL_t cause_value
 }
 
 void exception_c_handler(volatile CPU_Context* cpu_context, uintRL_t cause_value) {
-	//char str[30];
-	//DEBUG_print("exception_c_handler\n");
-	
 	if (cpu_context->execution_mode == 3) {
 		__asm__ __volatile__ ("csrc mstatus, %0" : : "r" (0x8));
 		DEBUG_print("ESBI Trap Caught!  Exception!  From: M-Mode.  Trap Handler: M-Mode\n");
@@ -432,33 +283,13 @@ void exception_c_handler(volatile CPU_Context* cpu_context, uintRL_t cause_value
 		dec_inst dinst;
 		uintRL_t form = decode_instruction(*instruction, &dinst);
 		if (form) {
-			//DEBUG_print("TraceA\n");
-			/*
-			DEBUG_print("\n\topcode: ");
-			itoa(dinst.opcode, str, 30, -16, -8);
-			DEBUG_print(str);
-			DEBUG_print("\n\trd: ");
-			itoa(dinst.rd, str, 30, -16, -8);
-			DEBUG_print(str);
-			DEBUG_print("\n\tfunct3: ");
-			itoa(dinst.funct3, str, 30, -16, -8);
-			DEBUG_print(str);
-			DEBUG_print("\n\trs1: ");
-			itoa(dinst.rs1, str, 30, -16, -8);
-			DEBUG_print(str);
-			DEBUG_print("\n\timm: ");
-			itoa(dinst.imm, str, 30, -16, -8);
-			DEBUG_print(str);
-			*/
 			if (dinst.opcode == 0x73) {
 				if (dinst.funct3 == 0x2 || dinst.funct3 == 0x3 || dinst.funct3 == 0x6 || dinst.funct3 == 0x7) {
 					if (dinst.rs1 == 0 && dinst.rd != 0) {
 						if (dinst.imm == 0xC01) {
-							//DEBUG_print("TraceB\n");
 							uint64_t* mtime = (void*)(CLINT_BASE + CLINT_MTIME);
 							cpu_context->regs[dinst.rd] = *mtime;
 							cpu_context->regs[REG_PC] += 4;
-							//DEBUG_print("Return\n");
 							switch_context(cpu_context);
 						}
 					}
@@ -466,22 +297,6 @@ void exception_c_handler(volatile CPU_Context* cpu_context, uintRL_t cause_value
 			}
 		}
 		s_delegation_trampoline(cpu_context, 0, *instruction);
-		/*
-		DEBUG_print("[Hart: ");
-		itoa(mhartid, str, 30, 10, 0);
-		DEBUG_print(str);
-		DEBUG_print("] ");
-		DEBUG_print("ESBI Exception!  Illegal instruction.\n");
-		DEBUG_print("\tPC: 0x");
-		itoa(cpu_context->regs[REG_PC], str, 30, -16, -8);
-		DEBUG_print(str);
-		DEBUG_print("\n");
-		DEBUG_print("\tOpcode 4-Byte Value: 0x");
-		itoa(*instruction, str, 30, -16, -8);
-		DEBUG_print(str);
-		DEBUG_print("\n");
-		idle_loop();
-		*/
 	} else if (cause_value == 3) {
 		// Breakpoint
 		__asm__ __volatile__ ("csrc mstatus, %0" : : "r" (0x8));
@@ -501,24 +316,10 @@ void exception_c_handler(volatile CPU_Context* cpu_context, uintRL_t cause_value
 		s_delegation_trampoline(cpu_context, 0, 0);
 	} else if (cause_value == 8) {
 		// User-Mode Environment Exception
-		/*
-		DEBUG_print("ESBI Trap Caught!  From: U-Mode.  Trap Handler: M-Mode\n");
-		DEBUG_print("\tPC: 0x");
-		itoa(cpu_context->regs[REG_PC], str, 30, -16, -8);
-		DEBUG_print(str);
-		DEBUG_print("\n");
-		*/
 		cpu_context->regs[REG_PC] += 4;
 		s_delegation_trampoline(cpu_context, 0, 0);
 	} else if (cause_value == 9) {
 		// Supervisor-Mode Environment Exception
-		/*
-		DEBUG_print("\tESBI Trap Caught!  From: S-Mode.  Trap Handler: M-Mode\n");
-		DEBUG_print("\tPC: 0x");
-		itoa(cpu_context->regs[REG_PC], str, 30, -16, -8);
-		DEBUG_print(str);
-		DEBUG_print("\n");
-		*/
 		cpu_context->regs[REG_PC] += 4;
 
 		sintRL_t params[6];
@@ -542,12 +343,6 @@ void exception_c_handler(volatile CPU_Context* cpu_context, uintRL_t cause_value
 		DEBUG_print(buf);
 		DEBUG_print("\n");
 		idle_loop();
-		/*
-		DEBUG_print("\tPC: 0x");
-		itoa(cpu_context->regs[REG_PC], str, 30, -16, -8);
-		DEBUG_print(str);
-		DEBUG_print("\n");
-		*/
 		cpu_context->regs[REG_PC] += 4;
 	} else if (cause_value == 12) {
 		// Instruction Page Fault
@@ -575,7 +370,6 @@ void exception_c_handler(volatile CPU_Context* cpu_context, uintRL_t cause_value
 		DEBUG_print(buf);
 		DEBUG_print("\n");
 		idle_loop();
-		//s_delegation_trampoline(cpu_context, 0, 0);
 	}
 	
 	return;
@@ -593,9 +387,7 @@ uintRL_t decode_instruction(uint32_t einst, dec_inst* dinst) {
 		struct encoded_type_u enc_u;
 		struct encoded_type_j enc_j;
 	} params;
-	//DEBUG_Print("Trace Start");
 	memcpy(&params, &einst, sizeof(uint32_t));
-	//DEBUG_print(" -- End\n");
 	
 	if (opcode == 0x73) {
 		// OpCode: SYSTEM, Encoding: I-Type
@@ -740,9 +532,7 @@ void send_hart_command_que(uintRL_t hart_id, Hart_Command* command) {
 	while (clint_hart_msip_ctls[hart_id]) {}
 	hart_commands[hart_id] = *command;
 	clint_hart_msip_ctls[hart_id] = 1;
-	//DEBUG_Print("TRACE_K\n");
 	ksem_post(hart_command_que_locks + hart_id);
-	//DEBUG_Print("TRACE_L\n");
 	return;
 }
 
@@ -762,9 +552,7 @@ void send_hart_command_blk(uintRL_t hart_id, Hart_Command* command) {
 	hart_commands[hart_id] = *command;
 	clint_hart_msip_ctls[hart_id] = 1;
 	while (clint_hart_msip_ctls[hart_id]) {}
-	//DEBUG_Print("TRACE_I\n");
 	ksem_post(hart_command_que_locks + hart_id);
-	//DEBUG_Print("TRACE_J\n");
 	return;
 }
 
@@ -776,8 +564,6 @@ void send_hart_command_ret(uintRL_t hart_id, Hart_Command* command) {
 	clint_hart_msip_ctls[hart_id] = 1;
 	while (clint_hart_msip_ctls[hart_id]) {}
 	*command = hart_commands[hart_id];
-	//DEBUG_Print("TRACE_G\n");
 	ksem_post(hart_command_que_locks + hart_id);
-	//DEBUG_Print("TRACE_H\n");
 	return;
 }

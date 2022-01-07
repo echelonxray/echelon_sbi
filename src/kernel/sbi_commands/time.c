@@ -6,14 +6,6 @@ extern __thread uintRL_t mhartid;
 #endif
 
 struct sbiret sbi_set_timer(uint64_t stime_value) {
-	/*
-	char buf[20];
-	DEBUG_print("Set Timer: ");
-	itoa(mhartid, buf, 20, 10, 0);
-	DEBUG_print(buf);
-	DEBUG_print("\n");
-	*/
-	
 	__asm__ __volatile__ ("csrc mip, %0" : : "r" (0x20));
 	__asm__ __volatile__ ("csrs mie, %0" : : "r" (0x80));
 	

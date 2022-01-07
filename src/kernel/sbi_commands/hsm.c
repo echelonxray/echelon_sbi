@@ -13,9 +13,6 @@ struct sbiret sbi_hart_start(unsigned long hartid, unsigned long start_addr, uns
 	struct sbiret retval;
 	retval.value = 0;
 
-	//retval.error = SBI_ERR_FAILED;
-	//return retval;
-
 	if (is_valid_hartid(hartid) == 0) {
 		DEBUG_print("\tNot Started: Invalid HartID\n");
 		retval.error = SBI_ERR_INVALID_PARAM;
@@ -35,16 +32,12 @@ struct sbiret sbi_hart_start(unsigned long hartid, unsigned long start_addr, uns
 	sint32_t hart_state = sbi_hsm_states[hartid];
 	if (hart_state == SBI_HSM_STARTED || hart_state == SBI_HSM_START_PENDING || hart_state == SBI_HSM_RESUME_PENDING) {
 		DEBUG_print("\tNot Started: Already Available2\n");
-		//DEBUG_Print("TRACE_M\n");
 		ksem_post(sbi_hsm_locks + hartid);
-		//DEBUG_Print("TRACE_N\n");
 		retval.error = SBI_ERR_ALREADY_AVAILABLE;
 		return retval;
 	}
 	sbi_hsm_states[hartid] = SBI_HSM_START_PENDING;
-	//DEBUG_Print("TRACE_C\n");
 	ksem_post(sbi_hsm_locks + hartid);
-	//DEBUG_Print("TRACE_D\n");
 	Hart_Command command;
 	command.command = HARTCMD_STARTHART;
 	command.param0 = hartid;
@@ -59,9 +52,7 @@ struct sbiret sbi_hart_stop() {
 	DEBUG_print("SBI: HSM_STOP\n");
 	ksem_wait(sbi_hsm_locks + mhartid);
 	sbi_hsm_states[mhartid] = SBI_HSM_STOPPED;
-	//DEBUG_Print("TRACE_A\n");
 	ksem_post(sbi_hsm_locks + mhartid);
-	//DEBUG_Print("TRACE_B\n");
 	switch_context(hart_contexts + mhartid);
 	struct sbiret retval;
 	retval.value = 0;
@@ -96,9 +87,7 @@ struct sbiret sbi_hart_suspend(uint32_t suspend_type, unsigned long resume_addr,
 		hart_contexts[mhartid].regs[REG_A2] = resume_addr;
 		ksem_wait(sbi_hsm_locks + mhartid);
 		sbi_hsm_states[mhartid] = SBI_HSM_SUSPENDED;
-		//DEBUG_Print("TRACE_E\n");
 		ksem_post(sbi_hsm_locks + mhartid);
-		//DEBUG_Print("TRACE_F\n");
 		switch_context(hart_contexts + mhartid);
 	}
 	if        (suspend_type >= 0x00000001 && suspend_type <= 0x0FFFFFFF) {

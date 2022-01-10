@@ -144,11 +144,13 @@ void exception_c_handler(volatile CPU_Context* cpu_context, uintRL_t cause_value
 		itoa(cpu_context->regs[REG_PC], buf, 20, -16, -8);
 		DEBUG_print(buf);
 		DEBUG_print("\n");
+		/*
 		uint32_t* inst = (uint32_t*)(cpu_context->regs[REG_PC]);
 		DEBUG_print("\tINST: 0x");
 		itoa(*inst, buf, 20, -16, -8);
 		DEBUG_print(buf);
 		DEBUG_print("\n");
+		*/
 		
 		DEBUG_print("\n");
 		
@@ -277,6 +279,8 @@ void exception_c_handler(volatile CPU_Context* cpu_context, uintRL_t cause_value
 		DEBUG_print(buf);
 		DEBUG_print("\n");
 		
+		DEBUG_print("\n");
+		
 		/*
 		idle_loop();
 	}
@@ -335,7 +339,9 @@ void exception_c_handler(volatile CPU_Context* cpu_context, uintRL_t cause_value
 		// Breakpoint
 		__asm__ __volatile__ ("csrc mstatus, %0" : : "r" (0x8));
 		DEBUG_print("ESBI Trap Caught!  Breakpoint Exception.  Trap Handler: M-Mode\n");
-		idle_loop();
+		cpu_context->regs[REG_PC] += 4;
+		for (volatile uintRL_t i = 0; i < 100000000; i++) {}
+		//idle_loop();
 	} else if (cause_value == 4) {
 		// Load Address Misaligned
 		s_delegation_trampoline(cpu_context, 0, 0);

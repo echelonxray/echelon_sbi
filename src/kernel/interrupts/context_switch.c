@@ -124,9 +124,11 @@ void interrupt_c_handler(volatile CPU_Context* cpu_context, uintRL_t cause_value
 void exception_c_handler(volatile CPU_Context* cpu_context, uintRL_t cause_value) {
 	DEBUG_print("exception_c_handler\n");
 	
+	/*
 	if (cpu_context->execution_mode == 3) {
 		__asm__ __volatile__ ("csrc mstatus, %0" : : "r" (0x8));
 		DEBUG_print("ESBI Trap Caught!  Exception!  From: M-Mode.  Trap Handler: M-Mode\n");
+		*/
 		
 		char buf[20];
 		memset(buf, 0, 20);
@@ -275,8 +277,10 @@ void exception_c_handler(volatile CPU_Context* cpu_context, uintRL_t cause_value
 		DEBUG_print(buf);
 		DEBUG_print("\n");
 		
+		/*
 		idle_loop();
 	}
+	*/
 	/*
 	if (cpu_context->execution_mode == 1 && cause_value != 2 && cause_value != 9) {
 		__asm__ __volatile__ ("csrc mstatus, %0" : : "r" (0x8));

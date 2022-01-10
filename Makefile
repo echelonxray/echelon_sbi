@@ -28,6 +28,7 @@ GFILES        := $(GFILES) src/inc/string.o
 # Kernel
 #  - Core (Entry/System Setup/Globals)
 KFILES        := $(KFILES) src/kernel/kernel.o
+KFILES        := $(KFILES) src/kernel/cpio_parse.o
 KFILES        := $(KFILES) src/kernel/kstart_entry.o
 KFILES        := $(KFILES) src/kernel/globals.o
 KFILES        := $(KFILES) src/kernel/memalloc.o
@@ -94,22 +95,16 @@ prog-%.elf.strip: prog-%.elf
 	$(OBJCPY) -O ihex $^ $@
 
 emu:
-	qemu-system-riscv64 -cpu sifive-u54 -smp 5 -bios ./prog-emu.elf.strip.bin -kernel ./ignore/kernel -M sifive_u -m 1G -serial stdio -display none
+	qemu-system-riscv64 -cpu sifive-u54 -smp 5 -bios ./prog-emu.elf.strip.bin -kernel ./ignore/kernel -initrd ./ignore/emudata/fs.cpio.gz -append "rdinit=/init.out" -M sifive_u -m 1G -serial stdio -display none
 
 emu-debug:
-	qemu-system-riscv64 -cpu sifive-u54 -smp 5 -bios ./prog-emu.elf.strip.bin -kernel ./ignore/kernel -M sifive_u -m 1G -serial stdio -display none -gdb tcp::1234 -S
-
-emu-test:
-	qemu-system-riscv64 -cpu sifive-u54 -smp 5 -bios ./prog-emu.elf.strip.bin -kernel ./test/test.out.strip.bin -M sifive_u -m 1G -serial stdio -display none
-
-emu-test-debug:
-	qemu-system-riscv64 -cpu sifive-u54 -smp 5 -bios ./prog-emu.elf.strip.bin -kernel ./test/test.out.strip.bin -M sifive_u -m 1G -serial stdio -display none -gdb tcp::1234 -S
+	qemu-system-riscv64 -cpu sifive-u54 -smp 5 -bios ./prog-emu.elf.strip.bin -kernel ./ignore/kernel -initrd ./ignore/emudata/fs.cpio.gz -append "rdinit=/init.out" -M sifive_u -m 1G -serial stdio -display none -gdb tcp::1234 -S
 
 emu-linux:
-	qemu-system-riscv64 -cpu sifive-u54 -smp 5 -kernel ./ignore/kernel -M sifive_u -m 1G -serial stdio -display none
+	qemu-system-riscv64 -cpu sifive-u54 -smp 5 -kernel ./ignore/kernel -initrd ./ignore/emudata/fs.cpio.gz -append "rdinit=/init.out" -M sifive_u -m 1G -serial stdio -display none
 
 emu-linux-debug:
-	qemu-system-riscv64 -cpu sifive-u54 -smp 5 -kernel ./ignore/kernel -M sifive_u -m 1G -serial stdio -display none -gdb tcp::1234 -S
+	qemu-system-riscv64 -cpu sifive-u54 -smp 5 -kernel ./ignore/kernel -initrd ./ignore/emudata/fs.cpio.gz -append "rdinit=/init.out" -M sifive_u -m 1G -serial stdio -display none -gdb tcp::1234 -S
 
 debug:
 	$(TUPLE)gdb -ex "target remote localhost:1234" -ex "layout asm" -ex "tui reg general" -ex "break *0x80000000"

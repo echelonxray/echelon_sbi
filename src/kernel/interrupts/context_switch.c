@@ -17,7 +17,7 @@ extern ksemaphore_t* sbi_hsm_locks;
 extern volatile sint32_t* sbi_hsm_states;
 extern volatile CPU_Context* hart_contexts_user;
 extern volatile Hart_Command* hart_commands;
-extern uintRL_t load_point;
+extern uintRL_t kernel_load_to_point;
 
 extern __thread uintRL_t mhartid;
 
@@ -27,14 +27,15 @@ void interrupt_c_handler(volatile CPU_Context* cpu_context, uintRL_t cause_value
 	
 	if        (cause_value == 3) {
 		// M-Mode Software Interrupt -- This is a hart command
-
+		
 		// Save the command locally so that it does not get clobbered when the
 		// msip flag is cleared.
 		Hart_Command command = hart_commands[mhartid];
-
+		
 		volatile uint32_t* clint_hart_msip_ctls = (uint32_t*)CLINT_BASE;
-
+		
 		if        (command.command == HARTCMD_SWITCHCONTEXT) {
+			hart_commands[mhartid].command = 0;
 			clint_hart_msip_ctls[mhartid] = 0;
 			switch_context((CPU_Context*)(command.param0));
 		} else if (command.command == HARTCMD_STARTHART) {
@@ -46,7 +47,7 @@ void interrupt_c_handler(volatile CPU_Context* cpu_context, uintRL_t cause_value
 			
 #ifdef MM_FU540_C000
 			__asm__ __volatile__ ("csrw pmpaddr0, %0" : : "r" (0x0000000080000000));
-			__asm__ __volatile__ ("csrw pmpaddr1, %0" : : "r" (load_point));
+			__asm__ __volatile__ ("csrw pmpaddr1, %0" : : "r" (kernel_load_to_point));
 			__asm__ __volatile__ ("csrw pmpaddr2, %0" : : "r" (0x003FFFFFFFFFFFFF));
 			__asm__ __volatile__ ("csrw pmpcfg0, %0" : : "r" ((0x0F << 16) | (0x08 <<  8) | (0x0F <<  0)));
 #endif
@@ -57,35 +58,41 @@ void interrupt_c_handler(volatile CPU_Context* cpu_context, uintRL_t cause_value
 			__asm__ __volatile__ ("csrw mie, %0"     : : "r" (0x02A));
 			
 			__asm__ __volatile__ ("csrw satp, zero");
-			__asm__ __volatile__ ("csrc mstatus, %0" : : "r" (0x0A));
+			__asm__ __volatile__ ("csrc mstatus, %0" : : "r" (0x2A));
 			__asm__ __volatile__ ("csrs mstatus, %0" : : "r" (0x80));
 			
 			clear_hart_context(hart_contexts_user + mhartid);
 			hart_contexts_user[mhartid].context_id = mhartid;
 			hart_contexts_user[mhartid].execution_mode = EM_S;
 			hart_contexts_user[mhartid].regs[REG_PC] = command.param1;
-			hart_contexts_user[mhartid].regs[REG_A0] = command.param0;
+			//hart_contexts_user[mhartid].regs[REG_A0] = command.param0;
+			hart_contexts_user[mhartid].regs[REG_A0] = mhartid;
 			hart_contexts_user[mhartid].regs[REG_A1] = command.param2;
 			
 			//ksem_wait(sbi_hsm_locks + mhartid);
 			sbi_hsm_states[mhartid] = SBI_HSM_STARTED;
 			//ksem_post(sbi_hsm_locks + mhartid);
 			
+			hart_commands[mhartid].command = 0;
 			clint_hart_msip_ctls[mhartid] = 0;
 			//DEBUG_print("Started\n");
 			switch_context(hart_contexts_user + mhartid);
 		} else if (command.command == HARTCMD_REMOTE_FENCE_I) {
 			__asm__ __volatile__ ("fence.i");
+			hart_commands[mhartid].command = 0;
 			clint_hart_msip_ctls[mhartid] = 0;
 		} else if (command.command == HARTCMD_REMOTE_SFENCE_VMA) {
 			// TODO: Specific parameters
 			__asm__ __volatile__ ("sfence.vma zero, zero");
+			hart_commands[mhartid].command = 0;
 			clint_hart_msip_ctls[mhartid] = 0;
 		} else if (command.command == HARTCMD_REMOTE_SFENCE_VMA_ASID) {
 			// TODO: Specific parameters
 			__asm__ __volatile__ ("sfence.vma zero, zero");
+			hart_commands[mhartid].command = 0;
 			clint_hart_msip_ctls[mhartid] = 0;
 		} else if (command.command == HARTCMD_SMODE_SOFTINT) {
+			hart_commands[mhartid].command = 0;
 			clint_hart_msip_ctls[mhartid] = 0;
 			__asm__ __volatile__ ("csrs mip, %0" : : "r" (0x2));
 		} else {
@@ -100,8 +107,8 @@ void interrupt_c_handler(volatile CPU_Context* cpu_context, uintRL_t cause_value
 		// M-Mode External Interrupt
 		
 		DEBUG_print("M-Mode External Int received in M-Mode\n");
-		__asm__ __volatile__ ("csrc mie, %0" : : "r" (0x80));
-		//__asm__ __volatile__ ("csrs mip, %0" : : "r" (0x20));
+		__asm__ __volatile__ ("csrc mie, %0" : : "r" (0x800));
+		//__asm__ __volatile__ ("csrs mip, %0" : : "r" (0x200));
 	} else {
 		not_handled_interrupt:
 		DEBUG_print("ESBI Interrupt!  Lower mcause bits: ");
@@ -268,6 +275,27 @@ void exception_c_handler(volatile CPU_Context* cpu_context, uintRL_t cause_value
 		
 		idle_loop();
 	}
+	/*
+	if (cpu_context->execution_mode == 1 && cause_value != 2 && cause_value != 9) {
+		__asm__ __volatile__ ("csrc mstatus, %0" : : "r" (0x8));
+		DEBUG_print("ESBI Trap Caught!  Exception!  From: S-Mode.  Trap Handler: M-Mode\n");
+		
+		char buf[20];
+		memset(buf, 0, 20);
+		DEBUG_print("ESBI Exception!  Lower mcause bits: ");
+		itoa(cause_value, buf, 20, 10, 0);
+		DEBUG_print(buf);
+		DEBUG_print("\n");
+		DEBUG_print("\tHart ID: ");
+		itoa(mhartid, buf, 20, -10, 0);
+		DEBUG_print(buf);
+		DEBUG_print("\n");
+		DEBUG_print("\tPC: 0x");
+		itoa(cpu_context->regs[REG_PC], buf, 20, -16, -8);
+		DEBUG_print(buf);
+		DEBUG_print("\n");
+	}
+	*/
 	
 	if        (cause_value == 0) {
 		// Instruction Address Misaligned
@@ -527,6 +555,12 @@ void clear_hart_context(volatile CPU_Context* hart_context) {
 }
 
 void send_hart_command_que(uintRL_t hart_id, Hart_Command* command) {
+	uint32_t foo = 0;
+	__asm__ __volatile__ ("sfence.vma");
+	__asm__ __volatile__ ("fence.i");
+	__asm__ __volatile__ ("amoor.w.aqrl zero, zero, (%0)" : : "r" (&foo));
+	//DEBUG_print("SND CMD0\n");
+	
 	ksem_wait(hart_command_que_locks + hart_id);
 	volatile uint32_t* clint_hart_msip_ctls = (uint32_t*)CLINT_BASE;
 	while (clint_hart_msip_ctls[hart_id]) {}
@@ -537,6 +571,12 @@ void send_hart_command_que(uintRL_t hart_id, Hart_Command* command) {
 }
 
 void send_hart_command_lck(uintRL_t hart_id, Hart_Command* command) {
+	uint32_t foo = 0;
+	__asm__ __volatile__ ("sfence.vma");
+	__asm__ __volatile__ ("fence.i");
+	__asm__ __volatile__ ("amoor.w.aqrl zero, zero, (%0)" : : "r" (&foo));
+	DEBUG_print("SND CMD1\n");
+	
 	ksem_wait(hart_command_que_locks + hart_id);
 	volatile uint32_t* clint_hart_msip_ctls = (uint32_t*)CLINT_BASE;
 	while (clint_hart_msip_ctls[hart_id]) {}
@@ -546,6 +586,12 @@ void send_hart_command_lck(uintRL_t hart_id, Hart_Command* command) {
 }
 
 void send_hart_command_blk(uintRL_t hart_id, Hart_Command* command) {
+	uint32_t foo = 0;
+	__asm__ __volatile__ ("sfence.vma");
+	__asm__ __volatile__ ("fence.i");
+	__asm__ __volatile__ ("amoor.w.aqrl zero, zero, (%0)" : : "r" (&foo));
+	DEBUG_print("SND CMD2\n");
+	
 	ksem_wait(hart_command_que_locks + hart_id);
 	volatile uint32_t* clint_hart_msip_ctls = (uint32_t*)CLINT_BASE;
 	while (clint_hart_msip_ctls[hart_id]) {}
@@ -557,6 +603,12 @@ void send_hart_command_blk(uintRL_t hart_id, Hart_Command* command) {
 }
 
 void send_hart_command_ret(uintRL_t hart_id, Hart_Command* command) {
+	uint32_t foo = 0;
+	__asm__ __volatile__ ("sfence.vma");
+	__asm__ __volatile__ ("fence.i");
+	__asm__ __volatile__ ("amoor.w.aqrl zero, zero, (%0)" : : "r" (&foo));
+	DEBUG_print("SND CMD3\n");
+	
 	ksem_wait(hart_command_que_locks + hart_id);
 	volatile uint32_t* clint_hart_msip_ctls = (uint32_t*)CLINT_BASE;
 	while (clint_hart_msip_ctls[hart_id]) {}

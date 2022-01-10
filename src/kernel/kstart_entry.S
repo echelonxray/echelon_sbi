@@ -13,8 +13,6 @@ my_entry_pt:
 	addi gp, gp, %pcrel_lo(1b)
 	.option pop
 	
-	# mv t0, a0
-	
 	1: auipc t0, %pcrel_hi(hart_init_handler)
 	addi t0, t0, %pcrel_lo(1b)
 	csrw mtvec, t0

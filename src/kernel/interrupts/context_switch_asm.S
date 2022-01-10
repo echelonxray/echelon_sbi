@@ -254,7 +254,7 @@ s_delegation_trampoline:
 	# Mask of bits to clear in mstatus
 	addi a1, zero, 0x19        # Mask of mstatus.MPP, mstatus.SPP
 	slli a1, a1, 8 # 0x1900    # Shift it into the correct place
-	#ori a1, a1, 0x22 # 0x1922 # Mask of mstatus.MPP, mstatus.SPP, mstatus.SPIE, mstatus.SIE
+	ori a1, a1, 0x22 # 0x1922 # Mask of mstatus.MPP, mstatus.SPP, mstatus.SPIE, mstatus.SIE
 	
 	csrc mstatus, a1        # Clear: mstatus.MPP, mstatus.SPP, mstatus.SPIE, mstatus.SIE
 	csrs mstatus, t0        # Set: mstatus.MPP = 1 (Supervisor Mode), mstatus.SPP = 1 (Supervisor Mode)

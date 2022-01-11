@@ -122,7 +122,7 @@ void interrupt_c_handler(volatile CPU_Context* cpu_context, uintRL_t cause_value
 }
 
 void exception_c_handler(volatile CPU_Context* cpu_context, uintRL_t cause_value) {
-	DEBUG_print("exception_c_handler\n");
+	//DEBUG_print("exception_c_handler\n");
 	
 	/*
 	if (cpu_context->execution_mode == 3) {
@@ -130,6 +130,7 @@ void exception_c_handler(volatile CPU_Context* cpu_context, uintRL_t cause_value
 		DEBUG_print("ESBI Trap Caught!  Exception!  From: M-Mode.  Trap Handler: M-Mode\n");
 		*/
 		
+		/*
 		char buf[20];
 		memset(buf, 0, 20);
 		DEBUG_print("ESBI Exception!  Lower mcause bits: ");
@@ -144,6 +145,7 @@ void exception_c_handler(volatile CPU_Context* cpu_context, uintRL_t cause_value
 		itoa(cpu_context->regs[REG_PC], buf, 20, -16, -8);
 		DEBUG_print(buf);
 		DEBUG_print("\n");
+		*/
 		/*
 		uint32_t* inst = (uint32_t*)(cpu_context->regs[REG_PC]);
 		DEBUG_print("\tINST: 0x");
@@ -152,6 +154,7 @@ void exception_c_handler(volatile CPU_Context* cpu_context, uintRL_t cause_value
 		DEBUG_print("\n");
 		*/
 		
+		/*
 		DEBUG_print("\n");
 		
 		DEBUG_print("\t x1: ");
@@ -280,6 +283,7 @@ void exception_c_handler(volatile CPU_Context* cpu_context, uintRL_t cause_value
 		DEBUG_print("\n");
 		
 		DEBUG_print("\n");
+		*/
 		
 		/*
 		idle_loop();

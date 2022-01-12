@@ -101,6 +101,7 @@ void interrupt_c_handler(volatile CPU_Context* cpu_context, uintRL_t cause_value
 	} else if (cause_value == 7) {
 		// M-Mode Timer Interrupt
 		
+		//DEBUG_print("M-Mode Timer Interrupt\n");
 		__asm__ __volatile__ ("csrc mie, %0" : : "r" (0x80));
 		__asm__ __volatile__ ("csrs mip, %0" : : "r" (0x20));
 	} else if (cause_value == 11) {

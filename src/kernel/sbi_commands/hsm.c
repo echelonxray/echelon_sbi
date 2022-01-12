@@ -12,7 +12,15 @@ extern volatile CPU_Context* hart_contexts;
 struct sbiret sbi_hart_start(unsigned long hartid, unsigned long start_addr, unsigned long opaque) {
 	struct sbiret retval;
 	retval.value = 0;
-
+	
+	/*
+	char buf[20];
+	itoa(hartid, buf, 30, -10, 0);
+	DEBUG_print("\thartid: ");
+	DEBUG_print(buf);
+	DEBUG_print("\n");
+	*/
+	
 	if (is_valid_hartid(hartid) == 0) {
 		DEBUG_print("\tNot Started: Invalid HartID\n");
 		retval.error = SBI_ERR_INVALID_PARAM;

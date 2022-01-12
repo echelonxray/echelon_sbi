@@ -8,6 +8,7 @@
 #include "./memalloc.h"
 #include "./kernel.h"
 #include "./cpio_parse.h"
+#include "./dtb_parse.h"
 #include "./kstart_entry.h"
 #include "./thread_locking.h"
 #include "./sbi_commands.h"
@@ -383,15 +384,16 @@ void kmain() {
 	void* unloaded_initramfs_ptr = 0;
 	struct header_pwb_cpio cpio_initramfs_entry_header;
 	cpio_initramfs_entry_header.h_magic = 0;
-	if (!init_reg_a1) {
-		if (unloaded_initramfs_ptr == 0) {
-			void* ptr = (void*)(0x20000000);
-			unloaded_initramfs_ptr = get_cpio_entry_header("fs.cpio.gz", ptr, &cpio_initramfs_entry_header);
-		}
-		if (unloaded_initramfs_ptr == 0) {
-			DEBUG_print("Could Not Locate Initramfs: Halting\n");
-			idle_loop();
-		}
+	if (unloaded_dtb_ptr) {
+		dtb_parse(unloaded_dtb_ptr, &unloaded_initramfs_ptr, 0);
+	}
+	if (unloaded_initramfs_ptr == 0) {
+		void* ptr = (void*)(0x20000000);
+		unloaded_initramfs_ptr = get_cpio_entry_header("fs.cpio.gz", ptr, &cpio_initramfs_entry_header);
+	}
+	if (unloaded_initramfs_ptr == 0) {
+		DEBUG_print("Could Not Locate Initramfs: Halting\n");
+		idle_loop();
 	}
 	// End: Locate Initramfs
 	
@@ -482,7 +484,12 @@ void kmain() {
 		memcpy((void*)dtb_load_to_point, unloaded_dtb_ptr, cpio_dtb_entry_header.h_filesize.vl32);
 	}
 	
-	uintRL_t initramfs_load_to_point = 0x87000000;
+	uintRL_t initramfs_load_to_point;
+	if (cpio_initramfs_entry_header.h_magic != 0) {
+		initramfs_load_to_point = 0x87000000;
+	} else {
+		initramfs_load_to_point = (uintRL_t)unloaded_initramfs_ptr;
+	}
 	itoa((initramfs_load_to_point >> 32) & 0xFFFFFFFF, buf, 20, -16, 8);
 	DEBUG_print(" Loading Initramfs @ 0x");
 	DEBUG_print(buf);
@@ -496,6 +503,7 @@ void kmain() {
 	
 	DEBUG_print("\n");
 	
+	// dtb_load_to_point
 	/*
 	DEBUG_print("Kernel Filesize: ");
 	itoa(cpio_kernel_entry_header.h_filesize.vl32, buf, 20, 10, 0);
@@ -512,6 +520,42 @@ void kmain() {
 	
 	DEBUG_print("\n");
 	*/
+	{
+		DEBUG_print("DTB - First 16 Bytes\n");
+		unsigned char* ptr = (void*)dtb_load_to_point;
+		DEBUG_print("  ");
+		for (unsigned int i = 0; i <  8; i++) {
+			DEBUG_print(" ");
+			itoa(ptr[i], buf, 20, -16, -2);
+			DEBUG_print(buf);
+		}
+		DEBUG_print("  ");
+		for (unsigned int i = 8; i < 16; i++) {
+			DEBUG_print(" ");
+			itoa(ptr[i], buf, 20, -16, -2);
+			DEBUG_print(buf);
+		}
+		DEBUG_print("\n");
+		DEBUG_print("\n");
+	}
+	{
+		DEBUG_print("IRF - First 16 Bytes\n");
+		unsigned char* ptr = (void*)initramfs_load_to_point;
+		DEBUG_print("  ");
+		for (unsigned int i = 0; i <  8; i++) {
+			DEBUG_print(" ");
+			itoa(ptr[i], buf, 20, -16, -2);
+			DEBUG_print(buf);
+		}
+		DEBUG_print("  ");
+		for (unsigned int i = 8; i < 16; i++) {
+			DEBUG_print(" ");
+			itoa(ptr[i], buf, 20, -16, -2);
+			DEBUG_print(buf);
+		}
+		DEBUG_print("\n");
+		DEBUG_print("\n");
+	}
 	
 	DEBUG_print("--Start Hart--\n");
 	Hart_Command command;

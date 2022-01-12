@@ -46,10 +46,10 @@ void interrupt_c_handler(volatile CPU_Context* cpu_context, uintRL_t cause_value
 			//__asm__ __volatile__ ("csrs mie, %0" : : "r" (1 << 7));
 			
 #ifdef MM_FU540_C000
-			__asm__ __volatile__ ("csrw pmpaddr0, %0" : : "r" (0x0000000080000000));
-			__asm__ __volatile__ ("csrw pmpaddr1, %0" : : "r" (kernel_load_to_point));
-			__asm__ __volatile__ ("csrw pmpaddr2, %0" : : "r" (0x003FFFFFFFFFFFFF));
-			__asm__ __volatile__ ("csrw pmpcfg0, %0" : : "r" ((0x0F << 16) | (0x08 <<  8) | (0x0F <<  0)));
+			__asm__ __volatile__ ("csrw pmpaddr0, %0" : : "r" ((0x0000000080000000ul >> 2) & 0x003FFFFFFFFFFFFFul));
+			__asm__ __volatile__ ("csrw pmpaddr1, %0" : : "r" ((kernel_load_to_point >> 2) & 0x003FFFFFFFFFFFFFul));
+			__asm__ __volatile__ ("csrw pmpaddr2, %0" : : "r" ((0xFFFFFFFFFFFFFFFFul >> 2) & 0x003FFFFFFFFFFFFFul));
+			__asm__ __volatile__ ("csrw pmpcfg0, %0" : : "r" ((0x0F << 16) | (0x08 <<  8) | (0x0B <<  0)));
 #endif
 			
 			__asm__ __volatile__ ("csrw medeleg, %0" : : "r" (0x000));

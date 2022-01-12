@@ -29,6 +29,7 @@ GFILES        := $(GFILES) src/inc/string.o
 #  - Core (Entry/System Setup/Globals)
 KFILES        := $(KFILES) src/kernel/kernel.o
 KFILES        := $(KFILES) src/kernel/cpio_parse.o
+KFILES        := $(KFILES) src/kernel/dtb_parse.o
 KFILES        := $(KFILES) src/kernel/kstart_entry.o
 KFILES        := $(KFILES) src/kernel/globals.o
 KFILES        := $(KFILES) src/kernel/memalloc.o

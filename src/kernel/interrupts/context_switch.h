@@ -84,18 +84,18 @@ typedef struct {
 	uintRL_t imm;
 } dec_inst;
 
-uintRL_t walk_pts(uintRL_t location, uintRL_t csr_satp);
+uintRL_t walk_pts(uintRL_t location, uintRL_t csr_satp, uintRL_t debug);
 uintRL_t decode_instruction(uint32_t einst, dec_inst* dinst);
-void interrupt_c_handler(volatile CPU_Context* cpu_context, uintRL_t cause_value);
-void exception_c_handler(volatile CPU_Context* cpu_context, uintRL_t cause_value);
+void interrupt_c_handler(volatile CPU_Context* cpu_context, uintRL_t cause_value, uintRL_t mtval);
+void exception_c_handler(volatile CPU_Context* cpu_context, uintRL_t cause_value, uintRL_t mtval);
 void interrupt_entry_handler();
-void switch_context(volatile CPU_Context* cpu_context);
+void switch_context(volatile CPU_Context* cpu_context) __attribute__((noreturn));
 void clear_hart_context(volatile CPU_Context* hart_context);
 void send_hart_command_que(uintRL_t hart_id, Hart_Command* command);
 //void send_hart_command_lck(uintRL_t hart_id, Hart_Command* command);
 void send_hart_command_blk(uintRL_t hart_id, Hart_Command* command);
 void send_hart_command_ret(uintRL_t hart_id, Hart_Command* command);
-void s_delegation_trampoline(volatile CPU_Context* cpu_context, uintRL_t pc_offset, uintRL_t stval);
+void s_delegation_trampoline(volatile CPU_Context* cpu_context, uintRL_t pc_offset, uintRL_t stval) __attribute__((noreturn));
 
 #define HARTCMD_SWITCHCONTEXT 1
 #define HARTCMD_STARTHART 14

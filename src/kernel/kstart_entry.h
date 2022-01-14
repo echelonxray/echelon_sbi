@@ -3,6 +3,6 @@
 
 #include "./../inc/types.h"
 
-void idle_loop();
+void idle_loop() __attribute__((noreturn));
 
 #endif

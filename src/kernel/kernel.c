@@ -65,7 +65,6 @@ extern void* mem_block_end;
 extern ksemaphore_t* sbi_hsm_locks;
 extern volatile sint32_t* sbi_hsm_states;
 
-__thread uintRL_t mhartid;
 ksemaphore_t* hart_command_que_locks;
 uintRL_t init_reg_a0;
 uintRL_t init_reg_a1;
@@ -79,6 +78,8 @@ volatile CPU_Context* hart_contexts;
 volatile CPU_Context* hart_contexts_exception;
 volatile CPU_Context* hart_contexts_user;
 volatile Hart_Command* hart_commands;
+
+__thread uintRL_t mhartid;
 
 void kinit(uintRL_t hartid) {
 	kallocinit(&KHEAP_START, &KHEAP_START + 0x10000);

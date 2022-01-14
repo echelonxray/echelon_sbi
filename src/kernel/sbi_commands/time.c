@@ -4,8 +4,10 @@
 extern __thread uintRL_t mhartid;
 
 struct sbiret sbi_set_timer(uint64_t stime_value) {
+	//DEBUG_print("sbi_set_timer();\n");
+	
+	__asm__ __volatile__ ("csrc mie, %0" : : "r" (0x80));
 	__asm__ __volatile__ ("csrc mip, %0" : : "r" (0x20));
-	__asm__ __volatile__ ("csrs mie, %0" : : "r" (0x80));
 	
 #ifdef MM_JSEMU_0000
 	uint32_t mtime;
@@ -24,6 +26,8 @@ struct sbiret sbi_set_timer(uint64_t stime_value) {
 	uint64_t* mtimecmp = (void*)(((uintRL_t)CLINT_BASE) + CLINT_MTIMECMPS);
 	mtimecmp[mhartid] = stime_value;
 #endif
+	
+	__asm__ __volatile__ ("csrs mie, %0" : : "r" (0x80));
 	
 	struct sbiret retval;
 	retval.value = 0;

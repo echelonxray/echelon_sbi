@@ -2,6 +2,8 @@
 #include "./debug.h"
 #include "./../inc/string.h"
 
+#define DEBUG_print(arg1) {} // Disable Debug Printing
+
 uint32_t dtb_parse_swap_endianess_32(uint32_t val) {
 	uint32_t retval = 0;
 	unsigned int bitwidth = 32;

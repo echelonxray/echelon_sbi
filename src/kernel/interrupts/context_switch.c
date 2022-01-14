@@ -21,9 +21,181 @@ extern uintRL_t kernel_load_to_point;
 
 extern __thread uintRL_t mhartid;
 
-void interrupt_c_handler(volatile CPU_Context* cpu_context, uintRL_t cause_value) {
+void print_reg_state(volatile CPU_Context* cpu_context) {
+	char buf[20];
+	
+	DEBUG_print("----Reg State----\n");
+	DEBUG_print("\tHart ID: ");
+	itoa(mhartid, buf, 20, -10, 0);
+	DEBUG_print(buf);
+	DEBUG_print("\n");
+	DEBUG_print("\tExecution Mode: ");
+	itoa(cpu_context->execution_mode, buf, 20, -10, 0);
+	DEBUG_print(buf);
+	DEBUG_print("\n");
+	DEBUG_print("\tPC: 0x");
+	itoa(cpu_context->regs[REG_PC], buf, 20, -16, -8);
+	DEBUG_print(buf);
+	DEBUG_print("\n");
+	/*
+	uint32_t* inst = (uint32_t*)(cpu_context->regs[REG_PC]);
+	DEBUG_print("\tINST: 0x");
+	itoa(*inst, buf, 20, -16, -8);
+	DEBUG_print(buf);
+	DEBUG_print("\n");
+	*/
+	
+	DEBUG_print("\n");
+	
+	DEBUG_print("\t x1: ");
+	itoa(cpu_context->regs[REG_X1], buf, 20, -16, 0);
+	DEBUG_print(buf);
+	DEBUG_print("\n");
+	DEBUG_print("\t x2: ");
+	itoa(cpu_context->regs[REG_X2], buf, 20, -16, 0);
+	DEBUG_print(buf);
+	DEBUG_print("\n");
+	DEBUG_print("\t x3: ");
+	itoa(cpu_context->regs[REG_X3], buf, 20, -16, 0);
+	DEBUG_print(buf);
+	DEBUG_print("\n");
+	DEBUG_print("\t x4: ");
+	itoa(cpu_context->regs[REG_X4], buf, 20, -16, 0);
+	DEBUG_print(buf);
+	DEBUG_print("\n");
+	DEBUG_print("\t x5: ");
+	itoa(cpu_context->regs[REG_X5], buf, 20, -16, 0);
+	DEBUG_print(buf);
+	DEBUG_print("\n");
+	DEBUG_print("\t x6: ");
+	itoa(cpu_context->regs[REG_X6], buf, 20, -16, 0);
+	DEBUG_print(buf);
+	DEBUG_print("\n");
+	DEBUG_print("\t x7: ");
+	itoa(cpu_context->regs[REG_X7], buf, 20, -16, 0);
+	DEBUG_print(buf);
+	DEBUG_print("\n");
+	DEBUG_print("\t x8: ");
+	itoa(cpu_context->regs[REG_X8], buf, 20, -16, 0);
+	DEBUG_print(buf);
+	DEBUG_print("\n");
+	DEBUG_print("\t x9: ");
+	itoa(cpu_context->regs[REG_X9], buf, 20, -16, 0);
+	DEBUG_print(buf);
+	DEBUG_print("\n");
+	DEBUG_print("\tx10: ");
+	itoa(cpu_context->regs[REG_X10], buf, 20, -16, 0);
+	DEBUG_print(buf);
+	DEBUG_print("\n");
+	DEBUG_print("\tx11: ");
+	itoa(cpu_context->regs[REG_X11], buf, 20, -16, 0);
+	DEBUG_print(buf);
+	DEBUG_print("\n");
+	DEBUG_print("\tx12: ");
+	itoa(cpu_context->regs[REG_X12], buf, 20, -16, 0);
+	DEBUG_print(buf);
+	DEBUG_print("\n");
+	DEBUG_print("\tx13: ");
+	itoa(cpu_context->regs[REG_X13], buf, 20, -16, 0);
+	DEBUG_print(buf);
+	DEBUG_print("\n");
+	DEBUG_print("\tx14: ");
+	itoa(cpu_context->regs[REG_X14], buf, 20, -16, 0);
+	DEBUG_print(buf);
+	DEBUG_print("\n");
+	DEBUG_print("\tx15: ");
+	itoa(cpu_context->regs[REG_X15], buf, 20, -16, 0);
+	DEBUG_print(buf);
+	DEBUG_print("\n");
+	DEBUG_print("\tx16: ");
+	itoa(cpu_context->regs[REG_X16], buf, 20, -16, 0);
+	DEBUG_print(buf);
+	DEBUG_print("\n");
+	DEBUG_print("\tx17: ");
+	itoa(cpu_context->regs[REG_X17], buf, 20, -16, 0);
+	DEBUG_print(buf);
+	DEBUG_print("\n");
+	DEBUG_print("\tx18: ");
+	itoa(cpu_context->regs[REG_X18], buf, 20, -16, 0);
+	DEBUG_print(buf);
+	DEBUG_print("\n");
+	DEBUG_print("\tx19: ");
+	itoa(cpu_context->regs[REG_X19], buf, 20, -16, 0);
+	DEBUG_print(buf);
+	DEBUG_print("\n");
+	DEBUG_print("\tx20: ");
+	itoa(cpu_context->regs[REG_X20], buf, 20, -16, 0);
+	DEBUG_print(buf);
+	DEBUG_print("\n");
+	DEBUG_print("\tx21: ");
+	itoa(cpu_context->regs[REG_X21], buf, 20, -16, 0);
+	DEBUG_print(buf);
+	DEBUG_print("\n");
+	DEBUG_print("\tx22: ");
+	itoa(cpu_context->regs[REG_X22], buf, 20, -16, 0);
+	DEBUG_print(buf);
+	DEBUG_print("\n");
+	DEBUG_print("\tx23: ");
+	itoa(cpu_context->regs[REG_X23], buf, 20, -16, 0);
+	DEBUG_print(buf);
+	DEBUG_print("\n");
+	DEBUG_print("\tx24: ");
+	itoa(cpu_context->regs[REG_X24], buf, 20, -16, 0);
+	DEBUG_print(buf);
+	DEBUG_print("\n");
+	DEBUG_print("\tx25: ");
+	itoa(cpu_context->regs[REG_X25], buf, 20, -16, 0);
+	DEBUG_print(buf);
+	DEBUG_print("\n");
+	DEBUG_print("\tx26: ");
+	itoa(cpu_context->regs[REG_X26], buf, 20, -16, 0);
+	DEBUG_print(buf);
+	DEBUG_print("\n");
+	DEBUG_print("\tx27: ");
+	itoa(cpu_context->regs[REG_X27], buf, 20, -16, 0);
+	DEBUG_print(buf);
+	DEBUG_print("\n");
+	DEBUG_print("\tx28: ");
+	itoa(cpu_context->regs[REG_X28], buf, 20, -16, 0);
+	DEBUG_print(buf);
+	DEBUG_print("\n");
+	DEBUG_print("\tx29: ");
+	itoa(cpu_context->regs[REG_X29], buf, 20, -16, 0);
+	DEBUG_print(buf);
+	DEBUG_print("\n");
+	DEBUG_print("\tx30: ");
+	itoa(cpu_context->regs[REG_X30], buf, 20, -16, 0);
+	DEBUG_print(buf);
+	DEBUG_print("\n");
+	DEBUG_print("\tx31: ");
+	itoa(cpu_context->regs[REG_X31], buf, 20, -16, 0);
+	DEBUG_print(buf);
+	DEBUG_print("\n");
+	
+	DEBUG_print("\n");
+	return;
+}
+
+void interrupt_c_handler(volatile CPU_Context* cpu_context, uintRL_t cause_value, uintRL_t mtval) {
 	char str[30];
 	//DEBUG_print("interrupt_c_handler\n");
+	/*
+	if (cpu_context->execution_mode == 3) {
+		DEBUG_print("<<<<<<<<<<<<<<<<<<<<interrupt_c_handler: ");
+		itoa(mhartid, str, 30, 10, 0);
+		DEBUG_print(str);
+		DEBUG_print(" ");
+		itoa(cause_value, str, 30, 10, 0);
+		DEBUG_print(str);
+		DEBUG_print(" 0x");
+		uintRL_t tmp_reg;
+		__asm__ __volatile__ ("csrr %0, mie" : "=r" (tmp_reg));
+		itoa(tmp_reg, str, 30, -16, -3);
+		DEBUG_print(str);
+		DEBUG_print("\n");
+		//idle_loop();
+	}
+	*/
 	
 	if        (cause_value == 3) {
 		// M-Mode Software Interrupt -- This is a hart command
@@ -52,10 +224,12 @@ void interrupt_c_handler(volatile CPU_Context* cpu_context, uintRL_t cause_value
 			__asm__ __volatile__ ("csrw pmpcfg0, %0" : : "r" ((0x0F << 16) | (0x08 <<  8) | (0x0B <<  0)));
 #endif
 			
-			__asm__ __volatile__ ("csrw medeleg, %0" : : "r" (0x000));
-			__asm__ __volatile__ ("csrw mideleg, %0" : : "r" (0x222));
+			//__asm__ __volatile__ ("csrw medeleg, %0" : : "r" (0xB1F3));
+			__asm__ __volatile__ ("csrw medeleg, %0" : : "r" (0x0000));
+			__asm__ __volatile__ ("csrw mideleg, %0" : : "r" (0x0222));
 			
 			__asm__ __volatile__ ("csrw mie, %0"     : : "r" (0x02A));
+			__asm__ __volatile__ ("csrc mip, %0"     : : "r" (0xFFF));
 			
 			__asm__ __volatile__ ("csrw satp, zero");
 			__asm__ __volatile__ ("csrc mstatus, %0" : : "r" (0x2A));
@@ -122,209 +296,28 @@ void interrupt_c_handler(volatile CPU_Context* cpu_context, uintRL_t cause_value
 	return;
 }
 
-void exception_c_handler(volatile CPU_Context* cpu_context, uintRL_t cause_value) {
+void exception_c_handler(volatile CPU_Context* cpu_context, uintRL_t cause_value, uintRL_t mtval) {
 	//DEBUG_print("exception_c_handler\n");
-	
-	/*
-	if (cpu_context->execution_mode == 3) {
-		__asm__ __volatile__ ("csrc mstatus, %0" : : "r" (0x8));
-		DEBUG_print("ESBI Trap Caught!  Exception!  From: M-Mode.  Trap Handler: M-Mode\n");
-		*/
-		
-		/*
-		char buf[20];
-		memset(buf, 0, 20);
-		DEBUG_print("ESBI Exception!  Lower mcause bits: ");
-		itoa(cause_value, buf, 20, 10, 0);
-		DEBUG_print(buf);
-		DEBUG_print("\n");
-		DEBUG_print("\tHart ID: ");
-		itoa(mhartid, buf, 20, -10, 0);
-		DEBUG_print(buf);
-		DEBUG_print("\n");
-		DEBUG_print("\tPC: 0x");
-		itoa(cpu_context->regs[REG_PC], buf, 20, -16, -8);
-		DEBUG_print(buf);
-		DEBUG_print("\n");
-		*/
-		/*
-		uint32_t* inst = (uint32_t*)(cpu_context->regs[REG_PC]);
-		DEBUG_print("\tINST: 0x");
-		itoa(*inst, buf, 20, -16, -8);
-		DEBUG_print(buf);
-		DEBUG_print("\n");
-		*/
-		
-		/*
-		DEBUG_print("\n");
-		
-		DEBUG_print("\t x1: ");
-		itoa(cpu_context->regs[REG_X1], buf, 20, -16, 0);
-		DEBUG_print(buf);
-		DEBUG_print("\n");
-		DEBUG_print("\t x2: ");
-		itoa(cpu_context->regs[REG_X2], buf, 20, -16, 0);
-		DEBUG_print(buf);
-		DEBUG_print("\n");
-		DEBUG_print("\t x3: ");
-		itoa(cpu_context->regs[REG_X3], buf, 20, -16, 0);
-		DEBUG_print(buf);
-		DEBUG_print("\n");
-		DEBUG_print("\t x4: ");
-		itoa(cpu_context->regs[REG_X4], buf, 20, -16, 0);
-		DEBUG_print(buf);
-		DEBUG_print("\n");
-		DEBUG_print("\t x5: ");
-		itoa(cpu_context->regs[REG_X5], buf, 20, -16, 0);
-		DEBUG_print(buf);
-		DEBUG_print("\n");
-		DEBUG_print("\t x6: ");
-		itoa(cpu_context->regs[REG_X6], buf, 20, -16, 0);
-		DEBUG_print(buf);
-		DEBUG_print("\n");
-		DEBUG_print("\t x7: ");
-		itoa(cpu_context->regs[REG_X7], buf, 20, -16, 0);
-		DEBUG_print(buf);
-		DEBUG_print("\n");
-		DEBUG_print("\t x8: ");
-		itoa(cpu_context->regs[REG_X8], buf, 20, -16, 0);
-		DEBUG_print(buf);
-		DEBUG_print("\n");
-		DEBUG_print("\t x9: ");
-		itoa(cpu_context->regs[REG_X9], buf, 20, -16, 0);
-		DEBUG_print(buf);
-		DEBUG_print("\n");
-		DEBUG_print("\tx10: ");
-		itoa(cpu_context->regs[REG_X10], buf, 20, -16, 0);
-		DEBUG_print(buf);
-		DEBUG_print("\n");
-		DEBUG_print("\tx11: ");
-		itoa(cpu_context->regs[REG_X11], buf, 20, -16, 0);
-		DEBUG_print(buf);
-		DEBUG_print("\n");
-		DEBUG_print("\tx12: ");
-		itoa(cpu_context->regs[REG_X12], buf, 20, -16, 0);
-		DEBUG_print(buf);
-		DEBUG_print("\n");
-		DEBUG_print("\tx13: ");
-		itoa(cpu_context->regs[REG_X13], buf, 20, -16, 0);
-		DEBUG_print(buf);
-		DEBUG_print("\n");
-		DEBUG_print("\tx14: ");
-		itoa(cpu_context->regs[REG_X14], buf, 20, -16, 0);
-		DEBUG_print(buf);
-		DEBUG_print("\n");
-		DEBUG_print("\tx15: ");
-		itoa(cpu_context->regs[REG_X15], buf, 20, -16, 0);
-		DEBUG_print(buf);
-		DEBUG_print("\n");
-		DEBUG_print("\tx16: ");
-		itoa(cpu_context->regs[REG_X16], buf, 20, -16, 0);
-		DEBUG_print(buf);
-		DEBUG_print("\n");
-		DEBUG_print("\tx17: ");
-		itoa(cpu_context->regs[REG_X17], buf, 20, -16, 0);
-		DEBUG_print(buf);
-		DEBUG_print("\n");
-		DEBUG_print("\tx18: ");
-		itoa(cpu_context->regs[REG_X18], buf, 20, -16, 0);
-		DEBUG_print(buf);
-		DEBUG_print("\n");
-		DEBUG_print("\tx19: ");
-		itoa(cpu_context->regs[REG_X19], buf, 20, -16, 0);
-		DEBUG_print(buf);
-		DEBUG_print("\n");
-		DEBUG_print("\tx20: ");
-		itoa(cpu_context->regs[REG_X20], buf, 20, -16, 0);
-		DEBUG_print(buf);
-		DEBUG_print("\n");
-		DEBUG_print("\tx21: ");
-		itoa(cpu_context->regs[REG_X21], buf, 20, -16, 0);
-		DEBUG_print(buf);
-		DEBUG_print("\n");
-		DEBUG_print("\tx22: ");
-		itoa(cpu_context->regs[REG_X22], buf, 20, -16, 0);
-		DEBUG_print(buf);
-		DEBUG_print("\n");
-		DEBUG_print("\tx23: ");
-		itoa(cpu_context->regs[REG_X23], buf, 20, -16, 0);
-		DEBUG_print(buf);
-		DEBUG_print("\n");
-		DEBUG_print("\tx24: ");
-		itoa(cpu_context->regs[REG_X24], buf, 20, -16, 0);
-		DEBUG_print(buf);
-		DEBUG_print("\n");
-		DEBUG_print("\tx25: ");
-		itoa(cpu_context->regs[REG_X25], buf, 20, -16, 0);
-		DEBUG_print(buf);
-		DEBUG_print("\n");
-		DEBUG_print("\tx26: ");
-		itoa(cpu_context->regs[REG_X26], buf, 20, -16, 0);
-		DEBUG_print(buf);
-		DEBUG_print("\n");
-		DEBUG_print("\tx27: ");
-		itoa(cpu_context->regs[REG_X27], buf, 20, -16, 0);
-		DEBUG_print(buf);
-		DEBUG_print("\n");
-		DEBUG_print("\tx28: ");
-		itoa(cpu_context->regs[REG_X28], buf, 20, -16, 0);
-		DEBUG_print(buf);
-		DEBUG_print("\n");
-		DEBUG_print("\tx29: ");
-		itoa(cpu_context->regs[REG_X29], buf, 20, -16, 0);
-		DEBUG_print(buf);
-		DEBUG_print("\n");
-		DEBUG_print("\tx30: ");
-		itoa(cpu_context->regs[REG_X30], buf, 20, -16, 0);
-		DEBUG_print(buf);
-		DEBUG_print("\n");
-		DEBUG_print("\tx31: ");
-		itoa(cpu_context->regs[REG_X31], buf, 20, -16, 0);
-		DEBUG_print(buf);
-		DEBUG_print("\n");
-		
-		DEBUG_print("\n");
-		*/
-		
-		/*
-		idle_loop();
-	}
-	*/
-	/*
-	if (cpu_context->execution_mode == 1 && cause_value != 2 && cause_value != 9) {
-		__asm__ __volatile__ ("csrc mstatus, %0" : : "r" (0x8));
-		DEBUG_print("ESBI Trap Caught!  Exception!  From: S-Mode.  Trap Handler: M-Mode\n");
-		
-		char buf[20];
-		memset(buf, 0, 20);
-		DEBUG_print("ESBI Exception!  Lower mcause bits: ");
-		itoa(cause_value, buf, 20, 10, 0);
-		DEBUG_print(buf);
-		DEBUG_print("\n");
-		DEBUG_print("\tHart ID: ");
-		itoa(mhartid, buf, 20, -10, 0);
-		DEBUG_print(buf);
-		DEBUG_print("\n");
-		DEBUG_print("\tPC: 0x");
-		itoa(cpu_context->regs[REG_PC], buf, 20, -16, -8);
-		DEBUG_print(buf);
-		DEBUG_print("\n");
-	}
-	*/
 	
 	if        (cause_value == 0) {
 		// Instruction Address Misaligned
-		s_delegation_trampoline(cpu_context, 0, 0);
+		DEBUG_print("Instruction Address Misaligned\n");
+		//print_reg_state(cpu_context);
+		s_delegation_trampoline(cpu_context, 0, mtval);
 	} else if (cause_value == 1) {
 		// Instruction Access Fault
-		s_delegation_trampoline(cpu_context, 0, 0);
+		DEBUG_print("Instruction Access Fault\n");
+		//print_reg_state(cpu_context);
+		s_delegation_trampoline(cpu_context, 0, mtval);
 	} else if (cause_value == 2) {
 		// Illegal Instruction
 		uintRL_t csr_satp;
 		__asm__ __volatile__ ("csrr %0, satp" : "=r" (csr_satp));
-		uint32_t* instruction = (void*)walk_pts(cpu_context->regs[REG_PC], csr_satp);
+		uint32_t* instruction = (void*)walk_pts(cpu_context->regs[REG_PC], csr_satp, 0);
+		
 		dec_inst dinst;
 		uintRL_t form = decode_instruction(*instruction, &dinst);
+		//uintRL_t form = decode_instruction(mtval, &dinst);
 		if (form) {
 			if (dinst.opcode == 0x73) {
 				if (dinst.funct3 == 0x2 || dinst.funct3 == 0x3 || dinst.funct3 == 0x6 || dinst.funct3 == 0x7) {
@@ -333,36 +326,67 @@ void exception_c_handler(volatile CPU_Context* cpu_context, uintRL_t cause_value
 							uint64_t* mtime = (void*)(CLINT_BASE + CLINT_MTIME);
 							cpu_context->regs[dinst.rd] = *mtime;
 							cpu_context->regs[REG_PC] += 4;
-							switch_context(cpu_context);
+							return;
 						}
 					}
 				}
 			}
 		}
-		s_delegation_trampoline(cpu_context, 0, *instruction);
+		
+		DEBUG_print("Illegal Instruction\n");
+		
+		/*
+		{
+			DEBUG_print("Illegal Instruction: ");
+			uint32_t hibits = (mtval >> 32) & 0xFFFFFFFF;
+			uint32_t lobits = (mtval >>  0) & 0xFFFFFFFF;
+			char buf[20];
+			itoa(hibits, buf, 20, -16, 8);
+			DEBUG_print(buf);
+			DEBUG_print("_");
+			itoa(lobits, buf, 20, -16, 8);
+			DEBUG_print(buf);
+			DEBUG_print("\n");
+		}
+		print_reg_state(cpu_context);
+		idle_loop();
+		*/
+		
+		s_delegation_trampoline(cpu_context, 0, mtval);
 	} else if (cause_value == 3) {
 		// Breakpoint
 		__asm__ __volatile__ ("csrc mstatus, %0" : : "r" (0x8));
 		DEBUG_print("ESBI Trap Caught!  Breakpoint Exception.  Trap Handler: M-Mode\n");
 		cpu_context->regs[REG_PC] += 4;
-		for (volatile uintRL_t i = 0; i < 100000000; i++) {}
+		for (volatile uintRL_t i = 0; i < 200000000; i++) {}
 		//idle_loop();
+		return;
 	} else if (cause_value == 4) {
 		// Load Address Misaligned
-		s_delegation_trampoline(cpu_context, 0, 0);
+		DEBUG_print("Load Address Misaligned\n");
+		//print_reg_state(cpu_context);
+		s_delegation_trampoline(cpu_context, 0, mtval);
 	} else if (cause_value == 5) {
 		// Load Access Fault
-		s_delegation_trampoline(cpu_context, 0, 0);
+		DEBUG_print("Load Access Fault\n");
+		//print_reg_state(cpu_context);
+		s_delegation_trampoline(cpu_context, 0, mtval);
 	} else if (cause_value == 6) {
 		// Store/AMO Address Misaligned
-		s_delegation_trampoline(cpu_context, 0, 0);
+		DEBUG_print("Store/AMO Address Misaligned\n");
+		//print_reg_state(cpu_context);
+		s_delegation_trampoline(cpu_context, 0, mtval);
 	} else if (cause_value == 7) {
 		// Store/AMO Access Fault
-		s_delegation_trampoline(cpu_context, 0, 0);
+		DEBUG_print("Store/AMO Access Fault\n");
+		//print_reg_state(cpu_context);
+		s_delegation_trampoline(cpu_context, 0, mtval);
 	} else if (cause_value == 8) {
 		// User-Mode Environment Exception
-		cpu_context->regs[REG_PC] += 4;
-		s_delegation_trampoline(cpu_context, 0, 0);
+		//cpu_context->regs[REG_PC] += 4;
+		DEBUG_print("User-Mode Environment Exception\n");
+		//print_reg_state(cpu_context);
+		s_delegation_trampoline(cpu_context, 0, mtval);
 	} else if (cause_value == 9) {
 		// Supervisor-Mode Environment Exception
 		cpu_context->regs[REG_PC] += 4;
@@ -379,6 +403,7 @@ void exception_c_handler(volatile CPU_Context* cpu_context, uintRL_t cause_value
 		sbi_return = call_to_sbi(cpu_context->regs[REG_A7], cpu_context->regs[REG_A6], params);
 		cpu_context->regs[REG_A1] = sbi_return.value;
 		cpu_context->regs[REG_A0] = sbi_return.error;
+		return;
 	} else if (cause_value == 11) {
 		// Machine-Mode Environment Exception
 		__asm__ __volatile__ ("csrc mstatus, %0" : : "r" (0x8));
@@ -388,32 +413,148 @@ void exception_c_handler(volatile CPU_Context* cpu_context, uintRL_t cause_value
 		DEBUG_print(buf);
 		DEBUG_print("\n");
 		idle_loop();
-		cpu_context->regs[REG_PC] += 4;
+		//cpu_context->regs[REG_PC] += 4;
 	} else if (cause_value == 12) {
 		// Instruction Page Fault
-		s_delegation_trampoline(cpu_context, 0, 0);
+		DEBUG_print("Instruction Page Fault\n");
+		
+		/*
+		char buf[20];
+		uintRL_t satp;
+		uintRL_t tmpv;
+		
+		{
+			DEBUG_print("satp: ");
+			__asm__ __volatile__ ("csrr %0, satp" : "=r" (satp));
+			uint32_t hibits = (satp >> 32) & 0xFFFFFFFF;
+			uint32_t lobits = (satp >>  0) & 0xFFFFFFFF;
+			itoa(hibits, buf, 20, -16, 8);
+			DEBUG_print(buf);
+			DEBUG_print("_");
+			itoa(lobits, buf, 20, -16, 8);
+			DEBUG_print(buf);
+			DEBUG_print("\n");
+		}
+		
+		{
+			DEBUG_print("misa: ");
+			__asm__ __volatile__ ("csrr %0, misa" : "=r" (tmpv));
+			uint32_t hibits = (tmpv >> 32) & 0xFFFFFFFF;
+			uint32_t lobits = (tmpv >>  0) & 0xFFFFFFFF;
+			itoa(hibits, buf, 20, -16, 8);
+			DEBUG_print(buf);
+			DEBUG_print("_");
+			itoa(lobits, buf, 20, -16, 8);
+			DEBUG_print(buf);
+			DEBUG_print("\n");
+		}
+		
+		{
+			DEBUG_print("mstatus: ");
+			__asm__ __volatile__ ("csrr %0, mstatus" : "=r" (tmpv));
+			uint32_t hibits = (tmpv >> 32) & 0xFFFFFFFF;
+			uint32_t lobits = (tmpv >>  0) & 0xFFFFFFFF;
+			itoa(hibits, buf, 20, -16, 8);
+			DEBUG_print(buf);
+			DEBUG_print("_");
+			itoa(lobits, buf, 20, -16, 8);
+			DEBUG_print(buf);
+			DEBUG_print("\n");
+		}
+		
+		{
+			tmpv = walk_pts(cpu_context->regs[REG_A0], satp, 1);
+			DEBUG_print("Walked: ");
+			uint32_t hibits = (tmpv >> 32) & 0xFFFFFFFF;
+			uint32_t lobits = (tmpv >>  0) & 0xFFFFFFFF;
+			itoa(hibits, buf, 20, -16, 8);
+			DEBUG_print(buf);
+			DEBUG_print("_");
+			itoa(lobits, buf, 20, -16, 8);
+			DEBUG_print(buf);
+			DEBUG_print("\n");
+		}
+		*/
+		
+		//print_reg_state(cpu_context);
+		s_delegation_trampoline(cpu_context, 0, mtval);
 	} else if (cause_value == 13) {
 		// Load Page Fault
-		s_delegation_trampoline(cpu_context, 0, 0);
+		DEBUG_print("Load Page Fault\n");
+		//print_reg_state(cpu_context);
+		s_delegation_trampoline(cpu_context, 0, mtval);
 	} else if (cause_value == 15) {
 		// Store/AMO Page Fault
-		s_delegation_trampoline(cpu_context, 0, 0);
+		DEBUG_print("Store/AMO Page Fault\n");
+		
+		/*
+		char buf[20];
+		uintRL_t satp;
+		uintRL_t tmpv;
+		
+		{
+			DEBUG_print("satp: ");
+			__asm__ __volatile__ ("csrr %0, satp" : "=r" (satp));
+			uint32_t hibits = (satp >> 32) & 0xFFFFFFFF;
+			uint32_t lobits = (satp >>  0) & 0xFFFFFFFF;
+			itoa(hibits, buf, 20, -16, 8);
+			DEBUG_print(buf);
+			DEBUG_print("_");
+			itoa(lobits, buf, 20, -16, 8);
+			DEBUG_print(buf);
+			DEBUG_print("\n");
+		}
+		
+		{
+			DEBUG_print("misa: ");
+			__asm__ __volatile__ ("csrr %0, misa" : "=r" (tmpv));
+			uint32_t hibits = (tmpv >> 32) & 0xFFFFFFFF;
+			uint32_t lobits = (tmpv >>  0) & 0xFFFFFFFF;
+			itoa(hibits, buf, 20, -16, 8);
+			DEBUG_print(buf);
+			DEBUG_print("_");
+			itoa(lobits, buf, 20, -16, 8);
+			DEBUG_print(buf);
+			DEBUG_print("\n");
+		}
+		
+		{
+			DEBUG_print("mstatus: ");
+			__asm__ __volatile__ ("csrr %0, mstatus" : "=r" (tmpv));
+			uint32_t hibits = (tmpv >> 32) & 0xFFFFFFFF;
+			uint32_t lobits = (tmpv >>  0) & 0xFFFFFFFF;
+			itoa(hibits, buf, 20, -16, 8);
+			DEBUG_print(buf);
+			DEBUG_print("_");
+			itoa(lobits, buf, 20, -16, 8);
+			DEBUG_print(buf);
+			DEBUG_print("\n");
+		}
+		
+		{
+			tmpv = walk_pts(cpu_context->regs[REG_A0], satp, 1);
+			DEBUG_print("Walked: ");
+			uint32_t hibits = (tmpv >> 32) & 0xFFFFFFFF;
+			uint32_t lobits = (tmpv >>  0) & 0xFFFFFFFF;
+			itoa(hibits, buf, 20, -16, 8);
+			DEBUG_print(buf);
+			DEBUG_print("_");
+			itoa(lobits, buf, 20, -16, 8);
+			DEBUG_print(buf);
+			DEBUG_print("\n");
+		}
+		*/
+		
+		//print_reg_state(cpu_context);
+		s_delegation_trampoline(cpu_context, 0, mtval);
 	} else {
 		__asm__ __volatile__ ("csrc mstatus, %0" : : "r" (0x8));
 		char buf[20];
-		memset(buf, 0, 20);
 		DEBUG_print("ESBI Exception!  Lower mcause bits: ");
 		itoa(cause_value, buf, 20, 10, 0);
 		DEBUG_print(buf);
 		DEBUG_print("\n");
-		DEBUG_print("\tHart ID: ");
-		itoa(mhartid, buf, 20, -10, 0);
-		DEBUG_print(buf);
-		DEBUG_print("\n");
-		DEBUG_print("\tPC: 0x");
-		itoa(cpu_context->regs[REG_PC], buf, 20, -16, -8);
-		DEBUG_print(buf);
-		DEBUG_print("\n");
+		print_reg_state(cpu_context);
 		idle_loop();
 	}
 	
@@ -455,7 +596,7 @@ uintRL_t decode_instruction(uint32_t einst, dec_inst* dinst) {
 // This function assumes the PT structures are not changed (Such as by other cores).
 // This function makes no security checks.  It assumes PTs structure is safe.  A malicious
 // kernel could exploit it.
-uintRL_t walk_pts(uintRL_t location, uintRL_t csr_satp) {
+uintRL_t walk_pts(uintRL_t location, uintRL_t csr_satp, uintRL_t debug) {
 	uintRL_t mem_addr;
 	
 #if   __riscv_xlen == 128
@@ -468,7 +609,7 @@ uintRL_t walk_pts(uintRL_t location, uintRL_t csr_satp) {
 	
 	sint64_t page_walk = (sint64_t)csr_satp;
 	// Is Virtual Memory Active?
-	if (((uintRL_t)page_walk >> 60) == 8) { // Sv39
+	if ((csr_satp >> 60) == 8) { // Sv39
 		// Shift to match PTE entry offset to ready for entry to the PT Walk loop
 		page_walk <<= 10;
 		
@@ -480,7 +621,35 @@ uintRL_t walk_pts(uintRL_t location, uintRL_t csr_satp) {
 			page_walk >>= 8;
 			
 			sint64_t* page_ptr = (sint64_t*)(page_walk & ~((uintRL_t)0xFFF));
+			
+			if (debug) {
+				DEBUG_print("Page Table Address: ");
+				uint32_t hibits = (((uint64_t)page_ptr) >> 32) & 0xFFFFFFFF;
+				uint32_t lobits = (((uint64_t)page_ptr) >>  0) & 0xFFFFFFFF;
+				char buf[20];
+				itoa(hibits, buf, 20, -16, 8);
+				DEBUG_print(buf);
+				DEBUG_print("_");
+				itoa(lobits, buf, 20, -16, 8);
+				DEBUG_print(buf);
+				DEBUG_print("\n");
+			}
+			
 			page_walk = page_ptr[(location >> shift_ammount) & 0x1FF];
+			
+			if (debug) {
+				DEBUG_print("Entry In The Page Table: ");
+				uint32_t hibits = (((uint64_t)page_walk) >> 32) & 0xFFFFFFFF;
+				uint32_t lobits = (((uint64_t)page_walk) >>  0) & 0xFFFFFFFF;
+				char buf[20];
+				itoa(hibits, buf, 20, -16, 8);
+				DEBUG_print(buf);
+				DEBUG_print("_");
+				itoa(lobits, buf, 20, -16, 8);
+				DEBUG_print(buf);
+				DEBUG_print("\n");
+			}
+			
 			shift_ammount -= 9;
 		} while ((page_walk & 0xF) == 1 && shift_ammount >= 12);
 		
@@ -505,7 +674,24 @@ uintRL_t walk_pts(uintRL_t location, uintRL_t csr_satp) {
 		// Binary OR the last 12 bits of the address to the computed physical memory page.
 		page_walk |= location & 0xFFF;
 		mem_addr = (uintRL_t)page_walk;
+		
+		if (debug) {
+			DEBUG_print("Final Address: ");
+			uint32_t hibits = (mem_addr >> 32) & 0xFFFFFFFF;
+			uint32_t lobits = (mem_addr >>  0) & 0xFFFFFFFF;
+			char buf[20];
+			itoa(hibits, buf, 20, -16, 8);
+			DEBUG_print(buf);
+			DEBUG_print("_");
+			itoa(lobits, buf, 20, -16, 8);
+			DEBUG_print(buf);
+			DEBUG_print("\n");
+		}
+		
 	} else {
+		if (debug) {
+			DEBUG_print("No Page Walk\n");
+		}
 		mem_addr = (uintRL_t)location;
 	}
 	
@@ -516,7 +702,7 @@ uintRL_t walk_pts(uintRL_t location, uintRL_t csr_satp) {
 	sint32_t page_walk = (sint32_t)csr_satp;
 	
 	// Is Virtual Memory Active?
-	if (((uintRL_t)page_walk >> 31) == 1) {
+	if ((csr_satp >> 31) == 1) {
 		// Shift to match PTE entry offset to ready for entry to the PT Walk loop
 		page_walk <<= 10;
 		

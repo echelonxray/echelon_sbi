@@ -96,13 +96,13 @@ interrupt_entry_handler:
 	
 	# Save the Program Counter
 	csrr a1, mepc
-	SX a1, 0x018(a0)
+	SX a1, (CT_R_ST + (XLEN_BYTES * REG_PC))(a0)
 	
 	# Save the Execution Mode
 	csrr a1, mstatus
 	srli a1, a1, 11
 	andi a1, a1, 0x3
-	SX a1, 0x008(a0)
+	SX a1, (XLEN_BYTES * 1)(a0)
 	
 	# Setup the Global Pointer
 	.option push
@@ -113,7 +113,7 @@ interrupt_entry_handler:
 	
 	# Find the cause of the interrupt
 	csrr a1, mcause
-	slti a2, a1, 0 # Save the interrupt flag in a2
+	slti ra, a1, 0 # Save the interrupt flag
 	not sp, zero
 	srli sp, sp, 1
 	and a1, a1, sp # Save the cause value in a1 (arg2)
@@ -130,7 +130,7 @@ interrupt_entry_handler:
 	li a5, 0
 	2: # loop start
 	beq t2, a3, 3b # Error: mhartid not found in array
-	LX a4, 0x00(t1)
+	LX a4, (t1)
 	beq t0, a4, 2f
 	addi t1, t1, CT_SIZE
 	addi a5, a5, CT_SIZE
@@ -141,8 +141,10 @@ interrupt_entry_handler:
 	LX sp, (CT_R_ST + (XLEN_BYTES * REG_SP))(t1)
 	LX tp, (CT_R_ST + (XLEN_BYTES * REG_TP))(t1)
 	
-	bne a2, zero, 2f # Jump if interrupt
-	/*
+	csrr a2, mtval
+	
+	bne ra, zero, 2f # Jump if interrupt
+	
 	addi sp, sp, -0x800
 	1: auipc a3, %pcrel_hi(hart_contexts_exception)
 	LX a3, %pcrel_lo(1b)(a3)
@@ -151,9 +153,9 @@ interrupt_entry_handler:
 	LX a3, 0x08(a0)
 	li a4, 3
 	beq a3, a4, 4f
-	#csrsi mstatus, 0x8
+	csrsi mstatus, 0x8
 	4:
-	*/
+	
 	call exception_c_handler
 	j 3f
 	
@@ -205,6 +207,10 @@ switch_context:
 	j idle_loop
 
 s_delegation_trampoline:
+	csrci mstatus, 0x8
+	
+	csrw mscratch, a0
+	
 	# Set stval
 	csrw stval, a2
 	

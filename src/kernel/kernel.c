@@ -176,6 +176,13 @@ void kmain() {
 	
 	char buf[20];
 	
+	uintRL_t mtvec;
+	__asm__ __volatile__ ("csrr %0, mtvec" : "=r" (mtvec));
+	itoa(mtvec, buf, 20, -16, -8);
+	DEBUG_print("mtvec: ");
+	DEBUG_print(buf);
+	DEBUG_print("\n");
+	
 	/*
 	struct fdt_header {
 		uint32_t magic;
@@ -356,7 +363,7 @@ void kmain() {
 	cpio_kernel_entry_header.h_magic = 0;
 	if (unloaded_kernel_ptr == 0) {
 		void* ptr = (void*)(0x20000000);
-		unloaded_kernel_ptr = get_cpio_entry_header("kern.bin", ptr, &cpio_kernel_entry_header);
+		unloaded_kernel_ptr = get_cpio_entry_header("riscv32iam_linux_kernel.bin", ptr, &cpio_kernel_entry_header);
 	}
 	if (unloaded_kernel_ptr == 0) {
 		DEBUG_print("Could Not Locate Kernel: Halting\n");
@@ -462,7 +469,9 @@ void kmain() {
 	DEBUG_print("\n");
 	//memset((void*)kernel_load_to_point, 0, kernel_header_image_size);
 	if (cpio_kernel_entry_header.h_magic != 0) {
+		DEBUG_print("Starting...");
 		memcpy((void*)kernel_load_to_point, unloaded_kernel_ptr, cpio_kernel_entry_header.h_filesize.vl32);
+		DEBUG_print("Done\n");
 	} else {
 		memcpy((void*)kernel_load_to_point, unloaded_kernel_ptr, kernel_header_image_size);
 	}
@@ -482,7 +491,9 @@ void kmain() {
 	DEBUG_print(buf);
 	DEBUG_print("\n");
 	if (cpio_dtb_entry_header.h_magic != 0) {
+		DEBUG_print("Starting...");
 		memcpy((void*)dtb_load_to_point, unloaded_dtb_ptr, cpio_dtb_entry_header.h_filesize.vl32);
+		DEBUG_print("Done\n");
 	}
 	
 	uintRL_t initramfs_load_to_point;
@@ -499,7 +510,9 @@ void kmain() {
 	DEBUG_print(buf);
 	DEBUG_print("\n");
 	if (cpio_initramfs_entry_header.h_magic != 0) {
+		DEBUG_print("Starting...");
 		memcpy((void*)initramfs_load_to_point, unloaded_initramfs_ptr, cpio_initramfs_entry_header.h_filesize.vl32);
+		DEBUG_print("Done\n");
 	}
 	
 	DEBUG_print("\n");
@@ -561,10 +574,10 @@ void kmain() {
 	DEBUG_print("--Start Hart--\n");
 	Hart_Command command;
 	command.command = HARTCMD_STARTHART;
-	command.param0 = 1;
+	command.param0 = 0;
 	command.param1 = kernel_load_to_point;
 	command.param2 = dtb_load_to_point;
-	send_hart_command_que(1, &command);
+	send_hart_command_que(0, &command);
 	
 	return;
 }

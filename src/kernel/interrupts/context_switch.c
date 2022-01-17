@@ -45,133 +45,114 @@ void print_reg_state(volatile CPU_Context* cpu_context) {
 	DEBUG_print("\n");
 	*/
 	
-	DEBUG_print("\n");
-	
 	DEBUG_print("\t x1: ");
-	itoa(cpu_context->regs[REG_X1], buf, 20, -16, 0);
+	itoa(cpu_context->regs[REG_X1], buf, 20, -16, -8);
 	DEBUG_print(buf);
-	DEBUG_print("\n");
 	DEBUG_print("\t x2: ");
-	itoa(cpu_context->regs[REG_X2], buf, 20, -16, 0);
+	itoa(cpu_context->regs[REG_X2], buf, 20, -16, -8);
 	DEBUG_print(buf);
 	DEBUG_print("\n");
 	DEBUG_print("\t x3: ");
-	itoa(cpu_context->regs[REG_X3], buf, 20, -16, 0);
+	itoa(cpu_context->regs[REG_X3], buf, 20, -16, -8);
 	DEBUG_print(buf);
-	DEBUG_print("\n");
 	DEBUG_print("\t x4: ");
-	itoa(cpu_context->regs[REG_X4], buf, 20, -16, 0);
+	itoa(cpu_context->regs[REG_X4], buf, 20, -16, -8);
 	DEBUG_print(buf);
 	DEBUG_print("\n");
 	DEBUG_print("\t x5: ");
-	itoa(cpu_context->regs[REG_X5], buf, 20, -16, 0);
+	itoa(cpu_context->regs[REG_X5], buf, 20, -16, -8);
 	DEBUG_print(buf);
-	DEBUG_print("\n");
 	DEBUG_print("\t x6: ");
-	itoa(cpu_context->regs[REG_X6], buf, 20, -16, 0);
+	itoa(cpu_context->regs[REG_X6], buf, 20, -16, -8);
 	DEBUG_print(buf);
 	DEBUG_print("\n");
 	DEBUG_print("\t x7: ");
-	itoa(cpu_context->regs[REG_X7], buf, 20, -16, 0);
+	itoa(cpu_context->regs[REG_X7], buf, 20, -16, -8);
 	DEBUG_print(buf);
-	DEBUG_print("\n");
 	DEBUG_print("\t x8: ");
-	itoa(cpu_context->regs[REG_X8], buf, 20, -16, 0);
+	itoa(cpu_context->regs[REG_X8], buf, 20, -16, -8);
 	DEBUG_print(buf);
 	DEBUG_print("\n");
 	DEBUG_print("\t x9: ");
-	itoa(cpu_context->regs[REG_X9], buf, 20, -16, 0);
+	itoa(cpu_context->regs[REG_X9], buf, 20, -16, -8);
 	DEBUG_print(buf);
-	DEBUG_print("\n");
 	DEBUG_print("\tx10: ");
-	itoa(cpu_context->regs[REG_X10], buf, 20, -16, 0);
+	itoa(cpu_context->regs[REG_X10], buf, 20, -16, -8);
 	DEBUG_print(buf);
 	DEBUG_print("\n");
 	DEBUG_print("\tx11: ");
-	itoa(cpu_context->regs[REG_X11], buf, 20, -16, 0);
+	itoa(cpu_context->regs[REG_X11], buf, 20, -16, -8);
 	DEBUG_print(buf);
-	DEBUG_print("\n");
 	DEBUG_print("\tx12: ");
-	itoa(cpu_context->regs[REG_X12], buf, 20, -16, 0);
+	itoa(cpu_context->regs[REG_X12], buf, 20, -16, -8);
 	DEBUG_print(buf);
 	DEBUG_print("\n");
 	DEBUG_print("\tx13: ");
-	itoa(cpu_context->regs[REG_X13], buf, 20, -16, 0);
+	itoa(cpu_context->regs[REG_X13], buf, 20, -16, -8);
 	DEBUG_print(buf);
-	DEBUG_print("\n");
 	DEBUG_print("\tx14: ");
-	itoa(cpu_context->regs[REG_X14], buf, 20, -16, 0);
+	itoa(cpu_context->regs[REG_X14], buf, 20, -16, -8);
 	DEBUG_print(buf);
 	DEBUG_print("\n");
 	DEBUG_print("\tx15: ");
-	itoa(cpu_context->regs[REG_X15], buf, 20, -16, 0);
+	itoa(cpu_context->regs[REG_X15], buf, 20, -16, -8);
 	DEBUG_print(buf);
-	DEBUG_print("\n");
 	DEBUG_print("\tx16: ");
-	itoa(cpu_context->regs[REG_X16], buf, 20, -16, 0);
+	itoa(cpu_context->regs[REG_X16], buf, 20, -16, -8);
 	DEBUG_print(buf);
 	DEBUG_print("\n");
 	DEBUG_print("\tx17: ");
-	itoa(cpu_context->regs[REG_X17], buf, 20, -16, 0);
+	itoa(cpu_context->regs[REG_X17], buf, 20, -16, -8);
 	DEBUG_print(buf);
-	DEBUG_print("\n");
 	DEBUG_print("\tx18: ");
-	itoa(cpu_context->regs[REG_X18], buf, 20, -16, 0);
+	itoa(cpu_context->regs[REG_X18], buf, 20, -16, -8);
 	DEBUG_print(buf);
 	DEBUG_print("\n");
 	DEBUG_print("\tx19: ");
-	itoa(cpu_context->regs[REG_X19], buf, 20, -16, 0);
+	itoa(cpu_context->regs[REG_X19], buf, 20, -16, -8);
 	DEBUG_print(buf);
-	DEBUG_print("\n");
 	DEBUG_print("\tx20: ");
-	itoa(cpu_context->regs[REG_X20], buf, 20, -16, 0);
+	itoa(cpu_context->regs[REG_X20], buf, 20, -16, -8);
 	DEBUG_print(buf);
 	DEBUG_print("\n");
 	DEBUG_print("\tx21: ");
-	itoa(cpu_context->regs[REG_X21], buf, 20, -16, 0);
+	itoa(cpu_context->regs[REG_X21], buf, 20, -16, -8);
 	DEBUG_print(buf);
-	DEBUG_print("\n");
 	DEBUG_print("\tx22: ");
-	itoa(cpu_context->regs[REG_X22], buf, 20, -16, 0);
+	itoa(cpu_context->regs[REG_X22], buf, 20, -16, -8);
 	DEBUG_print(buf);
 	DEBUG_print("\n");
 	DEBUG_print("\tx23: ");
-	itoa(cpu_context->regs[REG_X23], buf, 20, -16, 0);
+	itoa(cpu_context->regs[REG_X23], buf, 20, -16, -8);
 	DEBUG_print(buf);
-	DEBUG_print("\n");
 	DEBUG_print("\tx24: ");
-	itoa(cpu_context->regs[REG_X24], buf, 20, -16, 0);
+	itoa(cpu_context->regs[REG_X24], buf, 20, -16, -8);
 	DEBUG_print(buf);
 	DEBUG_print("\n");
 	DEBUG_print("\tx25: ");
-	itoa(cpu_context->regs[REG_X25], buf, 20, -16, 0);
+	itoa(cpu_context->regs[REG_X25], buf, 20, -16, -8);
 	DEBUG_print(buf);
-	DEBUG_print("\n");
 	DEBUG_print("\tx26: ");
-	itoa(cpu_context->regs[REG_X26], buf, 20, -16, 0);
+	itoa(cpu_context->regs[REG_X26], buf, 20, -16, -8);
 	DEBUG_print(buf);
 	DEBUG_print("\n");
 	DEBUG_print("\tx27: ");
-	itoa(cpu_context->regs[REG_X27], buf, 20, -16, 0);
+	itoa(cpu_context->regs[REG_X27], buf, 20, -16, -8);
 	DEBUG_print(buf);
-	DEBUG_print("\n");
 	DEBUG_print("\tx28: ");
-	itoa(cpu_context->regs[REG_X28], buf, 20, -16, 0);
+	itoa(cpu_context->regs[REG_X28], buf, 20, -16, -8);
 	DEBUG_print(buf);
 	DEBUG_print("\n");
 	DEBUG_print("\tx29: ");
-	itoa(cpu_context->regs[REG_X29], buf, 20, -16, 0);
+	itoa(cpu_context->regs[REG_X29], buf, 20, -16, -8);
 	DEBUG_print(buf);
-	DEBUG_print("\n");
 	DEBUG_print("\tx30: ");
-	itoa(cpu_context->regs[REG_X30], buf, 20, -16, 0);
+	itoa(cpu_context->regs[REG_X30], buf, 20, -16, -8);
 	DEBUG_print(buf);
 	DEBUG_print("\n");
 	DEBUG_print("\tx31: ");
-	itoa(cpu_context->regs[REG_X31], buf, 20, -16, 0);
+	itoa(cpu_context->regs[REG_X31], buf, 20, -16, -8);
 	DEBUG_print(buf);
-	DEBUG_print("\n");
-	
 	DEBUG_print("\n");
 	return;
 }
@@ -319,38 +300,262 @@ void exception_c_handler(volatile CPU_Context* cpu_context, uintRL_t cause_value
 		uintRL_t form = decode_instruction(*instruction, &dinst);
 		//uintRL_t form = decode_instruction(mtval, &dinst);
 		if (form) {
+			
+			// Emulate reading the CSR: time(timeh)
 			if (dinst.opcode == 0x73) {
 				if (dinst.funct3 == 0x2 || dinst.funct3 == 0x3 || dinst.funct3 == 0x6 || dinst.funct3 == 0x7) {
-					if (dinst.rs1 == 0 && dinst.rd != 0) {
-						if (dinst.imm == 0xC01) {
-							uint64_t* mtime = (void*)(CLINT_BASE + CLINT_MTIME);
+					if (dinst.rs1 == 0) {
+#ifdef MM_FU540_C000
+						if (dinst.rd != 0) {
+							cpu_context->regs[REG_PC] += 4;
+							return;
+						}
+						if        (dinst.imm == 0xC01) {
+							// CSR 64: time
+							uint64_t* mtime = (void*)(((uintRL_t)CLINT_BASE) + CLINT_MTIME);
 							cpu_context->regs[dinst.rd] = *mtime;
 							cpu_context->regs[REG_PC] += 4;
 							return;
 						}
+#endif
+#ifdef MM_JSEMU_0000
+#ifdef NOT_DEFINED // Disable this code section
+						if (dinst.rd != 0) {
+							cpu_context->regs[REG_PC] += 4;
+							return;
+						}
+						if        (dinst.imm == 0xC01) {
+							// CSR 32: time
+							uint32_t* mtime = (void*)(((uintRL_t)CLINT_BASE) + CLINT_MTIME);
+							cpu_context->regs[dinst.rd] = *mtime;
+							cpu_context->regs[REG_PC] += 4;
+							return;
+						} else if (dinst.imm == 0xC81) {
+							// CSR 32: timeh
+							uint32_t* mtime = (void*)(((uintRL_t)CLINT_BASE) + CLINT_MTIME + 0x4);
+							cpu_context->regs[dinst.rd] = *mtime;
+							cpu_context->regs[REG_PC] += 4;
+							return;
+						}
+#endif
+#endif
+					}
+				}
+			}
+			
+			// Emulate the M-Extension (But only for the Supervisor)
+			if (dinst.opcode == 0x33 && cpu_context->execution_mode == 1) {
+				if (dinst.funct7 == 0x1) {
+					if (dinst.rd == 0) {
+						cpu_context->regs[REG_PC] += 4;
+						return;
+					}
+					if        (dinst.funct3 == 0x0) {
+						// MUL
+						sintRL_t rs1 = cpu_context->regs[dinst.rs1];
+						sintRL_t rs2 = cpu_context->regs[dinst.rs2];
+						cpu_context->regs[dinst.rd] = rs1 * rs2;
+						cpu_context->regs[REG_PC] += 4;
+						return;
+					} else if (dinst.funct3 == 0x1) {
+						// MULH
+						sintRL_t rs1 = cpu_context->regs[dinst.rs1];
+						sintRL_t rs2 = cpu_context->regs[dinst.rs2];
+						
+						uint32_t inverse_shift = sizeof(sintRL_t) * 8;
+						uintRL_t lo_bits = 0;
+						uintRL_t hi_bits = 0;
+						for (uint32_t i = 0; i < sizeof(sintRL_t) * 8; i++) {
+							if (rs2 & 0x1) {
+								// Upon Entry to the loop, inverse_shift will overflow the 
+								// shift.  In RISC-V shifts by a register are only by the 
+								// lower 5, 6, or 7 bits in the register for XLENs 32, 64, 128 
+								// respectively.  Shift overflows are undefined behaviour 
+								// in the C standard.  I have it wrapped them in IF statements.
+								if (inverse_shift < sizeof(sintRL_t) * 8) {
+									if (rs2 < 0) {
+										hi_bits -= rs1 >> inverse_shift;
+									} else {
+										hi_bits += rs1 >> inverse_shift;
+									}
+								} else {
+									if (rs1 < 0) {
+										if (rs2 < 0) {
+											hi_bits -= (sintRL_t)-1;
+										} else {
+											hi_bits += (sintRL_t)-1;
+										}
+									}
+								}
+								
+								uintRL_t tmpval = lo_bits;
+								if (rs2 < 0) {
+									tmpval -= rs1 << i;
+									if (tmpval > lo_bits) {
+										// Overflow
+										hi_bits--;
+									}
+								} else {
+									tmpval += rs1 << i;
+									if (tmpval < lo_bits) {
+										// Overflow
+										hi_bits++;
+									}
+								}
+								lo_bits = tmpval;
+							}
+							rs2 >>= 1;
+							inverse_shift--;
+						}
+						
+						cpu_context->regs[dinst.rd] = hi_bits;
+						cpu_context->regs[REG_PC] += 4;
+						return;
+					} else if (dinst.funct3 == 0x2) {
+						// MULHSU
+						sintRL_t rs1 = cpu_context->regs[dinst.rs1];
+						uintRL_t rs2 = cpu_context->regs[dinst.rs2];
+						
+						uint32_t inverse_shift = sizeof(sintRL_t) * 8;
+						uintRL_t lo_bits = 0;
+						uintRL_t hi_bits = 0;
+						for (uint32_t i = 0; i < sizeof(sintRL_t) * 8; i++) {
+							if (rs2 & 0x1) {
+								// Upon Entry to the loop, inverse_shift will overflow the 
+								// shift.  In RISC-V shifts by a register are only by the 
+								// lower 5, 6, or 7 bits in the register for XLENs 32, 64, 128 
+								// respectively.  Shift overflows are undefined behaviour 
+								// in the C standard.  I have it wrapped them in IF statements.
+								if (inverse_shift < sizeof(sintRL_t) * 8) {
+									hi_bits += rs1 >> inverse_shift;
+								} else {
+									if (rs1 < 0) {
+										hi_bits += (sintRL_t)-1;
+									}
+								}
+								
+								uintRL_t tmpval = lo_bits;
+								tmpval += rs1 << i;
+								if (tmpval < lo_bits) {
+									// Overflow
+									hi_bits++;
+								}
+								lo_bits = tmpval;
+							}
+							rs2 >>= 1;
+							inverse_shift--;
+						}
+						
+						cpu_context->regs[dinst.rd] = hi_bits;
+						cpu_context->regs[REG_PC] += 4;
+						return;
+					} else if (dinst.funct3 == 0x3) {
+						// MULHU
+						uintRL_t rs1 = cpu_context->regs[dinst.rs1];
+						uintRL_t rs2 = cpu_context->regs[dinst.rs2];
+						
+						uint32_t inverse_shift = sizeof(sintRL_t) * 8;
+						uintRL_t lo_bits = 0;
+						uintRL_t hi_bits = 0;
+						for (uint32_t i = 0; i < sizeof(sintRL_t) * 8; i++) {
+							if (rs2 & 0x1) {
+								// Upon Entry to the loop, inverse_shift will overflow the 
+								// shift.  In RISC-V shifts by a register are only by the 
+								// lower 5, 6, or 7 bits in the register for XLENs 32, 64, 128 
+								// respectively.  Shift overflows are undefined behaviour 
+								// in the C standard.  However, RISC-V will not do anything 
+								// because the lowest bits will be zero.
+								hi_bits += rs1 >> inverse_shift;
+								
+								uintRL_t tmpval = lo_bits;
+								tmpval += rs1 << i;
+								if (tmpval < lo_bits) {
+									// Overflow
+									hi_bits++;
+								}
+								lo_bits = tmpval;
+							}
+							rs2 >>= 1;
+							inverse_shift--;
+						}
+						
+						cpu_context->regs[dinst.rd] = hi_bits;
+						cpu_context->regs[REG_PC] += 4;
+						return;
+					} else if (dinst.funct3 == 0x4) {
+						// DIV
+						sintRL_t rs1 = cpu_context->regs[dinst.rs1];
+						sintRL_t rs2 = cpu_context->regs[dinst.rs2];
+						if (rs2 == 0) {
+							cpu_context->regs[dinst.rd] = (sintRL_t)-1;
+							cpu_context->regs[REG_PC] += 4;
+							return;
+						}
+						if (rs2 == ((sintRL_t)-1) && rs1 == (((sintRL_t)1) << (sizeof(sintRL_t) * 8 - 1))) {
+							cpu_context->regs[dinst.rd] = rs1;
+							cpu_context->regs[REG_PC] += 4;
+							return;
+						}
+						cpu_context->regs[dinst.rd] = rs1 / rs2;
+						cpu_context->regs[REG_PC] += 4;
+						return;
+					} else if (dinst.funct3 == 0x5) {
+						// DIVU
+						uintRL_t rs1 = cpu_context->regs[dinst.rs1];
+						uintRL_t rs2 = cpu_context->regs[dinst.rs2];
+						if (rs2 == 0) {
+							cpu_context->regs[dinst.rd] = (sintRL_t)-1;
+							cpu_context->regs[REG_PC] += 4;
+							return;
+						}
+						cpu_context->regs[dinst.rd] = rs1 / rs2;
+						cpu_context->regs[REG_PC] += 4;
+						return;
+					} else if (dinst.funct3 == 0x6) {
+						// REM
+						sintRL_t rs1 = cpu_context->regs[dinst.rs1];
+						sintRL_t rs2 = cpu_context->regs[dinst.rs2];
+						if (rs2 == 0) {
+							cpu_context->regs[dinst.rd] = rs1;
+							cpu_context->regs[REG_PC] += 4;
+							return;
+						}
+						if (rs2 == ((sintRL_t)-1) && rs1 == (((sintRL_t)1) << (sizeof(sintRL_t) * 8 - 1))) {
+							cpu_context->regs[dinst.rd] = 0;
+							cpu_context->regs[REG_PC] += 4;
+							return;
+						}
+						cpu_context->regs[dinst.rd] = rs1 % rs2;
+						cpu_context->regs[REG_PC] += 4;
+						return;
+					} else {//(dinst.funct7 == 0x7)
+						// REMU
+						uintRL_t rs1 = cpu_context->regs[dinst.rs1];
+						uintRL_t rs2 = cpu_context->regs[dinst.rs2];
+						if (rs2 == 0) {
+							cpu_context->regs[dinst.rd] = rs1;
+							cpu_context->regs[REG_PC] += 4;
+							return;
+						}
+						cpu_context->regs[dinst.rd] = rs1 % rs2;
+						cpu_context->regs[REG_PC] += 4;
+						return;
 					}
 				}
 			}
 		}
 		
-		DEBUG_print("Illegal Instruction\n");
+		//DEBUG_print("Illegal Instruction\n");
 		
-		/*
 		{
 			DEBUG_print("Illegal Instruction: ");
-			uint32_t hibits = (mtval >> 32) & 0xFFFFFFFF;
-			uint32_t lobits = (mtval >>  0) & 0xFFFFFFFF;
 			char buf[20];
-			itoa(hibits, buf, 20, -16, 8);
-			DEBUG_print(buf);
-			DEBUG_print("_");
-			itoa(lobits, buf, 20, -16, 8);
+			itoa(*instruction, buf, 20, -16, 8);
 			DEBUG_print(buf);
 			DEBUG_print("\n");
 		}
 		print_reg_state(cpu_context);
 		idle_loop();
-		*/
 		
 		s_delegation_trampoline(cpu_context, 0, mtval);
 	} else if (cause_value == 3) {
@@ -365,6 +570,7 @@ void exception_c_handler(volatile CPU_Context* cpu_context, uintRL_t cause_value
 		// Load Address Misaligned
 		DEBUG_print("Load Address Misaligned\n");
 		//print_reg_state(cpu_context);
+		//idle_loop();
 		s_delegation_trampoline(cpu_context, 0, mtval);
 	} else if (cause_value == 5) {
 		// Load Access Fault

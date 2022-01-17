@@ -12,18 +12,18 @@ struct sbiret sbi_set_timer(uint64_t stime_value) {
 #ifdef MM_JSEMU_0000
 	uint32_t mtime;
 	uint32_t mtimeh;
-	mtimeh = stime_value >> 32;
-	mtimeh = stime_value >>  0;
+	mtimeh = (uint32_t)((stime_value >> 32) & 0xFFFFFFFF);
+	mtime  = (uint32_t)((stime_value >>  0) & 0xFFFFFFFF);
 	
-	volatile uint32_t* mtimecmp = (void*)(CLINT_BASE + CLINT_MTIMECMP);
-	volatile uint32_t* mtimecmphi = (void*)(CLINT_BASE + CLINT_MTIMECMPHI);
-	mtimecmphi[mhartid] = 0xFFFFFFFF;
-	mtimecmp[mhartid]   = mtime;
-	mtimecmphi[mhartid] = mtimeh;
+	volatile uint32_t* mtimecmp = (void*)(((uintRL_t)CLINT_BASE) + CLINT_MTIMECMPS);
+	volatile uint32_t* mtimecmphi = (void*)(((uintRL_t)CLINT_BASE) + CLINT_MTIMECMPS + 0x4);
+	mtimecmphi[mhartid * 2] = (sint32_t)-1;
+	mtimecmp[mhartid * 2]   = mtime;
+	mtimecmphi[mhartid * 2] = mtimeh;
 #endif
 	
 #ifdef MM_FU540_C000
-	uint64_t* mtimecmp = (void*)(((uintRL_t)CLINT_BASE) + CLINT_MTIMECMPS);
+	volatile uint64_t* mtimecmp = (void*)(((uintRL_t)CLINT_BASE) + CLINT_MTIMECMP);
 	mtimecmp[mhartid] = stime_value;
 #endif
 	

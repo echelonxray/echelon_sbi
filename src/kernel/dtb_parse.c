@@ -118,7 +118,7 @@ void dtb_parse(void* dtb_location, void** initrd_start, void** initrd_end) {
 	DEBUG_print("\n----FDT Rsv Map----\n");
 	{
 		unsigned int j = 0;
-		for (struct fdt_reserve_entry* i = rsvmap; (void*)i < dt_struct; i++) {
+		for (void* i = rsvmap; (void*)i < dt_struct; i += sizeof(struct fdt_reserve_entry)) {
 			struct fdt_reserve_entry rsv_entry;
 			memcpy(&rsv_entry, i, sizeof(struct fdt_reserve_entry));
 			if (ptr) {
@@ -167,9 +167,10 @@ void dtb_parse(void* dtb_location, void** initrd_start, void** initrd_end) {
 	DEBUG_print("\n----FDT DT Struct----\n");
 	{
 		uint32_t tree_depth = 0;
-		uint32_t* i = dt_struct;
+		void* i = dt_struct;
 		while ((void*)i < dt_strings && (void*)i < (dt_struct + dtb_header.size_dt_struct)) {
-			uint32_t prop_token = *i;
+			uint32_t prop_token;
+			memcpy(&prop_token, i, sizeof(uint32_t));
 			if (ptr) {
 				prop_token = dtb_parse_swap_endianess_32(prop_token);
 			}
@@ -193,7 +194,7 @@ void dtb_parse(void* dtb_location, void** initrd_start, void** initrd_end) {
 					}
 				}
 				DEBUG_print("FDT_END_NODE\n");
-				i++;
+				i += sizeof(uint32_t);
 			} else if (prop_token == FDT_BEGIN_NODE) {
 				{
 					for (uint32_t i = 0; i < tree_depth; i++) {
@@ -202,15 +203,17 @@ void dtb_parse(void* dtb_location, void** initrd_start, void** initrd_end) {
 				}
 				DEBUG_print("FDT_BEGIN_NODE ");
 				tree_depth++;
-				i++;
-				DEBUG_print((char*)i);
+				i += sizeof(uint32_t);
+				DEBUG_print(i);
 				DEBUG_print("\n");
 				uintRL_t addr = (uintRL_t)i;
-				addr += strlen((char*)i) + 1;
-				if (addr & 0x3) {
-					addr &= ~((uintRL_t)0x3);
-					addr += 4;
+				addr += strlen(i) + 1;
+				addr -= (uintRL_t)dt_struct;
+				if (addr & (sizeof(uint32_t) - 1)) {
+					addr &= ~((uintRL_t)(sizeof(uint32_t) - 1));
+					addr += sizeof(uint32_t);
 				}
+				addr += (uintRL_t)dt_struct;
 				i = (void*)addr;
 			} else if (prop_token == FDT_NOP) {
 				{
@@ -219,7 +222,7 @@ void dtb_parse(void* dtb_location, void** initrd_start, void** initrd_end) {
 					}
 				}
 				DEBUG_print("FDT_NOP\n");
-				i++;
+				i += sizeof(uint32_t);
 			} else if (prop_token == FDT_PROP) {
 				{
 					for (uint32_t i = 0; i < tree_depth; i++) {
@@ -227,11 +230,13 @@ void dtb_parse(void* dtb_location, void** initrd_start, void** initrd_end) {
 					}
 				}
 				DEBUG_print("FDT_PROP [len: ");
-				i++;
-				struct ftd_struct_prop_data* prop_data = (void*)i;
-				i = (void*)i + sizeof(struct ftd_struct_prop_data);
-				uint32_t len = prop_data->len;
-				uint32_t nameoff = prop_data->nameoff;
+				i += sizeof(uint32_t);
+				//struct ftd_struct_prop_data* prop_data = (void*)i;
+				struct ftd_struct_prop_data prop_data;
+				memcpy(&prop_data, i, sizeof(struct ftd_struct_prop_data));
+				i += sizeof(struct ftd_struct_prop_data);
+				uint32_t len = prop_data.len;
+				uint32_t nameoff = prop_data.nameoff;
 				if (ptr) {
 					len = dtb_parse_swap_endianess_32(len);
 					nameoff = dtb_parse_swap_endianess_32(nameoff);
@@ -244,7 +249,7 @@ void dtb_parse(void* dtb_location, void** initrd_start, void** initrd_end) {
 				DEBUG_print("] '");
 				DEBUG_print(dt_strings + nameoff);
 				DEBUG_print("' =");
-				uint8_t* byte_ptr = (void*)i;
+				uint8_t* byte_ptr = i;
 				if        (strcmp(dt_strings + nameoff, "linux,initrd-start") == 0) {
 					for (uint32_t j = 0; j < len; j++) {
 						linux_initrd_start <<= 8;
@@ -264,17 +269,19 @@ void dtb_parse(void* dtb_location, void** initrd_start, void** initrd_end) {
 				DEBUG_print("\n");
 				uintRL_t addr = (uintRL_t)i;
 				addr += len;
-				if (addr & 0x3) {
-					addr &= ~((uintRL_t)0x3);
-					addr += 4;
+				addr -= (uintRL_t)dt_struct;
+				if (addr & (sizeof(uint32_t) - 1)) {
+					addr &= ~((uintRL_t)(sizeof(uint32_t) - 1));
+					addr += sizeof(uint32_t);
 				}
+				addr += (uintRL_t)dt_struct;
 				i = (void*)addr;
 			} else {
 				DEBUG_print("TOKEN Invalid: prop_token = ");
 				itoa(prop_token, buf, 20, -16, -8);
 				DEBUG_print(buf);
 				DEBUG_print("\n");
-				i++;
+				i += sizeof(uint32_t);
 			}
 		}
 	}

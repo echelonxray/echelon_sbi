@@ -329,12 +329,40 @@ void memset(void* s, unsigned int c, size_t n) {
 void *memcpy(void *dest, const void *src, size_t n) {
 	const unsigned char* ptr_src = src;
 	unsigned char* ptr_dest = dest;
-	while (n > 0) {
-		*ptr_dest = *ptr_src;
-		ptr_dest++;
-		ptr_src++;
-		n--;
+	unsigned char* dest_end = dest + n;
+	
+	/*
+	src and dest need to be XLEN aligned for this to work
+	
+	uintRL_t* dest_end_lower   = (void*)(((uintRL_t)dest_end) & ~(sizeof(uintRL_t) - 1));
+	uintRL_t* dest_start_upper = (void*)(((uintRL_t)dest)     & ~(sizeof(uintRL_t) - 1));
+	if (((uintRL_t)dest) & (sizeof(uintRL_t) - 1)) {
+		dest_start_upper++;
 	}
+	
+	if (dest_start_upper < dest_end_lower) {
+		while (ptr_dest < (unsigned char*)dest_start_upper) {
+			*ptr_dest = *ptr_src;
+			ptr_src++;
+			ptr_dest++;
+		}
+		uintRL_t* ptr_RL_src = (void*)ptr_src;
+		while (dest_start_upper < dest_end_lower) {
+			*dest_start_upper = *ptr_RL_src;
+			ptr_RL_src++;
+			dest_start_upper++;
+		}
+		ptr_src  = (void*)ptr_RL_src;
+		ptr_dest = (void*)dest_start_upper;
+	}
+	*/
+	
+	while (ptr_dest < dest_end) {
+		*ptr_dest = *ptr_src;
+		ptr_src++;
+		ptr_dest++;
+	}
+	
 	return dest;
 }
 

@@ -6,7 +6,7 @@
 #elif  MM_FU540_C000
   #include "./memmaps/fu540_c000.h"
 #elif  MM_QEMU_VIRT
-  #include "./memmaps/fu540_c000.h"
+  #include "./memmaps/cust_emu_000.h"
 #elif  MM_CUSTOM_EMU
   #include "./memmaps/cust_emu_000.h"
 #else

@@ -189,7 +189,7 @@ unsigned long __udivdi3(unsigned long a, unsigned long b) {
 unsigned long long __umodti3(unsigned long long a, unsigned long long b) {
 	unsigned long i = 0;
 	while (a >= b) {
-		if ((signed long)b < 0) {
+		if ((signed long long)b < 0) {
 			a -= b;
 			break;
 		}
@@ -210,7 +210,7 @@ unsigned long long __udivti3(unsigned long long a, unsigned long long b) {
 	unsigned long i = 0;
 	unsigned long long j = 0;
 	while (a >= b) {
-		if ((signed long)b < 0) {
+		if ((signed long long)b < 0) {
 			a -= b;
 			j |= 1ull << i;
 			break;

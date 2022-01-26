@@ -6,6 +6,8 @@ extern uintRL_t load_point;
 extern __thread uintRL_t mhartid;
 
 struct sbiret call_to_sbi(sintRL_t EID, sintRL_t FID, sintRL_t* params) {
+	//DEBUG_print("SBI CALL\n");
+	
 	if        (EID == SBI_EXT_BASE) {
 		// Base Extension
 

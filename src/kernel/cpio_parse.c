@@ -57,8 +57,13 @@ void* get_cpio_entry_header(char* filename, void* cpio_archive, struct header_pw
 		memcpy(&cpio_head, ptr, sizeof(struct header_pwb_cpio));
 		if (cpio_head.h_magic != 0x71C7 && cpio_head.h_magic != 0xC771) {
 			/*
+			char buf[20];
 			itoa(cpio_head.h_magic, buf, 20, -16, -4);
-			DEBUG_print("End CPIO Parse 1: 0x");
+			DEBUG_print("Return CPIO Parse.  Magic: 0x");
+			DEBUG_print(buf);
+			uintRL_t value = (uintRL_t)cpio_archive;
+			DEBUG_print(", cpio_archive: 0x");
+			itoa(value, buf, 20, -16, -8);
 			DEBUG_print(buf);
 			DEBUG_print("\n");
 			*/

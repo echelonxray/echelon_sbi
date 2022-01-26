@@ -1,7 +1,7 @@
 #include "./string.h"
 
 /*
-signed long _dprintf(signed int fd, const char *format, unsigned long* gen_regs, long double* vec_regs, void* stack_params, unsigned long vector_regs_used) {
+signed long __printm(signed int fd, const char *format, unsigned long* gen_regs, long double* vec_regs, void* stack_params, unsigned long vector_regs_used) {
 	// Parse String
 	//void* stack_ptr = stack_params;
 	char buff[50];
@@ -176,6 +176,8 @@ signed long _dprintf(signed int fd, const char *format, unsigned long* gen_regs,
 }
 */
 
+
+
 void itoa(uintRL_t num, char* buf, size_t buf_len, signed int base, signed int set_min_width) {
 	// At least write a NULL terminator so that if the calling function 
 	// attempts to use the buffer, it will not run off into memory.
@@ -327,6 +329,14 @@ void memset(void* s, unsigned int c, size_t n) {
 }
 
 void *memcpy(void *dest, const void *src, size_t n) {
+	/*
+	int debug = 0;
+	uintRL_t debug_dest = (uintRL_t)dest;
+	if (debug_dest == 0x80400000) {
+		debug = 1;
+	}
+	*/
+	
 	const unsigned char* ptr_src = src;
 	unsigned char* ptr_dest = dest;
 	unsigned char* dest_end = dest + n;
@@ -357,7 +367,26 @@ void *memcpy(void *dest, const void *src, size_t n) {
 	}
 	*/
 	
+	/*
+	uintRL_t debug_counter;
+	debug_counter = 0;
+	debug_dest = 0;
+	*/
 	while (ptr_dest < dest_end) {
+		/*
+		if (debug) {
+			if (debug_counter == 0x1000) {
+				DEBUG_print("Trace: 0x");
+				char buf[20];
+				itoa(debug_dest, buf, 20, -16, -8);
+				DEBUG_print(buf);
+				DEBUG_print("\n");
+				debug_counter = 0;
+			}
+			debug_counter++;
+			debug_dest++;
+		}
+		*/
 		*ptr_dest = *ptr_src;
 		ptr_src++;
 		ptr_dest++;
@@ -366,10 +395,22 @@ void *memcpy(void *dest, const void *src, size_t n) {
 	return dest;
 }
 
-size_t strlen(char* str) {
+size_t strlen(const char* str) {
 	size_t i;
 	i = 0;
 	while (str[i] != 0) {
+		i++;
+	}
+	return i;
+}
+
+size_t strnlen(const char* str, size_t maxlen) {
+	size_t i;
+	i = 0;
+	while (i < maxlen) {
+		if (str[i] == 0) {
+			break;
+		}
 		i++;
 	}
 	return i;

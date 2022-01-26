@@ -2,8 +2,8 @@
 #define _insertion_kernel_h
 
 #ifdef MM_FU540_C000
-#define TOTAL_HART_COUNT 5
-#define USE_HART_COUNT 4
+#define TOTAL_HART_COUNT 2
+#define USE_HART_COUNT 1
 #endif
 
 #ifdef MM_JSEMU_0000

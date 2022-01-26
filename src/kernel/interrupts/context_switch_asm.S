@@ -37,7 +37,7 @@ hart_init_handler:
 	li a3, 0
 	li a5, 0
 	2: # loop start
-	beq a2, a3, 3f # Error: mhartid not found in array
+	bgeu a3, a2, 3f # Error: mhartid not found in array
 	LX a4, (a1)
 	beq a0, a4, 2f
 	addi a1, a1, CT_SIZE
@@ -164,6 +164,7 @@ interrupt_entry_handler:
 	3: mv a0, s0
 
 switch_context:
+	# Ensure that interrupts are disabled so that this is atomic
 	csrci mstatus, 0x8
 	
 	LX a4, (XLEN_BYTES * 1)(a0)   # Load the execution mode from the context block
@@ -207,36 +208,40 @@ switch_context:
 	j idle_loop
 
 s_delegation_trampoline:
+	# Ensure that interrupts are disabled so that this is atomic
 	csrci mstatus, 0x8
 	
+	# Set mscratch in case it was clobbered by an interrupt handler
 	csrw mscratch, a0
 	
-	# Set stval
-	csrw stval, a2
+	# Set scause
+	# The mcause CSR can not be used because it might have been clobbered by an interrupt handler
+	csrw scause, a1
 	
-	# Set the cause
-	csrr t1, mcause
-	csrw scause, t1
+	# Set stval
+	# The mtval CSR can not be used because it might have been clobbered by an interrupt handler
+	csrw stval, a2
 	
 	# Set the return address
 	LX t0, (CT_R_ST + (XLEN_BYTES * REG_PC))(a0)
-	add a1, a1, t0
-	csrw sepc, a1
+	csrw sepc, t0
 	
 	# Find the kernel trap handler
 	csrr t0, stvec
-	addi ra, zero, 1
+	li ra, 1
 	andi sp, t0, 0x3
-	addi t2, zero, -1
-	bne ra, sp, 1f
-	bge t1, zero, 1f
-	srli ra, t2, 1
-	and t1, t1, ra
-	slli t1, t1, 2
+	bne ra, sp, 1f # Jump if not vectored Mode
+	bge a1, zero, 1f # Jump if cause is an exception
+	#li t2, -1
+	#srli ra, t2, 1
+	#and t1, a1, ra
+	#slli t1, t1, 2
+	slli t1, a1, 2
 	add t0, t0, t1
 	1:
-	slli ra, t2, 2
-	and t0, t0, ra
+	#slli ra, t2, 2
+	#and t0, t0, ra
+	andi t0, t0, -4 # May not be needed if the lower 2 bits of mepc are hardwired to zero
 	csrw mepc, t0
 	
 	# Get the current state of mstatus
@@ -249,21 +254,18 @@ s_delegation_trampoline:
 	                          # mstatus.MPP[12:11] = 1 (Supervisor Mode), mstatus.SPIE[5] = mstatus.SIE[1]
 	
 	# Fake the mstatus.SPP setting such that the Supervisor thinks it received the trap
-	LX a1, (XLEN_BYTES * 1)(a0) # Get execution_mode from the cpu_context struct
-	andi a1, a1, 0x1            # Truncate the execution_mode to fit into mstatus.SPP
-	slli a1, a1, 8              # Shift it into the correct place
-	or t0, t0, a1               # Binary OR it against the other bits to set
-	
-	#li t0, 0x0800 # TMP
-	#or t0, t0, a1 # TMP
+	LX t1, (XLEN_BYTES * 1)(a0) # Get execution_mode from the cpu_context struct
+	andi t1, t1, 0x1            # Truncate the execution_mode to fit into mstatus.SPP
+	slli t1, t1, 8              # Shift it into the correct place
+	or t0, t0, t1               # Binary OR it against the other bits to set
 	
 	# Mask of bits to clear in mstatus
-	addi a1, zero, 0x19        # Mask of mstatus.MPP, mstatus.SPP
-	slli a1, a1, 8 # 0x1900    # Shift it into the correct place
-	ori a1, a1, 0x22 # 0x1922 # Mask of mstatus.MPP, mstatus.SPP, mstatus.SPIE, mstatus.SIE
+	addi t1, zero, 0x19        # Mask of mstatus.MPP, mstatus.SPP
+	slli t1, t1, 8 # 0x1900    # Shift it into the correct place
+	ori t1, t1, 0x22 # 0x1922  # Mask of mstatus.MPP, mstatus.SPP, mstatus.SPIE, mstatus.SIE
 	
-	csrc mstatus, a1        # Clear: mstatus.MPP, mstatus.SPP, mstatus.SPIE, mstatus.SIE
-	csrs mstatus, t0        # Set: mstatus.MPP = 1 (Supervisor Mode), mstatus.SPP = 1 (Supervisor Mode)
+	csrc mstatus, t1        # Clear: mstatus.MPP, mstatus.SPP, mstatus.SPIE, mstatus.SIE
+	csrs mstatus, t0        # Set: mstatus.MPP = 1 (Supervisor Mode), mstatus.SPP, mstatus.SPIE
 	
 	# Set Register States
 	LOAD_REGS REG_A0

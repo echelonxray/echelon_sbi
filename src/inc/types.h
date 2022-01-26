@@ -36,4 +36,3 @@ typedef uintRL_t usize_t;
 typedef sintRL_t ssize_t;
 
 #endif
-

@@ -23,8 +23,23 @@ struct sbiret sbi_set_timer(uint64_t stime_value) {
 #endif
 	
 #ifdef MM_FU540_C000
-	volatile uint64_t* mtimecmp = (void*)(((uintRL_t)CLINT_BASE) + CLINT_MTIMECMP);
+
+#if   __riscv_xlen == 64
+	volatile uint64_t* mtimecmp = (void*)(((uintRL_t)CLINT_BASE) + CLINT_MTIMECMPS);
 	mtimecmp[mhartid] = stime_value;
+#elif __riscv_xlen == 32
+	uint32_t mtime;
+	uint32_t mtimeh;
+	mtimeh = (uint32_t)((stime_value >> 32) & 0xFFFFFFFF);
+	mtime  = (uint32_t)((stime_value >>  0) & 0xFFFFFFFF);
+	
+	volatile uint32_t* mtimecmp   = (void*)(((uintRL_t)CLINT_BASE) + CLINT_MTIMECMPS);
+	volatile uint32_t* mtimecmphi = (void*)(((uintRL_t)CLINT_BASE) + CLINT_MTIMECMPS + 0x4);
+	mtimecmphi[mhartid * 2] = (sint32_t)-1;
+	mtimecmp[mhartid * 2] = mtime;
+	mtimecmphi[mhartid * 2] = mtimeh;
+#endif
+
 #endif
 	
 	__asm__ __volatile__ ("csrs mie, %0" : : "r" (0x80));

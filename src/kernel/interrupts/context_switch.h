@@ -95,7 +95,7 @@ void send_hart_command_que(uintRL_t hart_id, Hart_Command* command);
 //void send_hart_command_lck(uintRL_t hart_id, Hart_Command* command);
 void send_hart_command_blk(uintRL_t hart_id, Hart_Command* command);
 void send_hart_command_ret(uintRL_t hart_id, Hart_Command* command);
-void s_delegation_trampoline(volatile CPU_Context* cpu_context, uintRL_t pc_offset, uintRL_t stval) __attribute__((noreturn));
+void s_delegation_trampoline(volatile CPU_Context* cpu_context, uintRL_t cause, uintRL_t stval) __attribute__((noreturn));
 
 #define HARTCMD_SWITCHCONTEXT 1
 #define HARTCMD_STARTHART 14

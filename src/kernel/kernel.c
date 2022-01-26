@@ -165,11 +165,15 @@ uint32_t swap_endianess_32(uint32_t val) {
 }
 
 void kmain() {
+	printm("Michael Test! %d\n", 1);
+	
+	return;
+	
 	volatile uint32_t* ctrl_reg;
 	
 	// Enable TX on UART0
-	ctrl_reg = (uint32_t*)(UART0_BASE + UART_TXCTRL);
-	*ctrl_reg = 0x1;
+	//ctrl_reg = (uint32_t*)(UART0_BASE + UART_TXCTRL);
+	//*ctrl_reg = 0x1;
 	
 	DEBUG_print("Hello, World!\n");
 	DEBUG_print("\n");
@@ -270,14 +274,12 @@ void kmain() {
 	return;
 	*/
 	
-	/*
-	init_reg_a0 = 0;
-	init_reg_a1 = 0;
-	init_reg_a2 = 0;
-	init_reg_a3 = 0;
-	init_reg_a4 = 0;
-	init_reg_a5 = 0;
-	*/
+	//init_reg_a0 = 0;
+	//init_reg_a1 = 0;
+	//init_reg_a2 = 0;
+	//init_reg_a3 = 0;
+	//init_reg_a4 = 0;
+	//init_reg_a5 = 0;
 	
 	itoa(init_reg_a0 >> 32, buf, 20, -16, 8);
 	DEBUG_print("             reg_a0: 0x");
@@ -378,9 +380,25 @@ void kmain() {
 	if (init_reg_a1) {
 		unloaded_dtb_ptr = (void*)(init_reg_a1);
 	}
+	unsigned int dtb_from_qemu;
 	if (unloaded_dtb_ptr == 0) {
 		void* ptr = (void*)(0x20000000);
 		unloaded_dtb_ptr = get_cpio_entry_header("jsem.dtb", ptr, &cpio_dtb_entry_header);
+		dtb_from_qemu = 0;
+	} else {
+		dtb_from_qemu = 1;
+		/*
+		unsigned char *byte = unloaded_dtb_ptr;
+		for (unsigned int i = 0; i < 0x1000; i++) {
+			if (i % 16 == 0) {
+				DEBUG_print("\n");
+			}
+			char buf[20];
+			itoa(byte[i], buf, 20, -16, -2);
+			DEBUG_print(buf);
+		}
+		DEBUG_print("\n");
+		*/
 	}
 	if (unloaded_dtb_ptr == 0) {
 		DEBUG_print("Could Not Locate DTB Image: Halting\n");
@@ -392,7 +410,7 @@ void kmain() {
 	void* unloaded_initramfs_ptr = 0;
 	struct header_pwb_cpio cpio_initramfs_entry_header;
 	cpio_initramfs_entry_header.h_magic = 0;
-	if (unloaded_dtb_ptr) {
+	if (dtb_from_qemu) {
 		dtb_parse(unloaded_dtb_ptr, &unloaded_initramfs_ptr, 0);
 	}
 	if (unloaded_initramfs_ptr == 0) {
@@ -469,7 +487,10 @@ void kmain() {
 	DEBUG_print("\n");
 	//memset((void*)kernel_load_to_point, 0, kernel_header_image_size);
 	if (cpio_kernel_entry_header.h_magic != 0) {
-		DEBUG_print("Starting...");
+		DEBUG_print("Starting [");
+		itoa(cpio_kernel_entry_header.h_filesize.vl32, buf, 20, -10, 0);
+		DEBUG_print(buf);
+		DEBUG_print("]...");
 		memcpy((void*)kernel_load_to_point, unloaded_kernel_ptr, cpio_kernel_entry_header.h_filesize.vl32);
 		DEBUG_print("Done\n");
 	} else {
@@ -498,7 +519,7 @@ void kmain() {
 	
 	uintRL_t initramfs_load_to_point;
 	if (cpio_initramfs_entry_header.h_magic != 0) {
-		initramfs_load_to_point = 0x87000000;
+		initramfs_load_to_point = 0x86000000;
 	} else {
 		initramfs_load_to_point = (uintRL_t)unloaded_initramfs_ptr;
 	}
@@ -571,13 +592,18 @@ void kmain() {
 		DEBUG_print("\n");
 	}
 	
+	uintRL_t hart_to_start = 0;
+#ifdef MM_FU540_C000
+	hart_to_start = 1;
+#endif
+	
 	DEBUG_print("--Start Hart--\n");
 	Hart_Command command;
 	command.command = HARTCMD_STARTHART;
-	command.param0 = 0;
+	command.param0 = hart_to_start;
 	command.param1 = kernel_load_to_point;
 	command.param2 = dtb_load_to_point;
-	send_hart_command_que(0, &command);
+	send_hart_command_que(hart_to_start, &command);
 	
 	return;
 }

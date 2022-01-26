@@ -33,10 +33,26 @@ void print_reg_state(volatile CPU_Context* cpu_context) {
 	itoa(cpu_context->execution_mode, buf, 20, -10, 0);
 	DEBUG_print(buf);
 	DEBUG_print("\n");
-	DEBUG_print("\tPC: 0x");
+	
+	uintRL_t satp;
+	DEBUG_print("\tSATP: ");
+	__asm__ __volatile__ ("csrr %0, satp" : "=r" (satp));
+	itoa(satp, buf, 20, -16, -8);
+	DEBUG_print(buf);
+	DEBUG_print("\n");
+	
+	uintRL_t stvec;
+	DEBUG_print("\tSTVEC: ");
+	__asm__ __volatile__ ("csrr %0, stvec" : "=r" (stvec));
+	itoa(stvec, buf, 20, -16, -8);
+	DEBUG_print(buf);
+	DEBUG_print("\n");
+	
+	DEBUG_print("\t PC: ");
 	itoa(cpu_context->regs[REG_PC], buf, 20, -16, -8);
 	DEBUG_print(buf);
 	DEBUG_print("\n");
+	
 	/*
 	uint32_t* inst = (uint32_t*)(cpu_context->regs[REG_PC]);
 	DEBUG_print("\tINST: 0x");
@@ -199,10 +215,19 @@ void interrupt_c_handler(volatile CPU_Context* cpu_context, uintRL_t cause_value
 			//__asm__ __volatile__ ("csrs mie, %0" : : "r" (1 << 7));
 			
 #ifdef MM_FU540_C000
+
+#if   __riscv_xlen == 64
 			__asm__ __volatile__ ("csrw pmpaddr0, %0" : : "r" ((0x0000000080000000ul >> 2) & 0x003FFFFFFFFFFFFFul));
 			__asm__ __volatile__ ("csrw pmpaddr1, %0" : : "r" ((kernel_load_to_point >> 2) & 0x003FFFFFFFFFFFFFul));
 			__asm__ __volatile__ ("csrw pmpaddr2, %0" : : "r" ((0xFFFFFFFFFFFFFFFFul >> 2) & 0x003FFFFFFFFFFFFFul));
 			__asm__ __volatile__ ("csrw pmpcfg0, %0" : : "r" ((0x0F << 16) | (0x08 <<  8) | (0x0B <<  0)));
+#elif __riscv_xlen == 32
+			__asm__ __volatile__ ("csrw pmpaddr0, %0" : : "r" ((0x80000000ul         >> 2) & 0xFFFFFFFFul));
+			__asm__ __volatile__ ("csrw pmpaddr1, %0" : : "r" ((kernel_load_to_point >> 2) & 0xFFFFFFFFul));
+			__asm__ __volatile__ ("csrw pmpaddr2, %0" : : "r" ((0xFFFFFFFFul         >> 2) & 0xFFFFFFFFul));
+			__asm__ __volatile__ ("csrw pmpcfg0, %0" : : "r" ((0x0F << 16) | (0x08 <<  8) | (0x0B <<  0)));
+#endif
+
 #endif
 			
 			//__asm__ __volatile__ ("csrw medeleg, %0" : : "r" (0xB1F3));
@@ -247,13 +272,23 @@ void interrupt_c_handler(volatile CPU_Context* cpu_context, uintRL_t cause_value
 			hart_commands[mhartid].command = 0;
 			clint_hart_msip_ctls[mhartid] = 0;
 		} else if (command.command == HARTCMD_SMODE_SOFTINT) {
+			DEBUG_print("M-Mode Soft Interrupt\n");
+			
 			hart_commands[mhartid].command = 0;
 			clint_hart_msip_ctls[mhartid] = 0;
 			__asm__ __volatile__ ("csrs mip, %0" : : "r" (0x2));
 		} else {
 			goto not_handled_interrupt;
 		}
-	} else if (cause_value == 7) {
+	} /* else if (cause_value == 1) {
+		// S-Mode Timer Interrupt
+		
+		DEBUG_print("S-Mode Soft Interrupt\n");
+	} else if (cause_value == 5) {
+		// S-Mode Timer Interrupt
+		
+		DEBUG_print("S-Mode Timer Interrupt\n");
+	} */ else if (cause_value == 7) {
 		// M-Mode Timer Interrupt
 		
 		//DEBUG_print("M-Mode Timer Interrupt\n");
@@ -278,20 +313,40 @@ void interrupt_c_handler(volatile CPU_Context* cpu_context, uintRL_t cause_value
 }
 
 void exception_c_handler(volatile CPU_Context* cpu_context, uintRL_t cause_value, uintRL_t mtval) {
-	//DEBUG_print("exception_c_handler\n");
+	/*
+	char buf[20];
+	DEBUG_print("exception_c_handler: ");
+	itoa(cause_value, buf, 20, 10, 0);
+	DEBUG_print(buf);
+	DEBUG_print("\n");
+	print_reg_state(cpu_context);
+	*/
+	
+	/*
+	if (cause_value != 2 && cause_value != 9) {
+		char buf[20];
+		DEBUG_print("exception_c_handler: ");
+		itoa(cause_value, buf, 20, 10, 0);
+		DEBUG_print(buf);
+		DEBUG_print("\n");
+		print_reg_state(cpu_context);
+	}
+	*/
 	
 	if        (cause_value == 0) {
 		// Instruction Address Misaligned
 		DEBUG_print("Instruction Address Misaligned\n");
 		//print_reg_state(cpu_context);
-		s_delegation_trampoline(cpu_context, 0, mtval);
+		s_delegation_trampoline(cpu_context, cause_value, mtval);
 	} else if (cause_value == 1) {
 		// Instruction Access Fault
 		DEBUG_print("Instruction Access Fault\n");
 		//print_reg_state(cpu_context);
-		s_delegation_trampoline(cpu_context, 0, mtval);
+		s_delegation_trampoline(cpu_context, cause_value, mtval);
 	} else if (cause_value == 2) {
 		// Illegal Instruction
+		//DEBUG_print("Illegal Instruction\n");
+		
 		uintRL_t csr_satp;
 		__asm__ __volatile__ ("csrr %0, satp" : "=r" (csr_satp));
 		uint32_t* instruction = (void*)walk_pts(cpu_context->regs[REG_PC], csr_satp, 0);
@@ -299,41 +354,45 @@ void exception_c_handler(volatile CPU_Context* cpu_context, uintRL_t cause_value
 		dec_inst dinst;
 		uintRL_t form = decode_instruction(*instruction, &dinst);
 		//uintRL_t form = decode_instruction(mtval, &dinst);
+		//DEBUG_print("Trace X\n");
 		if (form) {
+			//DEBUG_print("Trace Z\n");
 			
 			// Emulate reading the CSR: time(timeh)
 			if (dinst.opcode == 0x73) {
 				if (dinst.funct3 == 0x2 || dinst.funct3 == 0x3 || dinst.funct3 == 0x6 || dinst.funct3 == 0x7) {
 					if (dinst.rs1 == 0) {
 #ifdef MM_FU540_C000
-						if (dinst.rd != 0) {
-							cpu_context->regs[REG_PC] += 4;
-							return;
-						}
+#if   __riscv_xlen == 128
+						#error "Not Implemented"
+#elif __riscv_xlen == 64
 						if        (dinst.imm == 0xC01) {
 							// CSR 64: time
 							uint64_t* mtime = (void*)(((uintRL_t)CLINT_BASE) + CLINT_MTIME);
-							cpu_context->regs[dinst.rd] = *mtime;
+							if (dinst.rd != 0) {
+								cpu_context->regs[dinst.rd] = *mtime;
+							}
 							cpu_context->regs[REG_PC] += 4;
 							return;
 						}
-#endif
-#ifdef MM_JSEMU_0000
-#ifdef NOT_DEFINED // Disable this code section
-						if (dinst.rd != 0) {
-							cpu_context->regs[REG_PC] += 4;
-							return;
-						}
+#elif __riscv_xlen == 32
 						if        (dinst.imm == 0xC01) {
 							// CSR 32: time
 							uint32_t* mtime = (void*)(((uintRL_t)CLINT_BASE) + CLINT_MTIME);
-							cpu_context->regs[dinst.rd] = *mtime;
+							uint32_t mtime_val = *mtime;
+							if (dinst.rd != 0) {
+								cpu_context->regs[dinst.rd] = mtime_val;
+							}
 							cpu_context->regs[REG_PC] += 4;
 							return;
-						} else if (dinst.imm == 0xC81) {
-							// CSR 32: timeh
-							uint32_t* mtime = (void*)(((uintRL_t)CLINT_BASE) + CLINT_MTIME + 0x4);
-							cpu_context->regs[dinst.rd] = *mtime;
+						}
+						if        (dinst.imm == 0xC81) {
+							// CSR 32: time
+							uint64_t* mtime = (void*)(((uintRL_t)CLINT_BASE) + CLINT_MTIME + 4);
+							uint32_t mtime_val = *mtime;
+							if (dinst.rd != 0) {
+								cpu_context->regs[dinst.rd] = mtime_val;
+							}
 							cpu_context->regs[REG_PC] += 4;
 							return;
 						}
@@ -343,6 +402,8 @@ void exception_c_handler(volatile CPU_Context* cpu_context, uintRL_t cause_value
 				}
 			}
 			
+#ifdef MM_JSEMU_0000
+#if   __riscv_xlen == 32
 			// Emulate the M-Extension (But only for the Supervisor)
 			if (dinst.opcode == 0x33 && cpu_context->execution_mode == 1) {
 				if (dinst.funct7 == 0x1) {
@@ -351,71 +412,41 @@ void exception_c_handler(volatile CPU_Context* cpu_context, uintRL_t cause_value
 						return;
 					}
 					if        (dinst.funct3 == 0x0) {
+						/*
+						{
+							DEBUG_print("M-Ext Emulate: MUL\n");
+							print_reg_state(cpu_context);
+						}
+						*/
+						
 						// MUL
 						sintRL_t rs1 = cpu_context->regs[dinst.rs1];
 						sintRL_t rs2 = cpu_context->regs[dinst.rs2];
+						
 						cpu_context->regs[dinst.rd] = rs1 * rs2;
 						cpu_context->regs[REG_PC] += 4;
 						return;
 					} else if (dinst.funct3 == 0x1) {
-						// MULH
-						sintRL_t rs1 = cpu_context->regs[dinst.rs1];
-						sintRL_t rs2 = cpu_context->regs[dinst.rs2];
+						/*
+						{
+							DEBUG_print("M-Ext Emulate: MULH\n");
+							print_reg_state(cpu_context);
+						}
+						*/
 						
-						uint32_t inverse_shift = sizeof(sintRL_t) * 8;
-						uintRL_t lo_bits = 0;
-						uintRL_t hi_bits = 0;
-						for (uint32_t i = 0; i < sizeof(sintRL_t) * 8; i++) {
-							if (rs2 & 0x1) {
-								// Upon Entry to the loop, inverse_shift will overflow the 
-								// shift.  In RISC-V shifts by a register are only by the 
-								// lower 5, 6, or 7 bits in the register for XLENs 32, 64, 128 
-								// respectively.  Shift overflows are undefined behaviour 
-								// in the C standard.  I have it wrapped them in IF statements.
-								if (inverse_shift < sizeof(sintRL_t) * 8) {
-									if (rs2 < 0) {
-										hi_bits -= rs1 >> inverse_shift;
-									} else {
-										hi_bits += rs1 >> inverse_shift;
-									}
-								} else {
-									if (rs1 < 0) {
-										if (rs2 < 0) {
-											hi_bits -= (sintRL_t)-1;
-										} else {
-											hi_bits += (sintRL_t)-1;
-										}
-									}
-								}
-								
-								uintRL_t tmpval = lo_bits;
-								if (rs2 < 0) {
-									tmpval -= rs1 << i;
-									if (tmpval > lo_bits) {
-										// Overflow
-										hi_bits--;
-									}
-								} else {
-									tmpval += rs1 << i;
-									if (tmpval < lo_bits) {
-										// Overflow
-										hi_bits++;
-									}
-								}
-								lo_bits = tmpval;
-							}
-							rs2 >>= 1;
-							inverse_shift--;
+						// MULH
+						uintRL_t rs1 = cpu_context->regs[dinst.rs1];
+						uintRL_t rs2 = cpu_context->regs[dinst.rs2];
+						sintRL_t rb1 = rs1;
+						sintRL_t rb2 = rs2;
+						
+						if (rb1 < 0) {
+							rs1 = ~rs1 + 1;
+						}
+						if (rb2 < 0) {
+							rs2 = ~rs2 + 1;
 						}
 						
-						cpu_context->regs[dinst.rd] = hi_bits;
-						cpu_context->regs[REG_PC] += 4;
-						return;
-					} else if (dinst.funct3 == 0x2) {
-						// MULHSU
-						sintRL_t rs1 = cpu_context->regs[dinst.rs1];
-						uintRL_t rs2 = cpu_context->regs[dinst.rs2];
-						
 						uint32_t inverse_shift = sizeof(sintRL_t) * 8;
 						uintRL_t lo_bits = 0;
 						uintRL_t hi_bits = 0;
@@ -425,13 +456,10 @@ void exception_c_handler(volatile CPU_Context* cpu_context, uintRL_t cause_value
 								// shift.  In RISC-V shifts by a register are only by the 
 								// lower 5, 6, or 7 bits in the register for XLENs 32, 64, 128 
 								// respectively.  Shift overflows are undefined behaviour 
-								// in the C standard.  I have it wrapped them in IF statements.
+								// in the C standard.  However, RISC-V will not do anything 
+								// because the lowest bits will be zero.
 								if (inverse_shift < sizeof(sintRL_t) * 8) {
 									hi_bits += rs1 >> inverse_shift;
-								} else {
-									if (rs1 < 0) {
-										hi_bits += (sintRL_t)-1;
-									}
 								}
 								
 								uintRL_t tmpval = lo_bits;
@@ -446,10 +474,83 @@ void exception_c_handler(volatile CPU_Context* cpu_context, uintRL_t cause_value
 							inverse_shift--;
 						}
 						
-						cpu_context->regs[dinst.rd] = hi_bits;
+						rb1 ^= rb2;
+						rb2 = hi_bits;
+						if (rb1 < 0) {
+							rb2 = ~rb2;
+							lo_bits = ~lo_bits;
+							if (lo_bits == (uintRL_t)-1) {
+								rb2++;
+							}
+						}
+						
+						cpu_context->regs[dinst.rd] = rb2;
+						cpu_context->regs[REG_PC] += 4;
+						return;
+					} else if (dinst.funct3 == 0x2) {
+						/*
+						{
+							DEBUG_print("M-Ext Emulate: MULHSU\n");
+							print_reg_state(cpu_context);
+						}
+						*/
+						
+						// MULHSU
+						uintRL_t rs1 = cpu_context->regs[dinst.rs1];
+						uintRL_t rs2 = cpu_context->regs[dinst.rs2];
+						sintRL_t rb1 = rs1;
+						sintRL_t rb2 = rs2;
+						
+						if (rb1 < 0) {
+							rs1 = ~rs1 + 1;
+						}
+						
+						uint32_t inverse_shift = sizeof(sintRL_t) * 8;
+						uintRL_t lo_bits = 0;
+						uintRL_t hi_bits = 0;
+						for (uint32_t i = 0; i < sizeof(sintRL_t) * 8; i++) {
+							if (rs2 & 0x1) {
+								// Upon Entry to the loop, inverse_shift will overflow the 
+								// shift.  In RISC-V shifts by a register are only by the 
+								// lower 5, 6, or 7 bits in the register for XLENs 32, 64, 128 
+								// respectively.  Shift overflows are undefined behaviour 
+								// in the C standard.  I have it wrapped them in IF statements.
+								if (inverse_shift < sizeof(sintRL_t) * 8) {
+									hi_bits += rs1 >> inverse_shift;
+								}
+								
+								uintRL_t tmpval = lo_bits;
+								tmpval += rs1 << i;
+								if (tmpval < lo_bits) {
+									// Overflow
+									hi_bits++;
+								}
+								lo_bits = tmpval;
+							}
+							rs2 >>= 1;
+							inverse_shift--;
+						}
+						
+						rb2 = hi_bits;
+						if (rb1 < 0) {
+							rb2 = ~rb2;
+							lo_bits = ~lo_bits;
+							if (lo_bits == (uintRL_t)-1) {
+								rb2++;
+							}
+						}
+						
+						cpu_context->regs[dinst.rd] = rb2;
 						cpu_context->regs[REG_PC] += 4;
 						return;
 					} else if (dinst.funct3 == 0x3) {
+						/*
+						{
+							DEBUG_print("M-Ext Emulate: MULHU\n");
+							print_reg_state(cpu_context);
+						}
+						*/
+						
 						// MULHU
 						uintRL_t rs1 = cpu_context->regs[dinst.rs1];
 						uintRL_t rs2 = cpu_context->regs[dinst.rs2];
@@ -465,7 +566,9 @@ void exception_c_handler(volatile CPU_Context* cpu_context, uintRL_t cause_value
 								// respectively.  Shift overflows are undefined behaviour 
 								// in the C standard.  However, RISC-V will not do anything 
 								// because the lowest bits will be zero.
-								hi_bits += rs1 >> inverse_shift;
+								if (inverse_shift < sizeof(sintRL_t) * 8) {
+									hi_bits += rs1 >> inverse_shift;
+								}
 								
 								uintRL_t tmpval = lo_bits;
 								tmpval += rs1 << i;
@@ -483,9 +586,17 @@ void exception_c_handler(volatile CPU_Context* cpu_context, uintRL_t cause_value
 						cpu_context->regs[REG_PC] += 4;
 						return;
 					} else if (dinst.funct3 == 0x4) {
+						/*
+						{
+							DEBUG_print("M-Ext Emulate: DIV\n");
+							print_reg_state(cpu_context);
+						}
+						*/
+						
 						// DIV
 						sintRL_t rs1 = cpu_context->regs[dinst.rs1];
 						sintRL_t rs2 = cpu_context->regs[dinst.rs2];
+						
 						if (rs2 == 0) {
 							cpu_context->regs[dinst.rd] = (sintRL_t)-1;
 							cpu_context->regs[REG_PC] += 4;
@@ -496,25 +607,43 @@ void exception_c_handler(volatile CPU_Context* cpu_context, uintRL_t cause_value
 							cpu_context->regs[REG_PC] += 4;
 							return;
 						}
+						
 						cpu_context->regs[dinst.rd] = rs1 / rs2;
 						cpu_context->regs[REG_PC] += 4;
 						return;
 					} else if (dinst.funct3 == 0x5) {
+						/*
+						{
+							DEBUG_print("M-Ext Emulate: DIVU\n");
+							print_reg_state(cpu_context);
+						}
+						*/
+						
 						// DIVU
 						uintRL_t rs1 = cpu_context->regs[dinst.rs1];
 						uintRL_t rs2 = cpu_context->regs[dinst.rs2];
+						
 						if (rs2 == 0) {
 							cpu_context->regs[dinst.rd] = (sintRL_t)-1;
 							cpu_context->regs[REG_PC] += 4;
 							return;
 						}
+						
 						cpu_context->regs[dinst.rd] = rs1 / rs2;
 						cpu_context->regs[REG_PC] += 4;
 						return;
 					} else if (dinst.funct3 == 0x6) {
+						/*
+						{
+							DEBUG_print("M-Ext Emulate: REM\n");
+							print_reg_state(cpu_context);
+						}
+						*/
+						
 						// REM
 						sintRL_t rs1 = cpu_context->regs[dinst.rs1];
 						sintRL_t rs2 = cpu_context->regs[dinst.rs2];
+						
 						if (rs2 == 0) {
 							cpu_context->regs[dinst.rd] = rs1;
 							cpu_context->regs[REG_PC] += 4;
@@ -525,24 +654,36 @@ void exception_c_handler(volatile CPU_Context* cpu_context, uintRL_t cause_value
 							cpu_context->regs[REG_PC] += 4;
 							return;
 						}
+						
 						cpu_context->regs[dinst.rd] = rs1 % rs2;
 						cpu_context->regs[REG_PC] += 4;
 						return;
 					} else {//(dinst.funct7 == 0x7)
+						/*
+						{
+							DEBUG_print("M-Ext Emulate: REMU\n");
+							print_reg_state(cpu_context);
+						}
+						*/
+						
 						// REMU
 						uintRL_t rs1 = cpu_context->regs[dinst.rs1];
 						uintRL_t rs2 = cpu_context->regs[dinst.rs2];
+						
 						if (rs2 == 0) {
 							cpu_context->regs[dinst.rd] = rs1;
 							cpu_context->regs[REG_PC] += 4;
 							return;
 						}
+						
 						cpu_context->regs[dinst.rd] = rs1 % rs2;
 						cpu_context->regs[REG_PC] += 4;
 						return;
 					}
 				}
 			}
+#endif
+#endif
 		}
 		
 		//DEBUG_print("Illegal Instruction\n");
@@ -553,48 +694,50 @@ void exception_c_handler(volatile CPU_Context* cpu_context, uintRL_t cause_value
 			itoa(*instruction, buf, 20, -16, 8);
 			DEBUG_print(buf);
 			DEBUG_print("\n");
+			print_reg_state(cpu_context);
+			idle_loop();
 		}
-		print_reg_state(cpu_context);
-		idle_loop();
 		
-		s_delegation_trampoline(cpu_context, 0, mtval);
+		s_delegation_trampoline(cpu_context, cause_value, mtval);
 	} else if (cause_value == 3) {
 		// Breakpoint
 		__asm__ __volatile__ ("csrc mstatus, %0" : : "r" (0x8));
 		DEBUG_print("ESBI Trap Caught!  Breakpoint Exception.  Trap Handler: M-Mode\n");
 		cpu_context->regs[REG_PC] += 4;
-		for (volatile uintRL_t i = 0; i < 200000000; i++) {}
-		//idle_loop();
+		//for (volatile uintRL_t i = 0; i < 200000000; i++) {}
+		idle_loop();
 		return;
 	} else if (cause_value == 4) {
 		// Load Address Misaligned
 		DEBUG_print("Load Address Misaligned\n");
 		//print_reg_state(cpu_context);
 		//idle_loop();
-		s_delegation_trampoline(cpu_context, 0, mtval);
+		s_delegation_trampoline(cpu_context, cause_value, mtval);
 	} else if (cause_value == 5) {
 		// Load Access Fault
 		DEBUG_print("Load Access Fault\n");
 		//print_reg_state(cpu_context);
-		s_delegation_trampoline(cpu_context, 0, mtval);
+		s_delegation_trampoline(cpu_context, cause_value, mtval);
 	} else if (cause_value == 6) {
 		// Store/AMO Address Misaligned
 		DEBUG_print("Store/AMO Address Misaligned\n");
 		//print_reg_state(cpu_context);
-		s_delegation_trampoline(cpu_context, 0, mtval);
+		s_delegation_trampoline(cpu_context, cause_value, mtval);
 	} else if (cause_value == 7) {
 		// Store/AMO Access Fault
 		DEBUG_print("Store/AMO Access Fault\n");
-		//print_reg_state(cpu_context);
-		s_delegation_trampoline(cpu_context, 0, mtval);
+		print_reg_state(cpu_context);
+		s_delegation_trampoline(cpu_context, cause_value, mtval);
 	} else if (cause_value == 8) {
 		// User-Mode Environment Exception
 		//cpu_context->regs[REG_PC] += 4;
 		DEBUG_print("User-Mode Environment Exception\n");
 		//print_reg_state(cpu_context);
-		s_delegation_trampoline(cpu_context, 0, mtval);
+		//__asm__ ("ebreak");
+		s_delegation_trampoline(cpu_context, cause_value, mtval);
 	} else if (cause_value == 9) {
 		// Supervisor-Mode Environment Exception
+		//DEBUG_print("Supervisor-Mode Environment Exception\n");
 		cpu_context->regs[REG_PC] += 4;
 
 		sintRL_t params[6];
@@ -622,7 +765,7 @@ void exception_c_handler(volatile CPU_Context* cpu_context, uintRL_t cause_value
 		//cpu_context->regs[REG_PC] += 4;
 	} else if (cause_value == 12) {
 		// Instruction Page Fault
-		DEBUG_print("Instruction Page Fault\n");
+		//DEBUG_print("Instruction Page Fault\n");
 		
 		/*
 		char buf[20];
@@ -683,15 +826,15 @@ void exception_c_handler(volatile CPU_Context* cpu_context, uintRL_t cause_value
 		*/
 		
 		//print_reg_state(cpu_context);
-		s_delegation_trampoline(cpu_context, 0, mtval);
+		s_delegation_trampoline(cpu_context, cause_value, mtval);
 	} else if (cause_value == 13) {
 		// Load Page Fault
-		DEBUG_print("Load Page Fault\n");
+		//DEBUG_print("Load Page Fault\n");
 		//print_reg_state(cpu_context);
-		s_delegation_trampoline(cpu_context, 0, mtval);
+		s_delegation_trampoline(cpu_context, cause_value, mtval);
 	} else if (cause_value == 15) {
 		// Store/AMO Page Fault
-		DEBUG_print("Store/AMO Page Fault\n");
+		//DEBUG_print("Store/AMO Page Fault\n");
 		
 		/*
 		char buf[20];
@@ -752,7 +895,7 @@ void exception_c_handler(volatile CPU_Context* cpu_context, uintRL_t cause_value
 		*/
 		
 		//print_reg_state(cpu_context);
-		s_delegation_trampoline(cpu_context, 0, mtval);
+		s_delegation_trampoline(cpu_context, cause_value, mtval);
 	} else {
 		__asm__ __volatile__ ("csrc mstatus, %0" : : "r" (0x8));
 		char buf[20];
@@ -781,7 +924,7 @@ uintRL_t decode_instruction(uint32_t einst, dec_inst* dinst) {
 	} params;
 	memcpy(&params, &einst, sizeof(uint32_t));
 	
-	if (opcode == 0x73) {
+	if        (opcode == 0x73) {
 		// OpCode: SYSTEM, Encoding: I-Type
 		
 		dinst->opcode = opcode;
@@ -793,6 +936,18 @@ uintRL_t decode_instruction(uint32_t einst, dec_inst* dinst) {
 		dinst->rs2 = 0;
 		dinst->funct7 = 0;
 		return 2;
+	} else if (opcode == 0x33) {
+		// OpCode: Mul32, Encoding: R-Type
+		
+		dinst->opcode = opcode;
+		dinst->rd = params.enc_r.rd;
+		dinst->funct3 = params.enc_r.funct3;
+		dinst->rs1 = params.enc_r.rs1;
+		dinst->rs2 = params.enc_r.rs2;
+		dinst->funct7 = params.enc_r.funct7;
+		
+		dinst->imm = 0;
+		return 1;
 	}
 	
 	return 0;

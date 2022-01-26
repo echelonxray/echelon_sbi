@@ -109,16 +109,19 @@ emu-opensbi-debug:
 	qemu-system-riscv32 -M sifive_u -cpu sifive-u54 -smp 5 -kernel ./../riscv32_testsuper/prog-emu.elf.strip.bin -initrd ./ignore/emudata/fs.cpio.gz -append "rdinit=/init.out loglevel=15" -m 1G -serial stdio -display none -gdb tcp::1234 -S
 
 emu-opensbi-linux:
-	qemu-system-riscv32 -M sifive_u -cpu sifive-u54 -smp 5 -kernel ./ignore/kernel -initrd ./ignore/emudata/fs.cpio.gz -append "rdinit=/init.out loglevel=15" -m 1G -serial stdio -display none
+	qemu-system-riscv32 -M virt -cpu rv32 -smp 1 -m 128M -serial stdio -display none -kernel ./ignore/emudata/riscv32iam_linux_kernel.bin -initrd ./ignore/emudata/fs.cpio.gz -append "rdinit=/init.out loglevel=15" -dtb ./ignore/emudata/jsem.dtb
+
+emu-opensbi-linux2:
+	qemu-system-riscv32 -M sifive_u -cpu rv32 -smp 2 -kernel ./ignore/emudata/riscv32iam_linux_kernel.bin -initrd ./ignore/emudata/fs.cpio.gz -append "rdinit=/init.out loglevel=15" -m 1G -serial stdio -display none
 
 emu-opensbi-linux-debug:
-	qemu-system-riscv32 -M sifive_u -cpu sifive-u54 -smp 5 -kernel ./ignore/kernel -initrd ./ignore/emudata/fs.cpio.gz -append "rdinit=/init.out loglevel=15" -m 1G -serial stdio -display none -gdb tcp::1234 -S
+	qemu-system-riscv32 -M virt -cpu rv32 -smp 1 -m 128M -serial stdio -display none -kernel ./ignore/emudata/riscv32iam_linux_kernel.bin -initrd ./ignore/emudata/fs.cpio.gz -append "rdinit=/init.out loglevel=15" -dtb ./ignore/emudata/jsem.dtb -gdb tcp::1234 -S
 
 emu-linux:
-	qemu-system-riscv32 -M sifive_u -cpu sifive-u54 -smp 5 -bios ./prog-emu.elf.strip.bin -kernel ./ignore/kernel -initrd ./ignore/emudata/fs.cpio.gz -append "rdinit=/init.out loglevel=15" -m 1G -serial stdio -display none
+	qemu-system-riscv32 -M virt -cpu rv32 -smp 1 -m 128M -serial stdio -display none -kernel ./ignore/emudata/riscv32iam_linux_kernel.bin -initrd ./ignore/emudata/fs.cpio.gz -append "rdinit=/init.out loglevel=15" -dtb ./ignore/emudata/jsem.dtb -bios ./prog-emu.elf.strip.bin
 
 emu-linux-debug:
-	qemu-system-riscv32 -M sifive_u -cpu sifive-u54 -smp 5 -bios ./prog-emu.elf.strip.bin -kernel ./ignore/kernel -initrd ./ignore/emudata/fs.cpio.gz -append "rdinit=/init.out loglevel=15" -m 1G -serial stdio -display none -gdb tcp::1234 -S
+	qemu-system-riscv32 -M virt -cpu rv32 -smp 1 -m 128M -serial stdio -display none -kernel ./ignore/emudata/riscv32iam_linux_kernel.bin -initrd ./ignore/emudata/fs.cpio.gz -append "rdinit=/init.out loglevel=15" -dtb ./ignore/emudata/jsem.dtb -bios ./prog-emu.elf.strip.bin -gdb tcp::1234 -S
 
 debug:
 	$(TUPLE)gdb -ex "target remote localhost:1234" -ex "layout asm" -ex "tui reg general" -ex "break *0x80000000"

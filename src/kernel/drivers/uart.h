@@ -3,6 +3,6 @@
 
 #include "./../../inc/types.h"
 
-void uart_write(unsigned char* str, void* uart_loc, size_t count);
+void uart_write(const unsigned char* restrict str, void* uart_loc, size_t count);
 
 #endif

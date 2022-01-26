@@ -118,6 +118,11 @@ void printm(const char* restrict format, ...) {
 		if ((format[i] != '%') && (flags == 0)) {
 			buf[j] = format[i];
 			j++;
+			if (j == 0x40) {
+				// Buffer is full.  Flush it.
+				_printm(buf, j);
+				j = 0;
+			}
 			goto next_format_character;
 		}
 		
@@ -439,7 +444,7 @@ void printm(const char* restrict format, ...) {
 				goto end_special;
 			}
 			if  (format[i] == 'X') {
-				// Unsigned Lower-Case Hexadecimal
+				// Unsigned Upper-Case Hexadecimal
 				
 				unsigned long long num;
 				if        (flags & flags_lmod_hh) {
@@ -567,6 +572,8 @@ void printm(const char* restrict format, ...) {
 			}
 			
 		} else {
+			// Enter Special Section (Enter %)
+			
 			// Flush the buffer
 			_printm(buf, j);
 			j = 0;

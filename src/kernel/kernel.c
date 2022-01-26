@@ -165,114 +165,16 @@ uint32_t swap_endianess_32(uint32_t val) {
 }
 
 void kmain() {
-	printm("Michael Test! %d\n", 1);
-	
-	return;
-	
-	volatile uint32_t* ctrl_reg;
-	
 	// Enable TX on UART0
+	//volatile uint32_t* ctrl_reg;
 	//ctrl_reg = (uint32_t*)(UART0_BASE + UART_TXCTRL);
 	//*ctrl_reg = 0x1;
 	
-	DEBUG_print("Hello, World!\n");
-	DEBUG_print("\n");
-	
-	char buf[20];
+	printm("Hello, World!\n\n");
 	
 	uintRL_t mtvec;
 	__asm__ __volatile__ ("csrr %0, mtvec" : "=r" (mtvec));
-	itoa(mtvec, buf, 20, -16, -8);
-	DEBUG_print("mtvec: ");
-	DEBUG_print(buf);
-	DEBUG_print("\n");
-	
-	/*
-	struct fdt_header {
-		uint32_t magic;
-		uint32_t totalsize;
-		uint32_t off_dt_struct;
-		uint32_t off_dt_strings;
-		uint32_t off_mem_rsvmap;
-		uint32_t version;
-		uint32_t last_comp_version;
-		uint32_t boot_cpuid_phys;
-		uint32_t size_dt_strings;
-		uint32_t size_dt_struct;
-	};
-	
-	struct fdt_header dtb_header;
-	memcpy(&dtb_header, (void*)init_reg_a1, sizeof(struct fdt_header));
-	
-	dtb_header.magic             = swap_endianess_32(dtb_header.magic);
-	dtb_header.totalsize         = swap_endianess_32(dtb_header.totalsize);
-	dtb_header.off_dt_struct     = swap_endianess_32(dtb_header.off_dt_struct);
-	dtb_header.off_dt_strings    = swap_endianess_32(dtb_header.off_dt_strings);
-	dtb_header.off_mem_rsvmap    = swap_endianess_32(dtb_header.off_mem_rsvmap);
-	dtb_header.version           = swap_endianess_32(dtb_header.version);
-	dtb_header.last_comp_version = swap_endianess_32(dtb_header.last_comp_version);
-	dtb_header.boot_cpuid_phys   = swap_endianess_32(dtb_header.boot_cpuid_phys);
-	dtb_header.size_dt_strings   = swap_endianess_32(dtb_header.size_dt_strings);
-	dtb_header.size_dt_struct    = swap_endianess_32(dtb_header.size_dt_struct);
-	
-	DEBUG_print("--DTB Header--\n");
-	itoa(dtb_header.magic, buf, 20, -16, -8);
-	DEBUG_print("\tDTB magic: ");
-	DEBUG_print(buf);
-	DEBUG_print("\n");
-	itoa(dtb_header.totalsize, buf, 20, -16, -8);
-	DEBUG_print("\tDTB totalsize: ");
-	DEBUG_print(buf);
-	DEBUG_print("\n");
-	itoa(dtb_header.off_dt_struct, buf, 20, -16, -8);
-	DEBUG_print("\tDTB off_dt_struct: ");
-	DEBUG_print(buf);
-	DEBUG_print("\n");
-	itoa(dtb_header.off_dt_strings, buf, 20, -16, -8);
-	DEBUG_print("\tDTB off_dt_strings: ");
-	DEBUG_print(buf);
-	DEBUG_print("\n");
-	itoa(dtb_header.off_mem_rsvmap, buf, 20, -16, -8);
-	DEBUG_print("\tDTB off_mem_rsvmap: ");
-	DEBUG_print(buf);
-	DEBUG_print("\n");
-	itoa(dtb_header.version, buf, 20, -16, -8);
-	DEBUG_print("\tDTB version: ");
-	DEBUG_print(buf);
-	DEBUG_print("\n");
-	itoa(dtb_header.last_comp_version, buf, 20, -16, -8);
-	DEBUG_print("\tDTB last_comp_version: ");
-	DEBUG_print(buf);
-	DEBUG_print("\n");
-	itoa(dtb_header.boot_cpuid_phys, buf, 20, -16, -8);
-	DEBUG_print("\tDTB boot_cpuid_phys: ");
-	DEBUG_print(buf);
-	DEBUG_print("\n");
-	itoa(dtb_header.size_dt_strings, buf, 20, -16, -8);
-	DEBUG_print("\tDTB size_dt_strings: ");
-	DEBUG_print(buf);
-	DEBUG_print("\n");
-	itoa(dtb_header.size_dt_struct, buf, 20, -16, -8);
-	DEBUG_print("\tDTB size_dt_struct: ");
-	DEBUG_print(buf);
-	DEBUG_print("\n");
-	
-	unsigned char* ptr = (unsigned char*)init_reg_a1;
-	for (uintRL_t i = 0; i < dtb_header.totalsize; i++) {
-		if        (i % 16 == 0) {
-			DEBUG_print("\n0x  ");
-		} else if (i %  8 == 0) {
-			DEBUG_print("  ");
-		} else {
-			DEBUG_print(" ");
-		}
-		itoa(ptr[i], buf, 20, -16, 2);
-		DEBUG_print(buf);
-	}
-	DEBUG_print("\n");
-	
-	return;
-	*/
+	printm("mtvec: %08X\n", mtvec);
 	
 	//init_reg_a0 = 0;
 	//init_reg_a1 = 0;
@@ -281,53 +183,13 @@ void kmain() {
 	//init_reg_a4 = 0;
 	//init_reg_a5 = 0;
 	
-	itoa(init_reg_a0 >> 32, buf, 20, -16, 8);
-	DEBUG_print("             reg_a0: 0x");
-	DEBUG_print(buf);
-	DEBUG_print("_");
-	itoa(init_reg_a0 & 0xFFFFFFFF, buf, 20, -16, 8);
-	DEBUG_print(buf);
-	DEBUG_print("\n");
-	
-	itoa(init_reg_a1 >> 32, buf, 20, -16, 8);
-	DEBUG_print("             reg_a1: 0x");
-	DEBUG_print(buf);
-	DEBUG_print("_");
-	itoa(init_reg_a1 & 0xFFFFFFFF, buf, 20, -16, 8);
-	DEBUG_print(buf);
-	DEBUG_print("\n");
-	
-	itoa(init_reg_a2 >> 32, buf, 20, -16, 8);
-	DEBUG_print("             reg_a2: 0x");
-	DEBUG_print(buf);
-	DEBUG_print("_");
-	itoa(init_reg_a2 & 0xFFFFFFFF, buf, 20, -16, 8);
-	DEBUG_print(buf);
-	DEBUG_print("\n");
-	
-	itoa(init_reg_a3 >> 32, buf, 20, -16, 8);
-	DEBUG_print("             reg_a3: 0x");
-	DEBUG_print(buf);
-	DEBUG_print("_");
-	itoa(init_reg_a3 & 0xFFFFFFFF, buf, 20, -16, 8);
-	DEBUG_print(buf);
-	DEBUG_print("\n");
-	
-	itoa(init_reg_a4 >> 32, buf, 20, -16, 8);
-	DEBUG_print("             reg_a4: 0x");
-	DEBUG_print(buf);
-	DEBUG_print("_");
-	itoa(init_reg_a4 & 0xFFFFFFFF, buf, 20, -16, 8);
-	DEBUG_print(buf);
-	DEBUG_print("\n");
-	
-	itoa(init_reg_a5 >> 32, buf, 20, -16, 8);
-	DEBUG_print("             reg_a5: 0x");
-	DEBUG_print(buf);
-	DEBUG_print("_");
-	itoa(init_reg_a5 & 0xFFFFFFFF, buf, 20, -16, 8);
-	DEBUG_print(buf);
-	DEBUG_print("\n");
+	printm("             Register a0: 0x%08lX\n", init_reg_a0);
+	printm("             Register a1: 0x%08lX\n", init_reg_a1);
+	printm("             Register a2: 0x%08lX\n", init_reg_a2);
+	printm("             Register a3: 0x%08lX\n", init_reg_a3);
+	printm("             Register a4: 0x%08lX\n", init_reg_a4);
+	printm("             Register a5: 0x%08lX\n", init_reg_a5);
+	printm("\n");
 	
 	struct __attribute__((__packed__)) kernel_boot_header {
 		uint32_t code0;
@@ -349,8 +211,6 @@ void kmain() {
 		uint32_t res3;
 	};
 	
-	DEBUG_print("\n");
-	
 	// Start: Locate Kernel
 	struct kernel_boot_header* unloaded_kernel_ptr = 0;
 	if (init_reg_a2) {
@@ -362,13 +222,14 @@ void kmain() {
 		}
 	}
 	struct header_pwb_cpio cpio_kernel_entry_header;
+	memset(&cpio_kernel_entry_header, 0, sizeof(struct header_pwb_cpio));
 	cpio_kernel_entry_header.h_magic = 0;
 	if (unloaded_kernel_ptr == 0) {
 		void* ptr = (void*)(0x20000000);
 		unloaded_kernel_ptr = get_cpio_entry_header("riscv32iam_linux_kernel.bin", ptr, &cpio_kernel_entry_header);
 	}
 	if (unloaded_kernel_ptr == 0) {
-		DEBUG_print("Could Not Locate Kernel: Halting\n");
+		printm("Could Not Locate Kernel: Halting\n");
 		idle_loop();
 	}
 	// End: Locate Kernel
@@ -376,7 +237,7 @@ void kmain() {
 	// Start: Locate DTB
 	void* unloaded_dtb_ptr = 0;
 	struct header_pwb_cpio cpio_dtb_entry_header;
-	cpio_dtb_entry_header.h_magic = 0;
+	memset(&cpio_dtb_entry_header, 0, sizeof(struct header_pwb_cpio));
 	if (init_reg_a1) {
 		unloaded_dtb_ptr = (void*)(init_reg_a1);
 	}
@@ -387,21 +248,9 @@ void kmain() {
 		dtb_from_qemu = 0;
 	} else {
 		dtb_from_qemu = 1;
-		/*
-		unsigned char *byte = unloaded_dtb_ptr;
-		for (unsigned int i = 0; i < 0x1000; i++) {
-			if (i % 16 == 0) {
-				DEBUG_print("\n");
-			}
-			char buf[20];
-			itoa(byte[i], buf, 20, -16, -2);
-			DEBUG_print(buf);
-		}
-		DEBUG_print("\n");
-		*/
 	}
 	if (unloaded_dtb_ptr == 0) {
-		DEBUG_print("Could Not Locate DTB Image: Halting\n");
+		printm("Could Not Locate DTB Image: Halting\n");
 		idle_loop();
 	}
 	// End: Locate DTB
@@ -409,7 +258,7 @@ void kmain() {
 	// Start: Locate Initramfs
 	void* unloaded_initramfs_ptr = 0;
 	struct header_pwb_cpio cpio_initramfs_entry_header;
-	cpio_initramfs_entry_header.h_magic = 0;
+	memset(&cpio_initramfs_entry_header, 0, sizeof(struct header_pwb_cpio));
 	if (dtb_from_qemu) {
 		dtb_parse(unloaded_dtb_ptr, &unloaded_initramfs_ptr, 0);
 	}
@@ -418,7 +267,7 @@ void kmain() {
 		unloaded_initramfs_ptr = get_cpio_entry_header("fs.cpio.gz", ptr, &cpio_initramfs_entry_header);
 	}
 	if (unloaded_initramfs_ptr == 0) {
-		DEBUG_print("Could Not Locate Initramfs: Halting\n");
+		printm("Could Not Locate Initramfs: Halting\n");
 		idle_loop();
 	}
 	// End: Locate Initramfs
@@ -433,34 +282,8 @@ void kmain() {
 	kernel_header_image_size <<= 32;
 	kernel_header_image_size |= tmp_kernel_header.image_size_a;
 	
-	itoa((kernel_header_text_offset >> 32) & 0xFFFFFFFF, buf, 20, -16, 8);
-	DEBUG_print("    kernel_header_text_offset: 0x");
-	DEBUG_print(buf);
-	DEBUG_print("_");
-	itoa((kernel_header_text_offset >>  0) & 0xFFFFFFFF, buf, 20, -16, 8);
-	DEBUG_print(buf);
-	DEBUG_print("\n");
-	
-	itoa((kernel_header_image_size >> 32) & 0xFFFFFFFF, buf, 20, -16, 8);
-	DEBUG_print("     kernel_header_image_size: 0x");
-	DEBUG_print(buf);
-	DEBUG_print("_");
-	itoa((kernel_header_image_size >>  0) & 0xFFFFFFFF, buf, 20, -16, 8);
-	DEBUG_print(buf);
-	DEBUG_print("\n");
-	
-	/*
-	struct kernel_boot_header bkh;
-	// TODO: Locate kernel
-	// TODO: Load Kernel Header into "bkh"
-	
-	uintRL_t text_offset = bkh.text_offset_b;
-	text_offset <<= 32;
-	text_offset |= bkh.text_offset_a;
-	uintRL_t image_size = bkh.image_size_b;
-	image_size <<= 32;
-	image_size |= bkh.image_size_a;
-	*/
+	printm("    kernel_header_text_offset: 0x%08lX\n", kernel_header_text_offset);
+	printm("     kernel_header_image_size: 0x%08lX\n", kernel_header_image_size);
 	
 	kernel_load_to_point = (uintRL_t)&PROGAMIMAGE_START; // 0x8000_0000
 	kernel_load_to_point += kernel_header_text_offset;
@@ -471,28 +294,13 @@ void kmain() {
 	while (kernel_load_to_point < ((uintRL_t)mem_block_end)) {
 		kernel_load_to_point += 0x00200000; // 0x0020_0000
 	}
-	itoa(((uintRL_t)unloaded_kernel_ptr >> 32) & 0xFFFFFFFF, buf, 20, -16, 8);
-	DEBUG_print(" Loading Kernel Fr @ 0x");
-	DEBUG_print(buf);
-	DEBUG_print("_");
-	itoa(((uintRL_t)unloaded_kernel_ptr >>  0) & 0xFFFFFFFF, buf, 20, -16, 8);
-	DEBUG_print(buf);
-	DEBUG_print("\n");
-	itoa((kernel_load_to_point >> 32) & 0xFFFFFFFF, buf, 20, -16, 8);
-	DEBUG_print(" Loading Kernel To @ 0x");
-	DEBUG_print(buf);
-	DEBUG_print("_");
-	itoa((kernel_load_to_point >>  0) & 0xFFFFFFFF, buf, 20, -16, 8);
-	DEBUG_print(buf);
-	DEBUG_print("\n");
-	//memset((void*)kernel_load_to_point, 0, kernel_header_image_size);
+	printm(" Loading Kernel Fr @ 0x%08lX\n", (uintRL_t)unloaded_kernel_ptr);
+	printm(" Loading Kernel To @ 0x%08lX\n", kernel_load_to_point);
+	
 	if (cpio_kernel_entry_header.h_magic != 0) {
-		DEBUG_print("Starting [");
-		itoa(cpio_kernel_entry_header.h_filesize.vl32, buf, 20, -10, 0);
-		DEBUG_print(buf);
-		DEBUG_print("]...");
+		printm("Starting [%d]...", cpio_kernel_entry_header.h_filesize.vl32);
 		memcpy((void*)kernel_load_to_point, unloaded_kernel_ptr, cpio_kernel_entry_header.h_filesize.vl32);
-		DEBUG_print("Done\n");
+		printm("Done\n");
 	} else {
 		memcpy((void*)kernel_load_to_point, unloaded_kernel_ptr, kernel_header_image_size);
 	}
@@ -504,17 +312,11 @@ void kmain() {
 		dtb_load_to_point = init_reg_a1;
 	}
 	dtb_load_to_point &= ~((uintRL_t)0xF);
-	itoa((dtb_load_to_point >> 32) & 0xFFFFFFFF, buf, 20, -16, 8);
-	DEBUG_print("       Loading DTB @ 0x");
-	DEBUG_print(buf);
-	DEBUG_print("_");
-	itoa((dtb_load_to_point >>  0) & 0xFFFFFFFF, buf, 20, -16, 8);
-	DEBUG_print(buf);
-	DEBUG_print("\n");
+	printm("       Loading DTB @ 0x%08lX\n", dtb_load_to_point);
 	if (cpio_dtb_entry_header.h_magic != 0) {
-		DEBUG_print("Starting...");
+		printm("Starting [%d]...", cpio_dtb_entry_header.h_filesize.vl32);
 		memcpy((void*)dtb_load_to_point, unloaded_dtb_ptr, cpio_dtb_entry_header.h_filesize.vl32);
-		DEBUG_print("Done\n");
+		printm("Done\n");
 	}
 	
 	uintRL_t initramfs_load_to_point;
@@ -523,78 +325,43 @@ void kmain() {
 	} else {
 		initramfs_load_to_point = (uintRL_t)unloaded_initramfs_ptr;
 	}
-	itoa((initramfs_load_to_point >> 32) & 0xFFFFFFFF, buf, 20, -16, 8);
-	DEBUG_print(" Loading Initramfs @ 0x");
-	DEBUG_print(buf);
-	DEBUG_print("_");
-	itoa((initramfs_load_to_point >>  0) & 0xFFFFFFFF, buf, 20, -16, 8);
-	DEBUG_print(buf);
-	DEBUG_print("\n");
+	printm(" Loading Initramfs @ 0x%08lX\n", initramfs_load_to_point);
 	if (cpio_initramfs_entry_header.h_magic != 0) {
-		DEBUG_print("Starting...");
+		printm("Starting [%d]...", cpio_initramfs_entry_header.h_filesize.vl32);
 		memcpy((void*)initramfs_load_to_point, unloaded_initramfs_ptr, cpio_initramfs_entry_header.h_filesize.vl32);
-		DEBUG_print("Done\n");
+		printm("Done\n");
 	}
 	
-	DEBUG_print("\n");
+	printm("\n");
 	
-	// dtb_load_to_point
-	/*
-	DEBUG_print("Kernel Filesize: ");
-	itoa(cpio_kernel_entry_header.h_filesize.vl32, buf, 20, 10, 0);
-	DEBUG_print(buf);
-	DEBUG_print("\n");
-	DEBUG_print("DTB Filesize: ");
-	itoa(cpio_dtb_entry_header.h_filesize.vl32, buf, 20, 10, 0);
-	DEBUG_print(buf);
-	DEBUG_print("\n");
-	DEBUG_print("Initramfs Filesize: ");
-	itoa(cpio_initramfs_entry_header.h_filesize.vl32, buf, 20, 10, 0);
-	DEBUG_print(buf);
-	DEBUG_print("\n");
-	
-	DEBUG_print("\n");
-	*/
 	{
-		DEBUG_print("DTB - First 16 Bytes\n");
 		unsigned char* ptr = (void*)dtb_load_to_point;
-		DEBUG_print("  ");
+		printm("DTB - First 16 Bytes\n  ");
 		for (unsigned int i = 0; i <  8; i++) {
-			DEBUG_print(" ");
-			itoa(ptr[i], buf, 20, -16, -2);
-			DEBUG_print(buf);
+			printm(" %02X", ptr[i]);
 		}
-		DEBUG_print("  ");
+		printm("  ");
 		for (unsigned int i = 8; i < 16; i++) {
-			DEBUG_print(" ");
-			itoa(ptr[i], buf, 20, -16, -2);
-			DEBUG_print(buf);
+			printm(" %02X", ptr[i]);
 		}
-		DEBUG_print("\n");
-		DEBUG_print("\n");
+		printm("\n\n");
 	}
 	{
-		DEBUG_print("IRF - First 16 Bytes\n");
 		unsigned char* ptr = (void*)initramfs_load_to_point;
-		DEBUG_print("  ");
+		printm("IRF - First 16 Bytes\n  ");
 		for (unsigned int i = 0; i <  8; i++) {
-			DEBUG_print(" ");
-			itoa(ptr[i], buf, 20, -16, -2);
-			DEBUG_print(buf);
+			printm(" %02X", ptr[i]);
 		}
-		DEBUG_print("  ");
+		printm("  ");
 		for (unsigned int i = 8; i < 16; i++) {
-			DEBUG_print(" ");
-			itoa(ptr[i], buf, 20, -16, -2);
-			DEBUG_print(buf);
+			printm(" %02X", ptr[i]);
 		}
-		DEBUG_print("\n");
-		DEBUG_print("\n");
+		printm("\n\n");
 	}
 	
 	uintRL_t hart_to_start = 0;
 	
-	DEBUG_print("--Start Hart--\n");
+	printm("--Start Hart--\n");
 	Hart_Command command;
 	command.command = HARTCMD_STARTHART;
 	command.param0 = hart_to_start;

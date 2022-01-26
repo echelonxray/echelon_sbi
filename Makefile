@@ -4,13 +4,11 @@ CC            := $(TUPLE)gcc
 OBJCPY        := $(TUPLE)objcopy
 STRIP         := $(TUPLE)strip
 LDFLAGS       := -e my_entry_pt -Wl,-gc-sections -static
-#DEFINES       := -D MM_FU540_C000
-DEFINES       := -D MM_JSEMU_0000
+#DEFINES       := -D MM_QEMU_VIRT
+DEFINES       := -D MM_CUSTOM_EMU
 CFLAGS        :=
 CFLAGS        := $(CFLAGS) -Wall -Wextra -Wno-unused-parameter # Set build warnings
 CFLAGS        := $(CFLAGS) -std=c99 # The standards to build to.
-#CFLAGS        := $(CFLAGS) -march=rv64ia -mabi=lp64 # The build target architectural information.
-#CFLAGS        := $(CFLAGS) -march=rv32ia -mabi=ilp32 -mbig-endian # The build target architectural information.
 CFLAGS        := $(CFLAGS) -march=rv32ia -mabi=ilp32 -mlittle-endian # The build target architectural information.
 CFLAGS        := $(CFLAGS) -mcmodel=medany # The symbol relocation scheme.
 CFLAGS        := $(CFLAGS) -O2 -mrelax -fno-stack-check -fno-stack-protector -fomit-frame-pointer # Optimizations to make and unused features/cruft.
@@ -49,13 +47,18 @@ KFILES        := $(KFILES) src/kernel/sbi_commands/ipi.o
 KFILES        := $(KFILES) src/kernel/sbi_commands/rfnc.o
 KFILES        := $(KFILES) src/kernel/sbi_commands/hsm.o
 
-.PHONY: all rebuild clean supervisorspace emu emu-debug debug
+.PHONY: all cust virt files clean emu emu-debug emu-linux emu-linux-debug emu-opensbi-linux emu-opensbi-linux-debug debug
 
-all: prog-emu.elf   prog-emu.elf.strip   prog-emu.elf.bin   prog-emu.elf.hex   prog-emu.elf.strip.bin   prog-emu.elf.strip.hex
+all: cust
+
+cust: clean
+	$(MAKE) files DEFINES="-D MM_CUSTOM_EMU"
+
+virt: clean
+	$(MAKE) files DEFINES="-D MM_QEMU_VIRT"
+
+files: prog-emu.elf   prog-emu.elf.strip   prog-emu.elf.bin   prog-emu.elf.hex   prog-emu.elf.strip.bin   prog-emu.elf.strip.hex
 #    prog-metal.elf prog-metal.elf.strip prog-metal.elf.bin prog-metal.elf.hex prog-metal.elf.strip.bin prog-metal.elf.strip.hex
-
-rebuild: clean
-	$(MAKE) all
 
 clean:
 	rm -f *.elf *.strip *.bin *.hex prog-partial.o prog-prerelax.o $(GFILES) $(KFILES)
@@ -97,31 +100,22 @@ prog-%.elf.strip: prog-%.elf
 	$(OBJCPY) -O ihex $^ $@
 
 emu:
-	qemu-system-riscv32 -M sifive_u -cpu sifive-u54 -smp 5 -bios ./prog-emu.elf.strip.bin -kernel ./../riscv32_testsuper/prog-emu.elf.strip.bin -initrd ./ignore/emudata/fs.cpio.gz -append "rdinit=/init.out loglevel=15" -m 1G -serial stdio -display none
+	qemu-system-riscv32 -M virt -cpu rv32 -smp 1 -m 128M -serial stdio -display none -bios ./prog-emu.elf.strip.bin
 
 emu-debug:
-	qemu-system-riscv32 -M sifive_u -cpu sifive-u54 -smp 5 -bios ./prog-emu.elf.strip.bin -kernel ./../riscv32_testsuper/prog-emu.elf.strip.bin -initrd ./ignore/emudata/fs.cpio.gz -append "rdinit=/init.out loglevel=15" -m 1G -serial stdio -display none -gdb tcp::1234 -S
-
-emu-opensbi:
-	qemu-system-riscv32 -M sifive_u -cpu sifive-u54 -smp 5 -kernel ./../riscv32_testsuper/prog-emu.elf.strip.bin -initrd ./ignore/emudata/fs.cpio.gz -append "rdinit=/init.out loglevel=15" -m 1G -serial stdio -display none
-
-emu-opensbi-debug:
-	qemu-system-riscv32 -M sifive_u -cpu sifive-u54 -smp 5 -kernel ./../riscv32_testsuper/prog-emu.elf.strip.bin -initrd ./ignore/emudata/fs.cpio.gz -append "rdinit=/init.out loglevel=15" -m 1G -serial stdio -display none -gdb tcp::1234 -S
-
-emu-opensbi-linux:
-	qemu-system-riscv32 -M virt -cpu rv32 -smp 1 -m 128M -serial stdio -display none -kernel ./ignore/emudata/riscv32iam_linux_kernel.bin -initrd ./ignore/emudata/fs.cpio.gz -append "rdinit=/init.out loglevel=15" -dtb ./ignore/emudata/jsem.dtb
-
-emu-opensbi-linux2:
-	qemu-system-riscv32 -M sifive_u -cpu rv32 -smp 2 -kernel ./ignore/emudata/riscv32iam_linux_kernel.bin -initrd ./ignore/emudata/fs.cpio.gz -append "rdinit=/init.out loglevel=15" -m 1G -serial stdio -display none
-
-emu-opensbi-linux-debug:
-	qemu-system-riscv32 -M virt -cpu rv32 -smp 1 -m 128M -serial stdio -display none -kernel ./ignore/emudata/riscv32iam_linux_kernel.bin -initrd ./ignore/emudata/fs.cpio.gz -append "rdinit=/init.out loglevel=15" -dtb ./ignore/emudata/jsem.dtb -gdb tcp::1234 -S
+	qemu-system-riscv32 -M virt -cpu rv32 -smp 1 -m 128M -serial stdio -display none -bios ./prog-emu.elf.strip.bin -gdb tcp::1234 -S
 
 emu-linux:
 	qemu-system-riscv32 -M virt -cpu rv32 -smp 1 -m 128M -serial stdio -display none -kernel ./ignore/emudata/riscv32iam_linux_kernel.bin -initrd ./ignore/emudata/fs.cpio.gz -append "rdinit=/init.out loglevel=15" -dtb ./ignore/emudata/jsem.dtb -bios ./prog-emu.elf.strip.bin
 
 emu-linux-debug:
 	qemu-system-riscv32 -M virt -cpu rv32 -smp 1 -m 128M -serial stdio -display none -kernel ./ignore/emudata/riscv32iam_linux_kernel.bin -initrd ./ignore/emudata/fs.cpio.gz -append "rdinit=/init.out loglevel=15" -dtb ./ignore/emudata/jsem.dtb -bios ./prog-emu.elf.strip.bin -gdb tcp::1234 -S
+
+emu-opensbi-linux:
+	qemu-system-riscv32 -M virt -cpu rv32 -smp 1 -m 128M -serial stdio -display none -kernel ./ignore/emudata/riscv32iam_linux_kernel.bin -initrd ./ignore/emudata/fs.cpio.gz -append "rdinit=/init.out loglevel=15" -dtb ./ignore/emudata/jsem.dtb
+
+emu-opensbi-linux-debug:
+	qemu-system-riscv32 -M virt -cpu rv32 -smp 1 -m 128M -serial stdio -display none -kernel ./ignore/emudata/riscv32iam_linux_kernel.bin -initrd ./ignore/emudata/fs.cpio.gz -append "rdinit=/init.out loglevel=15" -dtb ./ignore/emudata/jsem.dtb -gdb tcp::1234 -S
 
 debug:
 	$(TUPLE)gdb -ex "target remote localhost:1234" -ex "layout asm" -ex "tui reg general" -ex "break *0x80000000"

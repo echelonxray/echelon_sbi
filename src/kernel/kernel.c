@@ -593,9 +593,6 @@ void kmain() {
 	}
 	
 	uintRL_t hart_to_start = 0;
-#ifdef MM_FU540_C000
-	hart_to_start = 1;
-#endif
 	
 	DEBUG_print("--Start Hart--\n");
 	Hart_Command command;

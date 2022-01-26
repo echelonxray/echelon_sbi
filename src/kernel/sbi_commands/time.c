@@ -9,7 +9,7 @@ struct sbiret sbi_set_timer(uint64_t stime_value) {
 	__asm__ __volatile__ ("csrc mie, %0" : : "r" (0x80));
 	__asm__ __volatile__ ("csrc mip, %0" : : "r" (0x20));
 	
-#ifdef MM_JSEMU_0000
+#ifdef MM_CUSTOM_EMU
 	uint32_t mtime;
 	uint32_t mtimeh;
 	mtimeh = (uint32_t)((stime_value >> 32) & 0xFFFFFFFF);
@@ -21,8 +21,8 @@ struct sbiret sbi_set_timer(uint64_t stime_value) {
 	mtimecmp[mhartid * 2]   = mtime;
 	mtimecmphi[mhartid * 2] = mtimeh;
 #endif
-	
-#ifdef MM_FU540_C000
+
+#ifdef MM_QEMU_VIRT
 
 #if   __riscv_xlen == 64
 	volatile uint64_t* mtimecmp = (void*)(((uintRL_t)CLINT_BASE) + CLINT_MTIMECMPS);

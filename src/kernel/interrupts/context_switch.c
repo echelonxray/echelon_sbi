@@ -214,7 +214,7 @@ void interrupt_c_handler(volatile CPU_Context* cpu_context, uintRL_t cause_value
 			DEBUG_print("\n");
 			//__asm__ __volatile__ ("csrs mie, %0" : : "r" (1 << 7));
 			
-#ifdef MM_FU540_C000
+#ifdef MM_QEMU_VIRT
 
 #if   __riscv_xlen == 64
 			__asm__ __volatile__ ("csrw pmpaddr0, %0" : : "r" ((0x0000000080000000ul >> 2) & 0x003FFFFFFFFFFFFFul));
@@ -362,7 +362,7 @@ void exception_c_handler(volatile CPU_Context* cpu_context, uintRL_t cause_value
 			if (dinst.opcode == 0x73) {
 				if (dinst.funct3 == 0x2 || dinst.funct3 == 0x3 || dinst.funct3 == 0x6 || dinst.funct3 == 0x7) {
 					if (dinst.rs1 == 0) {
-#ifdef MM_FU540_C000
+#ifdef MM_QEMU_VIRT
 #if   __riscv_xlen == 128
 						#error "Not Implemented"
 #elif __riscv_xlen == 64
@@ -402,7 +402,7 @@ void exception_c_handler(volatile CPU_Context* cpu_context, uintRL_t cause_value
 				}
 			}
 			
-#ifdef MM_JSEMU_0000
+#ifdef MM_CUSTOM_EMU
 #if   __riscv_xlen == 32
 			// Emulate the M-Extension (But only for the Supervisor)
 			if (dinst.opcode == 0x33 && cpu_context->execution_mode == 1) {

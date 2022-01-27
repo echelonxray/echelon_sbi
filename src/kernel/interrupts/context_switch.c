@@ -230,7 +230,6 @@ void interrupt_c_handler(volatile CPU_Context* cpu_context, uintRL_t cause_value
 
 #endif
 			
-			//__asm__ __volatile__ ("csrw medeleg, %0" : : "r" (0xB1F3));
 			__asm__ __volatile__ ("csrw medeleg, %0" : : "r" (0x0000));
 			__asm__ __volatile__ ("csrw mideleg, %0" : : "r" (0x0222));
 			
@@ -280,15 +279,22 @@ void interrupt_c_handler(volatile CPU_Context* cpu_context, uintRL_t cause_value
 		} else {
 			goto not_handled_interrupt;
 		}
-	} /* else if (cause_value == 1) {
+	} else if (cause_value == 1) {
 		// S-Mode Timer Interrupt
 		
 		DEBUG_print("S-Mode Soft Interrupt\n");
+		idle_loop();
 	} else if (cause_value == 5) {
 		// S-Mode Timer Interrupt
 		
 		DEBUG_print("S-Mode Timer Interrupt\n");
-	} */ else if (cause_value == 7) {
+		idle_loop();
+	} else if (cause_value == 9) {
+		// S-Mode External Interrupt
+		
+		DEBUG_print("S-Mode External Interrupt\n");
+		idle_loop();
+	} else if (cause_value == 7) {
 		// M-Mode Timer Interrupt
 		
 		//DEBUG_print("M-Mode Timer Interrupt\n");

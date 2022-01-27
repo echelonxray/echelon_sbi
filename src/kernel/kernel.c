@@ -155,21 +155,7 @@ void wait_by_spin() {
 	return;
 }
 
-uint32_t swap_endianess_32(uint32_t val) {
-	uint32_t retval;
-	retval  = (val << 24) & 0xFF000000;
-	retval |= (val <<  8) & 0x00FF0000;
-	retval |= (val >>  8) & 0x0000FF00;
-	retval |= (val >> 24) & 0x000000FF;
-	return retval;
-}
-
 void kmain() {
-	// Enable TX on UART0
-	//volatile uint32_t* ctrl_reg;
-	//ctrl_reg = (uint32_t*)(UART0_BASE + UART_TXCTRL);
-	//*ctrl_reg = 0x1;
-	
 	printm("Hello, World!\n\n");
 	
 	uintRL_t mtvec;

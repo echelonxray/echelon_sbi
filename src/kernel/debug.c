@@ -5,26 +5,10 @@
 #include "./../inc/string.h"
 #include "./../inc/var_args.h"
 
-// Compiler bug as of GCC version (Gentoo 11.2.1_p20220115 p4) 11.2.1 20220115:
-//
-// GCC is emitting symbols __umoddi3 and __udivdi3 instead of
-// __umodti3 and __udivti3.  However the registers are setup correctly
-// to pass 2 unsigned long longs(2 uint64_ts).  Therefore, the receiving
-// functions do not get the correct data because the former functions 
-// expect 2 unsigned longs (2 uint32_ts).  For instance, passing
-// a 1 and a 10, results in the attempted modulus of 1 % 0.
-// 0 is the value stored in register a1.  It is the high 32 bits of
-// 1, per the calling convention of passing double XLEN sized values
-// in the general purpose registers.
-
 void DEBUG_print(char* str) {
 	uart_write((unsigned char*)str, UART0_BASE, strlen(str));
 	return;
 }
-
-// Working around a compiler bug.  See Note at top of file.
-unsigned long long __umodti3(unsigned long long a, unsigned long long b);
-unsigned long long __udivti3(unsigned long long a, unsigned long long b);
 
 size_t _itoa(unsigned long long number, char* restrict buf, size_t buf_len, signed char base) {
 	unsigned char hex_offset = 'a' - 10;
@@ -37,11 +21,8 @@ size_t _itoa(unsigned long long number, char* restrict buf, size_t buf_len, sign
 	while (number > 0 && i < buf_len) {
 		unsigned char digit;
 		
-		// Working around a compiler bug.  See Note at top of file.
-		//digit  = number % base;
-		digit  = __umodti3(number, base); 
-		//number = number / base;
-		number = __udivti3(number, base);
+		digit  = number % base;
+		number = number / base;
 		
 		if (digit >= 10) {
 			buf[i] = digit + hex_offset;

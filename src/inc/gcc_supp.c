@@ -1,6 +1,34 @@
-signed int __mulsi3(signed int a, signed int b) {
-	unsigned int ua = a;
-	unsigned int ub = b;
+#include "types.h"
+
+/*
+So my problem was not, in fact, a compiler bug.  It was incorrect 
+documentation.  The GNU manual page here: 
+https://gcc.gnu.org/onlinedocs/gccint/Integer-library-routines.html 
+describes these functions in terms of signed and unsigned; int, long, 
+and long long.  However, the RISC-V port of the GCC complier does 
+not follow that standard.  I'm not sure if the RISC-V port is unique 
+in the regard or if that page is simply wrong, possibly being 
+architecture specific without saying it.  
+
+Per the RISC-V type sizes, listed in the RISC-V Calling Convention 
+specifications:
+- int:       32-bits wide.
+- long:      XLEN-bits wide.  It matches the register width.
+- long long: 64-bits wide.
+
+However the RISC-V GCC compiler considers functions to be like this: 
+- __***si*(): 32-bits
+- __***di*(): 64-bits
+- __***ti*(): 128-bits (As far as I know, this is not implemented 
+                        on RISC-V.  At least not on rv32)
+
+Thank you for the help: 
+https://github.com/riscv-collab/riscv-gcc/issues/324
+*/
+
+sint32_t __mulsi3(sint32_t a, sint32_t b) {
+	uint32_t ua = a;
+	uint32_t ub = b;
 	if (a < 0) {
 		ua = ~ua + 1;
 	}
@@ -8,8 +36,8 @@ signed int __mulsi3(signed int a, signed int b) {
 		ub = ~ub + 1;
 	}
 	
-	unsigned int j = 0;
-	for (unsigned int i = 0; i < sizeof(signed int) * 8; i++) {
+	uint32_t j = 0;
+	for (uint32_t i = 0; i < sizeof(sint32_t) * 8; i++) {
 		if (!ua || !ub) {
 			break;
 		}
@@ -20,7 +48,7 @@ signed int __mulsi3(signed int a, signed int b) {
 		ub <<= 1;
 	}
 	
-	signed int r = j;
+	sint32_t r = j;
 	a ^= b;
 	if (a < 0) {
 		return -r;
@@ -28,9 +56,9 @@ signed int __mulsi3(signed int a, signed int b) {
 	return r;
 }
 
-signed int __modsi3(signed int a, signed int b) {
-	unsigned int ua = a;
-	unsigned int ub = b;
+sint32_t __modsi3(sint32_t a, sint32_t b) {
+	uint32_t ua = a;
+	uint32_t ub = b;
 	if (a < 0) {
 		ua = ~ua + 1;
 	}
@@ -38,9 +66,9 @@ signed int __modsi3(signed int a, signed int b) {
 		ub = ~ub + 1;
 	}
 	
-	unsigned int i = 0;
+	uint32_t i = 0;
 	while (ua >= ub) {
-		if ((signed int)ub < 0) {
+		if ((sint32_t)ub < 0) {
 			ua -= ub;
 			break;
 		}
@@ -55,17 +83,17 @@ signed int __modsi3(signed int a, signed int b) {
 		}
 	}
 	
-	signed int r = ua;
+	sint32_t r = ua;
 	if (a < 0) {
 		return -r;
 	}
 	return r;
 }
 
-unsigned int __umodsi3(unsigned int a, unsigned int b) {
-	unsigned int i = 0;
+uint32_t __umodsi3(uint32_t a, uint32_t b) {
+	uint32_t i = 0;
 	while (a >= b) {
-		if ((signed int)b < 0) {
+		if ((sint32_t)b < 0) {
 			a -= b;
 			break;
 		}
@@ -82,8 +110,8 @@ unsigned int __umodsi3(unsigned int a, unsigned int b) {
 	return a;
 }
 
-unsigned long __umoddi3(unsigned long a, unsigned long b) {
-	unsigned long i = 0;
+uint64_t __umoddi3(uint64_t a, uint64_t b) {
+	uint64_t i = 0;
 	while (a >= b) {
 		if ((signed long)b < 0) {
 			a -= b;
@@ -102,9 +130,9 @@ unsigned long __umoddi3(unsigned long a, unsigned long b) {
 	return a;
 }
 
-signed int __divsi3(signed int a, signed int b) {
-	unsigned int ua = a;
-	unsigned int ub = b;
+sint32_t __divsi3(sint32_t a, sint32_t b) {
+	uint32_t ua = a;
+	uint32_t ub = b;
 	if (a < 0) {
 		ua = ~ua + 1;
 	}
@@ -112,10 +140,10 @@ signed int __divsi3(signed int a, signed int b) {
 		ub = ~ub + 1;
 	}
 	
-	unsigned int i = 0;
-	unsigned int j = 0;
+	uint32_t i = 0;
+	uint32_t j = 0;
 	while (ua >= ub) {
-		if ((signed int)ub < 0) {
+		if ((sint32_t)ub < 0) {
 			ua -= ub;
 			j |= 1 << i;
 			break;
@@ -132,7 +160,7 @@ signed int __divsi3(signed int a, signed int b) {
 		}
 	}
 	
-	signed int r = j;
+	sint32_t r = j;
 	a ^= b;
 	if (a < 0) {
 		return -r;
@@ -140,11 +168,11 @@ signed int __divsi3(signed int a, signed int b) {
 	return r;
 }
 
-unsigned int __udivsi3(unsigned int a, unsigned int b) {
-	unsigned int i = 0;
-	unsigned int j = 0;
+uint32_t __udivsi3(uint32_t a, uint32_t b) {
+	uint32_t i = 0;
+	uint32_t j = 0;
 	while (a >= b) {
-		if ((signed int)b < 0) {
+		if ((sint32_t)b < 0) {
 			a -= b;
 			j |= 1 << i;
 			break;
@@ -163,9 +191,9 @@ unsigned int __udivsi3(unsigned int a, unsigned int b) {
 	return j;
 }
 
-unsigned long __udivdi3(unsigned long a, unsigned long b) {
-	unsigned long i = 0;
-	unsigned long j = 0;
+uint64_t __udivdi3(uint64_t a, uint64_t b) {
+	uint64_t i = 0;
+	uint64_t j = 0;
 	while (a >= b) {
 		if ((signed long)b < 0) {
 			a -= b;
@@ -186,6 +214,7 @@ unsigned long __udivdi3(unsigned long a, unsigned long b) {
 	return j;
 }
 
+/*
 unsigned long long __umodti3(unsigned long long a, unsigned long long b) {
 	unsigned long i = 0;
 	while (a >= b) {
@@ -228,3 +257,4 @@ unsigned long long __udivti3(unsigned long long a, unsigned long long b) {
 	}
 	return j;
 }
+*/

@@ -158,16 +158,37 @@ void wait_by_spin() {
 void kmain() {
 	printm("Hello, World!\n\n");
 	
+	unsigned char* ptr = (void*)UART0_BASE;
+	printm("RHR: 0x%02X\n", ptr[0]);
+	printm("IER: 0x%02X\n", ptr[1]);
+	printm("ISR: 0x%02X\n", ptr[2]);
+	printm("LCR: 0x%02X\n", ptr[3]);
+	printm("MCR: 0x%02X\n", ptr[4]);
+	printm("LSR: 0x%02X\n", ptr[5]);
+	printm("MSR: 0x%02X\n", ptr[6]);
+	printm("SPR: 0x%02X\n", ptr[7]);
+	unsigned char vls[2];
+	ptr[3] |=  0x80;
+	vls[0] = ptr[0];
+	vls[1] = ptr[1];
+	ptr[3] &= ~0x80;
+	printm("DLL: 0x%02X\n", vls[0]);
+	printm("DLM: 0x%02X\n", vls[1]);
+	printm("\n");
+	
+	//wait_by_spin();
+	//return;
+	
 	uintRL_t mtvec;
 	__asm__ __volatile__ ("csrr %0, mtvec" : "=r" (mtvec));
 	printm("mtvec: %08X\n", mtvec);
 	
-	//init_reg_a0 = 0;
-	//init_reg_a1 = 0;
-	//init_reg_a2 = 0;
-	//init_reg_a3 = 0;
-	//init_reg_a4 = 0;
-	//init_reg_a5 = 0;
+	init_reg_a0 = 0;
+	init_reg_a1 = 0;
+	init_reg_a2 = 0;
+	init_reg_a3 = 0;
+	init_reg_a4 = 0;
+	init_reg_a5 = 0;
 	
 	printm("             Register a0: 0x%08lX\n", init_reg_a0);
 	printm("             Register a1: 0x%08lX\n", init_reg_a1);
@@ -212,7 +233,8 @@ void kmain() {
 	cpio_kernel_entry_header.h_magic = 0;
 	if (unloaded_kernel_ptr == 0) {
 		void* ptr = (void*)(0x20000000);
-		unloaded_kernel_ptr = get_cpio_entry_header("riscv32iam_linux_kernel.bin", ptr, &cpio_kernel_entry_header);
+		unloaded_kernel_ptr = get_cpio_entry_header("kernel.bin", ptr, &cpio_kernel_entry_header);
+		//unloaded_kernel_ptr = get_cpio_entry_header("prog-emu.elf.strip.bin", ptr, &cpio_kernel_entry_header);
 	}
 	if (unloaded_kernel_ptr == 0) {
 		printm("Could Not Locate Kernel: Halting\n");
@@ -230,7 +252,7 @@ void kmain() {
 	unsigned int dtb_from_qemu;
 	if (unloaded_dtb_ptr == 0) {
 		void* ptr = (void*)(0x20000000);
-		unloaded_dtb_ptr = get_cpio_entry_header("jsem.dtb", ptr, &cpio_dtb_entry_header);
+		unloaded_dtb_ptr = get_cpio_entry_header("echelon_emu_v0.1.1.dtb", ptr, &cpio_dtb_entry_header);
 		dtb_from_qemu = 0;
 	} else {
 		dtb_from_qemu = 1;
@@ -250,7 +272,7 @@ void kmain() {
 	}
 	if (unloaded_initramfs_ptr == 0) {
 		void* ptr = (void*)(0x20000000);
-		unloaded_initramfs_ptr = get_cpio_entry_header("fs.cpio.gz", ptr, &cpio_initramfs_entry_header);
+		unloaded_initramfs_ptr = get_cpio_entry_header("initramfs.cpio.gz", ptr, &cpio_initramfs_entry_header);
 	}
 	if (unloaded_initramfs_ptr == 0) {
 		printm("Could Not Locate Initramfs: Halting\n");

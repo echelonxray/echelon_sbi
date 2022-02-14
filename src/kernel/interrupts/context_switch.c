@@ -352,6 +352,7 @@ void exception_c_handler(volatile CPU_Context* cpu_context, uintRL_t cause_value
 	} else if (cause_value == 2) {
 		// Illegal Instruction
 		//DEBUG_print("Illegal Instruction\n");
+		//printm("Illegal Instruction.  PC: 0x%08X\n", cpu_context->regs[REG_PC]);
 		
 		uintRL_t csr_satp;
 		__asm__ __volatile__ ("csrr %0, satp" : "=r" (csr_satp));
@@ -594,8 +595,8 @@ void exception_c_handler(volatile CPU_Context* cpu_context, uintRL_t cause_value
 					} else if (dinst.funct3 == 0x4) {
 						/*
 						{
-							DEBUG_print("M-Ext Emulate: DIV\n");
-							print_reg_state(cpu_context);
+							printm("M-Ext Emulate: DIV\n");
+							//print_reg_state(cpu_context);
 						}
 						*/
 						
@@ -709,7 +710,7 @@ void exception_c_handler(volatile CPU_Context* cpu_context, uintRL_t cause_value
 		// Breakpoint
 		__asm__ __volatile__ ("csrc mstatus, %0" : : "r" (0x8));
 		DEBUG_print("ESBI Trap Caught!  Breakpoint Exception.  Trap Handler: M-Mode\n");
-		cpu_context->regs[REG_PC] += 4;
+		print_reg_state(cpu_context);
 		//for (volatile uintRL_t i = 0; i < 200000000; i++) {}
 		idle_loop();
 		return;
@@ -736,10 +737,27 @@ void exception_c_handler(volatile CPU_Context* cpu_context, uintRL_t cause_value
 		s_delegation_trampoline(cpu_context, cause_value, mtval);
 	} else if (cause_value == 8) {
 		// User-Mode Environment Exception
+		//printm("User-Mode Environment Exception.  PC: 0x%08X\n", cpu_context->regs[REG_PC]);
 		//cpu_context->regs[REG_PC] += 4;
-		DEBUG_print("User-Mode Environment Exception\n");
+		//DEBUG_print("User-Mode Environment Exception\n");
 		//print_reg_state(cpu_context);
 		//__asm__ ("ebreak");
+		/*
+		if (cpu_context->regs[REG_A7] == 422 || cpu_context->regs[REG_A7] == 98) {
+			printm("FUTEX.  PC: 0x%08lX\n", cpu_context->regs[REG_PC]);
+			printm("\t*uaddr (a0): 0x%08lX, futex_op (a1): 0x%lX, val (a2): 0x%lX, *timeout (a3): 0x%08lX\n", 
+			       cpu_context->regs[REG_A0], 
+			       cpu_context->regs[REG_A1], 
+			       cpu_context->regs[REG_A2], 
+			       cpu_context->regs[REG_A3]);
+		}
+		if (cpu_context->regs[REG_A7] == 220) {
+			printm("CLONE.  PC: 0x%08lX\n", cpu_context->regs[REG_PC]); 
+		}
+		if (cpu_context->regs[REG_A7] == 435) {
+			printm("CLONE3.  PC: 0x%08lX\n", cpu_context->regs[REG_PC]); 
+		}
+		*/
 		s_delegation_trampoline(cpu_context, cause_value, mtval);
 	} else if (cause_value == 9) {
 		// Supervisor-Mode Environment Exception
@@ -772,6 +790,11 @@ void exception_c_handler(volatile CPU_Context* cpu_context, uintRL_t cause_value
 	} else if (cause_value == 12) {
 		// Instruction Page Fault
 		//DEBUG_print("Instruction Page Fault\n");
+		/*
+		uintRL_t satp;
+		__asm__ __volatile__ ("csrr %0, satp" : "=r" (satp));
+		printm("Page Fault (Exec) Virt PC: 0x%08X, SATP: 0x%08X\n", cpu_context->regs[REG_PC], satp);
+		*/
 		
 		/*
 		char buf[20];
@@ -836,12 +859,21 @@ void exception_c_handler(volatile CPU_Context* cpu_context, uintRL_t cause_value
 	} else if (cause_value == 13) {
 		// Load Page Fault
 		//DEBUG_print("Load Page Fault\n");
+		/*
+		uintRL_t satp;
+		__asm__ __volatile__ ("csrr %0, satp" : "=r" (satp));
+		printm("Page Fault (Load) Virt PC: 0x%08X, SATP: 0x%08X\n", cpu_context->regs[REG_PC], satp);
+		*/
 		//print_reg_state(cpu_context);
 		s_delegation_trampoline(cpu_context, cause_value, mtval);
 	} else if (cause_value == 15) {
 		// Store/AMO Page Fault
 		//DEBUG_print("Store/AMO Page Fault\n");
-		
+		/*
+		uintRL_t satp;
+		__asm__ __volatile__ ("csrr %0, satp" : "=r" (satp));
+		printm("Page Fault (Save) Virt PC: 0x%08X, SATP: 0x%08X\n", cpu_context->regs[REG_PC], satp);
+		*/
 		/*
 		char buf[20];
 		uintRL_t satp;

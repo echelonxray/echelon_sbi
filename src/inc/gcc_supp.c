@@ -113,7 +113,7 @@ uint32_t __umodsi3(uint32_t a, uint32_t b) {
 uint64_t __umoddi3(uint64_t a, uint64_t b) {
 	uint64_t i = 0;
 	while (a >= b) {
-		if ((signed long)b < 0) {
+		if ((sint64_t)b < 0) {
 			a -= b;
 			break;
 		}
@@ -195,7 +195,7 @@ uint64_t __udivdi3(uint64_t a, uint64_t b) {
 	uint64_t i = 0;
 	uint64_t j = 0;
 	while (a >= b) {
-		if ((signed long)b < 0) {
+		if ((sint64_t)b < 0) {
 			a -= b;
 			j |= 1ul << i;
 			break;

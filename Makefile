@@ -5,17 +5,19 @@ OBJCPY        := $(TUPLE)objcopy
 STRIP         := $(TUPLE)strip
 LDFLAGS       := -e my_entry_pt -Wl,-gc-sections -static
 #DEFINES       := -D MM_QEMU_VIRT
-DEFINES       := -D MM_CUSTOM_EMU
+#DEFINES       := -D MM_CUSTOM_EMU
+DEFINES       :=
 CFLAGS        :=
-CFLAGS        := $(CFLAGS) -Wall -Wextra -Wno-unused-parameter # Set build warnings
+CFLAGS        := $(CFLAGS) -Wall -Wextra # Set build warnings
 CFLAGS        := $(CFLAGS) -std=c99 # The standards to build to.
-CFLAGS        := $(CFLAGS) -march=rv32ia -mabi=ilp32 -mlittle-endian # The build target architectural information.
+CFLAGS        := $(CFLAGS) -march=rv32ia -mabi=ilp32 -mlittle-endian -mstrict-align # The build target architectural information.
 CFLAGS        := $(CFLAGS) -mcmodel=medany # The symbol relocation scheme.
-CFLAGS        := $(CFLAGS) -O2 -mrelax -fno-stack-check -fno-stack-protector -fomit-frame-pointer # Optimizations to make and unused features/cruft.
+CFLAGS        := $(CFLAGS) -O3 -mrelax -fno-stack-check -fno-stack-protector -fomit-frame-pointer # Optimizations to make and unused features/cruft.
 CFLAGS        := $(CFLAGS) -ftls-model=local-exec # Thread Local Store (TLS) scheme: Final TLS offsets are known at linktime. (local-exec)
 CFLAGS        := $(CFLAGS) -fno-pic # Do not build position independent code.  Older versions of GCC did not default to this.
 CFLAGS        := $(CFLAGS) -ffreestanding -nostdlib -nostartfiles # Build a freestanding program.  Do not automatically include any other libraries or object files.
 CFLAGS        := $(CFLAGS) -fno-zero-initialized-in-bss # Because this will run on the bare metal, there is nothing to zero the memory.  Do not assume that fresh memory is zeroed.
+CFLAGS        := $(CFLAGS) -MD # Generate header dependency tracking information
 
 GFILES        :=
 KFILES        :=
@@ -47,6 +49,9 @@ KFILES        := $(KFILES) src/kernel/sbi_commands/ipi.o
 KFILES        := $(KFILES) src/kernel/sbi_commands/rfnc.o
 KFILES        := $(KFILES) src/kernel/sbi_commands/hsm.o
 
+FILES_O       := $(GFILES) $(KFILES)
+FILES_D       := $(addsuffix .d,$(basename $(FILES_O)))
+
 .PHONY: all cust virt files clean emu emu-debug emu-linux emu-linux-debug emu-opensbi-linux emu-opensbi-linux-debug debug
 
 all: cust
@@ -61,19 +66,19 @@ files: prog-emu.elf   prog-emu.elf.strip   prog-emu.elf.bin   prog-emu.elf.hex  
 #    prog-metal.elf prog-metal.elf.strip prog-metal.elf.bin prog-metal.elf.hex prog-metal.elf.strip.bin prog-metal.elf.strip.hex
 
 clean:
-	rm -f *.elf *.strip *.bin *.hex prog-partial.o prog-prerelax.o $(GFILES) $(KFILES)
+	rm -f *.elf *.strip *.bin *.hex prog-partial.o prog-prerelax.o $(FILES_O) $(FILES_D)
 
-%.o: %.c
-	$(CC) $(CFLAGS) $(DEFINES) $^ -c -o $@
+%.o: %.c $(wildcard %.d)
+	$(CC) $(CFLAGS) $(DEFINES) $< -c -o $@
+
+%.o: %.S $(wildcard %.d)
+	$(CC) $(CFLAGS) $(DEFINES) $< -c -o $@
 
 %.o: %.s
-	$(CC) $(CFLAGS) $(DEFINES) $^ -c -o $@
+	$(CC) $(CFLAGS) $(DEFINES) $< -c -o $@
 
-%.o: %.S
-	$(CC) $(CFLAGS) $(DEFINES) $^ -c -o $@
-
-prog-partial.o: $(GFILES) $(KFILES)
-	$(CC) $(CFLAGS) $(GFILES) $(KFILES) -r $(LDFLAGS) -o $@
+prog-partial.o: $(FILES_O)
+	$(CC) $(CFLAGS) $^ -r $(LDFLAGS) -o $@
 
 prog-prerelax.o: prog-partial.o
 	$(OBJCPY) --set-section-flags .rodata.str1.8=alloc $^ $@
@@ -119,3 +124,5 @@ emu-opensbi-linux-debug:
 
 debug:
 	$(TUPLE)gdb -ex "target remote localhost:1234" -ex "layout asm" -ex "tui reg general" -ex "break *0x80000000"
+
+-include $(wildcard $(FILES_D))

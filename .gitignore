@@ -1,0 +1,11 @@
+# Ignore build output files
+esbi-*.elf
+esbi-*.elf.bin
+esbi-*.elf.hex
+esbi-*.elf.strip
+esbi-*.elf.strip.bin
+esbi-*.elf.strip.hex
+
+# Ignore temporary build files
+*.o
+*.d

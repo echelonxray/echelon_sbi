@@ -62,6 +62,9 @@ FILES_BASE    := $(basename $(GFILES) $(KFILES))
 
 all: echelon_emu qemu_virt
 
+rebuild: clean
+	$(MAKE) all
+
 clean:
 	rm -f esbi-*
 	rm -f $(addsuffix .o,$(FILES_BASE))

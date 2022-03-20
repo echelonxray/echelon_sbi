@@ -1,12 +1,9 @@
-TUPLE         := riscv64-unknown-elf-
-#TUPLE         := riscv32-unknown-linux-gnu-
-CC            := $(TUPLE)gcc
-OBJCPY        := $(TUPLE)objcopy
-STRIP         := $(TUPLE)strip
+TRIPLET       := riscv64-unknown-elf-
+#TRIPLET      := riscv32-unknown-linux-gnu-
+CC            := $(TRIPLET)gcc
+OBJCPY        := $(TRIPLET)objcopy
+STRIP         := $(TRIPLET)strip
 LDFLAGS       := -e my_entry_pt -Wl,-gc-sections -static
-#DEFINES       := -D MM_QEMU_VIRT
-#DEFINES       := -D MM_CUSTOM_EMU
-DEFINES       :=
 CFLAGS        :=
 CFLAGS        := $(CFLAGS) -Wall -Wextra # Set build warnings
 CFLAGS        := $(CFLAGS) -std=c99 # The standards to build to.
@@ -19,102 +16,124 @@ CFLAGS        := $(CFLAGS) -ffreestanding -nostdlib -nostartfiles # Build a free
 CFLAGS        := $(CFLAGS) -fno-zero-initialized-in-bss # Because this will run on the bare metal, there is nothing to zero the memory.  Do not assume that fresh memory is zeroed.
 CFLAGS        := $(CFLAGS) -MD # Generate header dependency tracking information
 
+TGT_SFXs      := .elf .elf.bin .elf.hex .elf.strip .elf.strip.bin .elf.strip.hex
+
+DEFINES       :=
+TAG           :=
+
 GFILES        :=
 KFILES        :=
 
 # Global Library
-GFILES        := $(GFILES) src/inc/gcc_supp.o
-GFILES        := $(GFILES) src/inc/string.o
+GFILES        := $(GFILES) src/inc/gcc_supp.?
+GFILES        := $(GFILES) src/inc/string.?
 
 # Kernel
 #  - Core (Entry/System Setup/Globals)
-KFILES        := $(KFILES) src/kernel/kernel.o
-KFILES        := $(KFILES) src/kernel/cpio_parse.o
-KFILES        := $(KFILES) src/kernel/dtb_parse.o
-KFILES        := $(KFILES) src/kernel/kstart_entry.o
-KFILES        := $(KFILES) src/kernel/globals.o
-KFILES        := $(KFILES) src/kernel/memalloc.o
-KFILES        := $(KFILES) src/kernel/thread_locking.o
-KFILES        := $(KFILES) src/kernel/sbi_commands.o
-KFILES        := $(KFILES) src/kernel/debug.o
+KFILES        := $(KFILES) src/kernel/kernel.?
+KFILES        := $(KFILES) src/kernel/cpio_parse.?
+KFILES        := $(KFILES) src/kernel/dtb_parse.?
+KFILES        := $(KFILES) src/kernel/kstart_entry.?
+KFILES        := $(KFILES) src/kernel/globals.?
+KFILES        := $(KFILES) src/kernel/memalloc.?
+KFILES        := $(KFILES) src/kernel/thread_locking.?
+KFILES        := $(KFILES) src/kernel/sbi_commands.?
+KFILES        := $(KFILES) src/kernel/debug.?
 #  - Drivers
-KFILES        := $(KFILES) src/kernel/drivers/uart.o
+KFILES        := $(KFILES) src/kernel/drivers/uart.?
 #  - Interrupt Handler
-KFILES        := $(KFILES) src/kernel/interrupts/context_switch.o
-KFILES        := $(KFILES) src/kernel/interrupts/context_switch_asm.o
+KFILES        := $(KFILES) src/kernel/interrupts/context_switch.?
+KFILES        := $(KFILES) src/kernel/interrupts/context_switch_asm.?
 #  - SBI Commands
-KFILES        := $(KFILES) src/kernel/sbi_commands/base.o
-KFILES        := $(KFILES) src/kernel/sbi_commands/time.o
-KFILES        := $(KFILES) src/kernel/sbi_commands/ipi.o
-KFILES        := $(KFILES) src/kernel/sbi_commands/rfnc.o
-KFILES        := $(KFILES) src/kernel/sbi_commands/hsm.o
+KFILES        := $(KFILES) src/kernel/sbi_commands/base.?
+KFILES        := $(KFILES) src/kernel/sbi_commands/time.?
+KFILES        := $(KFILES) src/kernel/sbi_commands/ipi.?
+KFILES        := $(KFILES) src/kernel/sbi_commands/rfnc.?
+KFILES        := $(KFILES) src/kernel/sbi_commands/hsm.?
 
-FILES_O       := $(GFILES) $(KFILES)
-FILES_D       := $(addsuffix .d,$(basename $(FILES_O)))
+# What list of base filenames are we to build?
+FILES_BASE    := $(basename $(GFILES) $(KFILES))
 
-.PHONY: all cust virt files clean emu emu-debug emu-linux emu-linux-debug emu-opensbi-linux emu-opensbi-linux-debug debug
+.PHONY: all clean echelon_emu qemu_virt emu emu-debug emu-linux emu-linux-debug emu-opensbi-linux emu-opensbi-linux-debug debug
 
-all: cust
+.PRECIOUS: %.o %.$(TAG).o
 
-cust: clean
-	$(MAKE) files DEFINES="-D MM_CUSTOM_EMU"
+# Primary make targets.  These are the targets that can be called directly.
 
-virt: clean
-	$(MAKE) files DEFINES="-D MM_QEMU_VIRT"
-
-files: prog-emu.elf   prog-emu.elf.strip   prog-emu.elf.bin   prog-emu.elf.hex   prog-emu.elf.strip.bin   prog-emu.elf.strip.hex
-#    prog-metal.elf prog-metal.elf.strip prog-metal.elf.bin prog-metal.elf.hex prog-metal.elf.strip.bin prog-metal.elf.strip.hex
+all: echelon_emu qemu_virt
 
 clean:
-	rm -f *.elf *.strip *.bin *.hex prog-partial.o prog-prerelax.o $(FILES_O) $(FILES_D)
+	rm -f esbi-*
+	rm -f $(addsuffix .o,$(FILES_BASE))
+	rm -f $(addsuffix .d,$(FILES_BASE))
+	rm -f $(addsuffix .echelon_emu.o,$(FILES_BASE))
+	rm -f $(addsuffix .echelon_emu.d,$(FILES_BASE))
+	rm -f $(addsuffix .qemu_virt.o,$(FILES_BASE))
+	rm -f $(addsuffix .qemu_virt.d,$(FILES_BASE))
 
-%.o: %.c $(wildcard %.d)
-	$(CC) $(CFLAGS) $(DEFINES) $< -c -o $@
+echelon_emu:
+	$(MAKE) $(addprefix esbi-$@,$(TGT_SFXs)) DEFINES="-D MM_CUSTOM_EMU" TAG="$@"
 
-%.o: %.S $(wildcard %.d)
-	$(CC) $(CFLAGS) $(DEFINES) $< -c -o $@
+qemu_virt:
+	$(MAKE) $(addprefix esbi-$@,$(TGT_SFXs)) DEFINES="-D MM_QEMU_VIRT" TAG="$@"
 
-%.o: %.s
-	$(CC) $(CFLAGS) $(DEFINES) $< -c -o $@
+# Targets below this line should not be called directly.
 
-prog-partial.o: $(FILES_O)
-	$(CC) $(CFLAGS) $^ -r $(LDFLAGS) -o $@
+# Root make targets
 
-prog-prerelax.o: prog-partial.o
-	$(OBJCPY) --set-section-flags .rodata.str1.8=alloc $^ $@
-
-prog-metal.elf: prog-prerelax.o
-	$(CC) $(CFLAGS) $^ -T ./bare_metal.ld $(LDFLAGS) -o $@
-
-prog-emu.elf: prog-prerelax.o
+esbi-echelon_emu.elf: esbi-echelon_emu.prerelax.o
 	$(CC) $(CFLAGS) $^ -T ./emulation.ld $(LDFLAGS) -o $@
 
-prog-%.elf.strip: prog-%.elf
+esbi-qemu_virt.elf: esbi-qemu_virt.prerelax.o
+	$(CC) $(CFLAGS) $^ -T ./emulation.ld $(LDFLAGS) -o $@
+
+# Dependencies of the root make targets
+
+esbi-%.prerelax.o: esbi-%.partial.o
+	$(OBJCPY) --set-section-flags .rodata.str1.8=alloc $^ $@
+
+esbi-%.partial.o: $(addsuffix .$(TAG).o,$(FILES_BASE))
+	$(CC) $(CFLAGS) $^ -r $(LDFLAGS) -o $@
+
+# File building
+
+%.$(TAG).o: %.c
+	$(CC) $(CFLAGS) $(DEFINES) $^ -c -o $@
+
+%.$(TAG).o: %.S
+	$(CC) $(CFLAGS) $(DEFINES) $^ -c -o $@
+
+%.$(TAG).o: %.s
+	$(CC) $(CFLAGS) $^ -c -o $@
+
+# Build output variants
+
+%.strip: %
 	$(STRIP) -s -x -R .comment -R .text.startup -R .riscv.attributes $^ -o $@
 
-%.elf.bin: %.elf
+%.bin: %
 	$(OBJCPY) -O binary $^ $@
 
-%.elf.hex: %.elf
+%.hex: %
 	$(OBJCPY) -O ihex $^ $@
 
-%.strip.bin: %.strip
-	$(OBJCPY) -O binary $^ $@
+# Header dependency tracking
 
-%.strip.hex: %.strip
-	$(OBJCPY) -O ihex $^ $@
+-include $(wildcard $(addsuffix .$(TAG).d,$(FILES_BASE)))
+
+# Testing and debugging
 
 emu:
-	qemu-system-riscv32 -M virt -cpu rv32 -smp 1 -m 128M -serial stdio -display none -bios ./prog-emu.elf.strip.bin
+	qemu-system-riscv32 -M virt -cpu rv32 -smp 1 -m 128M -serial stdio -display none -bios ./esbi-qemu_virt.elf.strip.bin
 
 emu-debug:
-	qemu-system-riscv32 -M virt -cpu rv32 -smp 1 -m 128M -serial stdio -display none -bios ./prog-emu.elf.strip.bin -gdb tcp::1234 -S
+	qemu-system-riscv32 -M virt -cpu rv32 -smp 1 -m 128M -serial stdio -display none -bios ./esbi-qemu_virt.elf.strip.bin -gdb tcp::1234 -S
 
 emu-linux:
-	qemu-system-riscv32 -M virt -cpu rv32 -smp 1 -m 128M -serial stdio -display none -kernel ./ignore/emudata/riscv32iam_linux_kernel.bin -initrd ./ignore/emudata/fs.cpio.gz -append "rdinit=/init.out loglevel=15" -dtb ./ignore/emudata/jsem.dtb -bios ./prog-emu.elf.strip.bin
+	qemu-system-riscv32 -M virt -cpu rv32 -smp 1 -m 128M -serial stdio -display none -kernel ./ignore/emudata/riscv32iam_linux_kernel.bin -initrd ./ignore/emudata/fs.cpio.gz -append "rdinit=/init.out loglevel=15" -dtb ./ignore/emudata/jsem.dtb -bios ./esbi-qemu_virt.elf.strip.bin
 
 emu-linux-debug:
-	qemu-system-riscv32 -M virt -cpu rv32 -smp 1 -m 128M -serial stdio -display none -kernel ./ignore/emudata/riscv32iam_linux_kernel.bin -initrd ./ignore/emudata/fs.cpio.gz -append "rdinit=/init.out loglevel=15" -dtb ./ignore/emudata/jsem.dtb -bios ./prog-emu.elf.strip.bin -gdb tcp::1234 -S
+	qemu-system-riscv32 -M virt -cpu rv32 -smp 1 -m 128M -serial stdio -display none -kernel ./ignore/emudata/riscv32iam_linux_kernel.bin -initrd ./ignore/emudata/fs.cpio.gz -append "rdinit=/init.out loglevel=15" -dtb ./ignore/emudata/jsem.dtb -bios ./esbi-qemu_virt.elf.strip.bin -gdb tcp::1234 -S
 
 emu-opensbi-linux:
 	qemu-system-riscv32 -M virt -cpu rv32 -smp 1 -m 128M -serial stdio -display none -kernel ./ignore/emudata/riscv32iam_linux_kernel.bin -initrd ./ignore/emudata/fs.cpio.gz -append "rdinit=/init.out loglevel=15" -dtb ./ignore/emudata/jsem.dtb
@@ -123,6 +142,4 @@ emu-opensbi-linux-debug:
 	qemu-system-riscv32 -M virt -cpu rv32 -smp 1 -m 128M -serial stdio -display none -kernel ./ignore/emudata/riscv32iam_linux_kernel.bin -initrd ./ignore/emudata/fs.cpio.gz -append "rdinit=/init.out loglevel=15" -dtb ./ignore/emudata/jsem.dtb -gdb tcp::1234 -S
 
 debug:
-	$(TUPLE)gdb -ex "target remote localhost:1234" -ex "layout asm" -ex "tui reg general" -ex "break *0x80000000"
-
--include $(wildcard $(FILES_D))
+	$(TRIPLET)gdb -ex "target remote localhost:1234" -ex "layout asm" -ex "tui reg general" -ex "break *0x80000000"

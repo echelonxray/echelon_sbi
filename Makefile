@@ -124,7 +124,7 @@ esbi-%.partial.o: $(addsuffix .$(TAG).o,$(FILES_BASE))
 
 -include $(wildcard $(addsuffix .$(TAG).d,$(FILES_BASE)))
 
-# Testing and debugging
+# Testing and debugging (These can be called directly)
 
 emu:
 	qemu-system-riscv32 -M virt -cpu rv32 -smp 1 -m 128M -serial stdio -display none -bios ./esbi-qemu_virt.elf.strip.bin

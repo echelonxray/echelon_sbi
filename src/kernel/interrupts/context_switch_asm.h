@@ -34,7 +34,7 @@
 
 .altmacro
 .macro M_LS_REGS_ELEM inst arg_reg ptr_reg offt
-	\inst x\arg_reg&, \offt&(x\ptr_reg&)
+	\inst x\arg_reg, \offt(x\ptr_reg)
 .endm
 
 .macro M_LS_REGS_LIST inst arg_reg_start arg_reg_end ptr_reg
@@ -47,7 +47,12 @@
 .endm
 
 .macro SAVE_REGS ptr_reg
-	M_LS_REGS_LIST <SX>, 1, %(REG_COUNT-1), <\ptr_reg>
+#if REG_COUNT > 16 // Clang asm macro recursive limit is 20
+	M_LS_REGS_LIST <SX>,  1,        %(16-1), <\ptr_reg>
+	M_LS_REGS_LIST <SX>, 16, %(REG_COUNT-1), <\ptr_reg>
+#else
+	M_LS_REGS_LIST <SX>,  1, %(REG_COUNT-1), <\ptr_reg>
+#endif
 	.if \ptr_reg-1
 		csrrw x1, mscratch, x\ptr_reg
 		M_LS_REGS_ELEM <SX>, 1, <\ptr_reg>, %(CT_R_ST+(XLEN_BYTES*\ptr_reg))
@@ -58,7 +63,12 @@
 .endm
 
 .macro LOAD_REGS ptr_reg
-	M_LS_REGS_LIST <LX>, 1, %(REG_COUNT-1), <\ptr_reg>
+#if REG_COUNT > 16 // Clang asm macro recursive limit is 20
+	M_LS_REGS_LIST <LX>,  1,        %(16-1), <\ptr_reg>
+	M_LS_REGS_LIST <LX>, 16, %(REG_COUNT-1), <\ptr_reg>
+#else
+	M_LS_REGS_LIST <LX>,  1, %(REG_COUNT-1), <\ptr_reg>
+#endif
 	M_LS_REGS_ELEM <LX>, <\ptr_reg>, <\ptr_reg>, %(CT_R_ST+(XLEN_BYTES*\ptr_reg))
 .endm
 

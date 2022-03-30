@@ -1,18 +1,22 @@
 TRIPLET       := riscv64-unknown-elf-
 #TRIPLET      := riscv32-unknown-linux-gnu-
-CC            := $(TRIPLET)gcc
-OBJCPY        := $(TRIPLET)objcopy
-STRIP         := $(TRIPLET)strip
+#CC            := $(TRIPLET)gcc
+CC            := clang -target riscv64
+#OBJCPY        := $(TRIPLET)objcopy
+OBJCPY        := llvm-objcopy
+#STRIP         := $(TRIPLET)strip
+STRIP         := llvm-strip
 LDFLAGS       := -e my_entry_pt -Wl,-gc-sections -static
 CFLAGS        :=
-CFLAGS        := $(CFLAGS) -Wall -Wextra # Set build warnings
+CFLAGS        := $(CFLAGS) -Wall -Wextra -g # Set build warnings and debugging
 CFLAGS        := $(CFLAGS) -std=c99 # The standards to build to.
-CFLAGS        := $(CFLAGS) -march=rv32ia -mabi=ilp32 -mlittle-endian -mstrict-align # The build target architectural information.
+CFLAGS        := $(CFLAGS) -march=rv32ia -mabi=ilp32 -mlittle-endian # The build target architectural information.
+#CFLAGS        := $(CFLAGS) -march=rv32ia_zicsr_zifencei -mabi=ilp32 -mlittle-endian -mstrict-align # The build target architectural information.
 CFLAGS        := $(CFLAGS) -mcmodel=medany # The symbol relocation scheme.
-CFLAGS        := $(CFLAGS) -O3 -mrelax -fno-stack-check -fno-stack-protector -fomit-frame-pointer # Optimizations to make and unused features/cruft.
+CFLAGS        := $(CFLAGS) -O3 -mrelax -fno-stack-check -fno-stack-protector -fomit-frame-pointer -ffunction-sections # Optimizations to make and unused features/cruft.
 CFLAGS        := $(CFLAGS) -ftls-model=local-exec # Thread Local Store (TLS) scheme: Final TLS offsets are known at linktime. (local-exec)
-CFLAGS        := $(CFLAGS) -fno-pic # Do not build position independent code.  Older versions of GCC did not default to this.
-CFLAGS        := $(CFLAGS) -ffreestanding -nostdlib -nostartfiles # Build a freestanding program.  Do not automatically include any other libraries or object files.
+CFLAGS        := $(CFLAGS) -fno-pic -fno-pie # Do not build position independent code.  Older versions of GCC did not default to this.
+CFLAGS        := $(CFLAGS) -ffreestanding -nostdlib # Build a freestanding program.  Do not automatically include any other libraries or object files.
 CFLAGS        := $(CFLAGS) -fno-zero-initialized-in-bss # Because this will run on the bare metal, there is nothing to zero the memory.  Do not assume that fresh memory is zeroed.
 CFLAGS        := $(CFLAGS) -MD # Generate header dependency tracking information
 
@@ -84,30 +88,19 @@ qemu_virt:
 
 # Root make targets
 
-esbi-echelon_emu.elf: esbi-echelon_emu.prerelax.o
+esbi-echelon_emu.elf: $(addsuffix .$(TAG).o,$(FILES_BASE))
 	$(CC) $(CFLAGS) $^ -T ./emulation.ld $(LDFLAGS) -o $@
 
-esbi-qemu_virt.elf: esbi-qemu_virt.prerelax.o
+esbi-qemu_virt.elf: $(addsuffix .$(TAG).o,$(FILES_BASE))
 	$(CC) $(CFLAGS) $^ -T ./emulation.ld $(LDFLAGS) -o $@
-
-# Dependencies of the root make targets
-
-esbi-%.prerelax.o: esbi-%.partial.o
-	$(OBJCPY) --set-section-flags .rodata.str1.8=alloc $^ $@
-
-esbi-%.partial.o: $(addsuffix .$(TAG).o,$(FILES_BASE))
-	$(CC) $(CFLAGS) $^ -r $(LDFLAGS) -o $@
 
 # File building
 
 %.$(TAG).o: %.c
-	$(CC) $(CFLAGS) $(DEFINES) $^ -c -o $@
+	$(CC) $(CFLAGS) $(DEFINES) $< -c -o $@
 
 %.$(TAG).o: %.S
-	$(CC) $(CFLAGS) $(DEFINES) $^ -c -o $@
-
-%.$(TAG).o: %.s
-	$(CC) $(CFLAGS) $^ -c -o $@
+	$(CC) $(CFLAGS) $(DEFINES) $< -c -o $@
 
 # Build output variants
 
@@ -122,7 +115,7 @@ esbi-%.partial.o: $(addsuffix .$(TAG).o,$(FILES_BASE))
 
 # Header dependency tracking
 
--include $(wildcard $(addsuffix .$(TAG).d,$(FILES_BASE)))
+-include $(addsuffix .$(TAG).d,$(FILES_BASE))
 
 # Testing and debugging (These can be called directly)
 

@@ -1,6 +1,6 @@
 #include "./interrupts/context_switch_asm.h"
 
-.section entry_text
+.section entry_text,"ax"
 
 .globl my_entry_pt
 .globl idle_loop

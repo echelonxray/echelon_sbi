@@ -167,6 +167,9 @@ struct sbiret sbi_remote_sfence_vma_asid(unsigned long hart_mask, unsigned long 
 	return retval;
 }
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-parameter"
+
 struct sbiret sbi_remote_hfence_gvma_vmid(unsigned long hart_mask, unsigned long hart_mask_base, unsigned long start_addr, long size, unsigned long vmid) {
 	DEBUG_print("SBI FAILURE: HFence.GVMA_VMID\n");
 	struct sbiret retval;
@@ -198,3 +201,5 @@ struct sbiret sbi_remote_hfence_vvma(unsigned long hart_mask, unsigned long hart
 	retval.error = SBI_ERR_NOT_SUPPORTED;
 	return retval;
 }
+
+#pragma GCC diagnostic pop

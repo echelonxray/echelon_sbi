@@ -1,17 +1,17 @@
-TRIPLET       := riscv64-unknown-elf-
+TRIPLET       := riscv64-ex3-linux-musl-
 #TRIPLET      := riscv32-unknown-linux-gnu-
-#CC            := $(TRIPLET)gcc
-CC            := clang -target riscv64
-#OBJCPY        := $(TRIPLET)objcopy
-OBJCPY        := llvm-objcopy
-#STRIP         := $(TRIPLET)strip
-STRIP         := llvm-strip
+CC            := $(TRIPLET)gcc
+#CC            := clang -target riscv64
+OBJCPY        := $(TRIPLET)objcopy
+#OBJCPY        := llvm-objcopy
+STRIP         := $(TRIPLET)strip
+#STRIP         := llvm-strip
 LDFLAGS       := -e my_entry_pt -Wl,-gc-sections -static
 CFLAGS        :=
 CFLAGS        := $(CFLAGS) -Wall -Wextra -g # Set build warnings and debugging
 CFLAGS        := $(CFLAGS) -std=c99 # The standards to build to.
-CFLAGS        := $(CFLAGS) -march=rv32ia -mabi=ilp32 -mlittle-endian # The build target architectural information.
-#CFLAGS        := $(CFLAGS) -march=rv32ia_zicsr_zifencei -mabi=ilp32 -mlittle-endian -mstrict-align # The build target architectural information.
+CFLAGS        := $(CFLAGS) -march=rv32ia_zicsr_zifencei -mabi=ilp32 -mlittle-endian -mstrict-align # The build target architectural information.
+#CFLAGS        := $(CFLAGS) -march=rv32ia -mabi=ilp32 -mlittle-endian # The build target architectural information.
 CFLAGS        := $(CFLAGS) -mcmodel=medany # The symbol relocation scheme.
 CFLAGS        := $(CFLAGS) -O3 -mrelax -fno-stack-check -fno-stack-protector -fomit-frame-pointer -ffunction-sections # Optimizations to make and unused features/cruft.
 CFLAGS        := $(CFLAGS) -ftls-model=local-exec # Thread Local Store (TLS) scheme: Final TLS offsets are known at linktime. (local-exec)

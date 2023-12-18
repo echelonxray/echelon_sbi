@@ -1,4 +1,4 @@
-TRIPLET       := riscv64-ex3-linux-musl-
+TRIPLET       := riscv32-rv32ia-linux-musl-
 #TRIPLET      := riscv32-unknown-linux-gnu-
 CC            := $(TRIPLET)gcc
 #CC            := clang -target riscv64

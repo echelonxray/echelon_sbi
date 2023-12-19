@@ -30,7 +30,7 @@ FILES         := $(FILES) src/globals.?
 FILES         := $(FILES) src/memalloc.?
 FILES         := $(FILES) src/thread_locking.?
 FILES         := $(FILES) src/sbi_commands.?
-FILES         := $(FILES) src/debug.?
+FILES         := $(FILES) src/printm.?
 # Data Parsing
 FILES         := $(FILES) src/dataparse/cpio_parse.?
 FILES         := $(FILES) src/dataparse/dtb_parse.?

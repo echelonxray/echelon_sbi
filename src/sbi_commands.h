@@ -2,7 +2,7 @@
 #define _insertion_sbi_commands_h
 
 #include <string.h>
-#include <debug.h>
+#include <printm.h>
 #include <inc/types.h>
 #include <inc/reg.h>
 #include "sbi_commands/base.h"

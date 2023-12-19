@@ -5,7 +5,7 @@
 #include <string.h>
 #include <thread_locking.h>
 #include <sbi_commands.h>
-#include <debug.h>
+#include <printm.h>
 #include <inc/types.h>
 #include <inc/reg.h>
 #include <inc/memmap.h>

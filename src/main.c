@@ -4,7 +4,7 @@
 #include <string.h>
 #include <thread_locking.h>
 #include <sbi_commands.h>
-#include <debug.h>
+#include <printm.h>
 #include <globals.h>
 #include <inc/types.h>
 #include <inc/reg.h>
@@ -146,11 +146,6 @@ void kinit(uintRL_t hartid) {
 		while (clint_hart_msip_ctls[i]) {}
 	}
 	
-	return;
-}
-
-void wait_by_spin() {
-	for (volatile unsigned int i = 0; i < 200000000; i++) {}
 	return;
 }
 

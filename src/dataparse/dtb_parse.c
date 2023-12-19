@@ -1,5 +1,5 @@
 #include "dtb_parse.h"
-#include <debug.h>
+#include <printm.h>
 #include <string.h>
 
 uint32_t dtb_parse_swap_endianess_32(uint32_t val) {

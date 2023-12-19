@@ -1,4 +1,4 @@
-#include "debug.h"
+#include "printm.h"
 #include <string.h>
 #include <thread_locking.h>
 #include <drivers/uart.h>
@@ -10,7 +10,12 @@ void DEBUG_print(char* str) {
 	return;
 }
 
-size_t _itoa(unsigned long long number, char* restrict buf, size_t buf_len, signed char base) {
+static void _printm(const char* restrict buffer, size_t length) {
+	uart_write((unsigned char*)buffer, UART0_BASE, length);
+	return;
+}
+
+static size_t _itoa(unsigned long long number, char* restrict buf, size_t buf_len, signed char base) {
 	unsigned char hex_offset = 'a' - 10;
 	if (base < 0) {
 		hex_offset = 'A' - 10;
@@ -55,11 +60,6 @@ size_t _itoa(unsigned long long number, char* restrict buf, size_t buf_len, sign
 	}
 	
 	return i;
-}
-
-void _printm(const char* restrict buffer, size_t length) {
-	uart_write((unsigned char*)buffer, UART0_BASE, length);
-	return;
 }
 
 #define flags_special 0x0001

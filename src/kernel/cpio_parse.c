@@ -9,6 +9,7 @@ uint16_t cpio_parse_swap_endianess_16(uint16_t val) {
 	return retval;
 }
 
+// Fix the endianness to the host system.
 void read_entry(struct header_pwb_cpio* cpio_head) {
 	if (cpio_head->h_magic != 0x71C7) {
 		cpio_head->h_magic = cpio_parse_swap_endianess_16(cpio_head->h_magic);

@@ -13,6 +13,7 @@ my_entry_pt:
 	addi gp, gp, %pcrel_lo(1b)
 	.option pop
 	
+	# Point the interrupt vector to handle hardware thread init
 	1: auipc t0, %pcrel_hi(hart_init_handler)
 	addi t0, t0, %pcrel_lo(1b)
 	csrw mtvec, t0
@@ -22,11 +23,12 @@ my_entry_pt:
 	csrw mie, t0
 	csrs mstatus, t0
 	
-	# Spin/Halt all harts except for the hart specified
+	# Spin/Halt all harts except for hart 0
 	li t1, 0
 	csrr t0, mhartid
 	bne t0, t1, idle_loop
 	
+	# Save the values of a0 through a5 on reset
 	1: auipc t1, %pcrel_hi(init_reg_a0)
 	SX a0, %pcrel_lo(1b)(t1)
 	1: auipc t1, %pcrel_hi(init_reg_a1)
@@ -48,9 +50,9 @@ my_entry_pt:
 	1: auipc a1, %pcrel_hi(INIT_DATA_RUNTIME_START)
 	addi a1, a1, %pcrel_lo(1b)
 	# If the addresses are different, the global variables
-	# are separate from the program binary.  Copy over
-	# the image of initialized values to memory in order
-	# to initialize the global variables in RAM.
+	# are separate from the program binary (RAM/ROM Split).
+	# Copy over the image of initialized values to memory in
+	# order to initialize the global variables in RAM.
 	beq t1, a1, 2f
 	1: auipc a2, %pcrel_hi(INIT_DATA_RUNTIME_END)
 	addi a2, a2, %pcrel_lo(1b)
@@ -62,10 +64,8 @@ my_entry_pt:
 	j 3b
 	2:
 	
-	# Load the location of symbol KISTACK_TOP into the Stack Pointer
-	# This is done using pc relative addressing so that it works
-	# across 32-bit, 64-bit, and 128-bit sizes and locations.
-	# The placement symbol KISTACK_TOP is determined at build time
+	# Load the location of symbol KISTACK_TOP into the Stack Pointer.
+	# The placement symbol KISTACK_TOP is determined at link-time
 	# by the linker script to provide 0x1000 bytes of stack space.
 	# Specifically, KISTACK_TOP is set (0x1000 - 0x10) so that its
 	# initial value can be used to store up to a 128 bit value.

@@ -2,7 +2,7 @@
 This is not actually needed (At least not on actual hardware.), but 
 it explicitly sets the entry point in the .elf file to be the same 
 as the true entry point to the program. The global symbol my_entry_pt
-is located in src/kernel/kstart_entry.s.
+is located in "src/entry.S".
 */
 ENTRY(my_entry_pt)
 
@@ -19,8 +19,8 @@ SECTIONS
 	*/
 	.text : {
 		/*
-		Make sure the entry_text section from src/entry.S is linked first.
-		The entry_text section of src/entry.S.  is the actual entry
+		Make sure the entry_text section from "src/entry.S" is linked first.
+		The entry_text section of "src/entry.S".  is the actual entry
 		machine code for the kernel and should be at the start of the file.
 		This way, at reset, execution starts by jumping to the beginning of
 		this machine code.

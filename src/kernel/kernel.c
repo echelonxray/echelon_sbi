@@ -180,12 +180,14 @@ void kmain() {
 	__asm__ __volatile__ ("csrr %0, mtvec" : "=r" (mtvec));
 	printm("mtvec: %08X\n", mtvec);
 	
+	/*
 	init_reg_a0 = 0;
 	init_reg_a1 = 0;
 	init_reg_a2 = 0;
 	init_reg_a3 = 0;
 	init_reg_a4 = 0;
 	init_reg_a5 = 0;
+	*/
 	
 	printm("             Register a0: 0x%08lX\n", init_reg_a0);
 	printm("             Register a1: 0x%08lX\n", init_reg_a1);

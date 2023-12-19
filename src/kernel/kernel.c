@@ -176,9 +176,6 @@ void kmain() {
 	printm("DLM: 0x%02X\n", vls[1]);
 	printm("\n");
 	
-	//wait_by_spin();
-	//return;
-	
 	uintRL_t mtvec;
 	__asm__ __volatile__ ("csrr %0, mtvec" : "=r" (mtvec));
 	printm("mtvec: %08X\n", mtvec);

@@ -1,7 +1,7 @@
 #ifndef _insertion_kernel_interrupts_asm_header_h
 #define _insertion_kernel_interrupts_asm_header_h
 
-#include "./../inc/general_oper.h"
+#include "./../inc/reg.h"
 
 #ifndef __riscv
 	#error "Not supported architecture"

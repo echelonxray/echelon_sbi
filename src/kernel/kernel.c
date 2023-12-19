@@ -1,6 +1,6 @@
 #include "./../inc/types.h"
 #include "./../inc/string.h"
-#include "./inc/general_oper.h"
+#include "./inc/reg.h"
 #include "./inc/memmap.h"
 #include "./drivers/uart.h"
 #include "./interrupts/context_switch.h"

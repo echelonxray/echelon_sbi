@@ -3,7 +3,7 @@
 
 #include "./../inc/types.h"
 #include "./../inc/string.h"
-#include "./inc/general_oper.h"
+#include "./inc/reg.h"
 #include "./sbi_commands/base.h"
 #include "./sbi_commands/time.h"
 #include "./sbi_commands/ipi.h"

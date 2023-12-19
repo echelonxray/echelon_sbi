@@ -1,6 +1,5 @@
 #include "./uart.h"
 #include "./../inc/memmap.h"
-#include "./../inc/general_oper.h"
 #include "./../../inc/types.h"
 
 void uart_putc(unsigned char c, void* uart_loc) {

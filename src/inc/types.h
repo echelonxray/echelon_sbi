@@ -18,17 +18,17 @@ typedef signed char sint8_t;
 typedef signed char int8_t;
 
 #if   __riscv_xlen == 128
-typedef uint128_t uintRL_t;
-typedef sint128_t sintRL_t;
-typedef sint128_t intRL_t;
+	typedef uint128_t uintRL_t;
+	typedef sint128_t sintRL_t;
+	typedef sint128_t intRL_t;
 #elif __riscv_xlen == 64
-typedef uint64_t uintRL_t;
-typedef sint64_t sintRL_t;
-typedef sint64_t intRL_t;
+	typedef uint64_t uintRL_t;
+	typedef sint64_t sintRL_t;
+	typedef sint64_t intRL_t;
 #else
-typedef uint32_t uintRL_t;
-typedef sint32_t sintRL_t;
-typedef sint32_t intRL_t;
+	typedef uint32_t uintRL_t;
+	typedef sint32_t sintRL_t;
+	typedef sint32_t intRL_t;
 #endif
 
 typedef uintRL_t size_t;

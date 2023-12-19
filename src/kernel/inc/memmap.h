@@ -10,7 +10,7 @@
 #elif  MM_CUSTOM_EMU
   #include "./memmaps/cust_emu_000.h"
 #else
-  #error No device memory map specificed in the preprocessor definitions
+  #error "No device memory map specificed in the preprocessor definitions"
 #endif
 
 #endif

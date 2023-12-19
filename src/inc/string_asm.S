@@ -1,7 +1,0 @@
-/*
-.text
-
-.globl dprintf
-
-printf:
-*/

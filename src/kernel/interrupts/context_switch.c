@@ -1,7 +1,6 @@
 #include "./context_switch.h"
 #include "./../../inc/types.h"
 #include "./../../inc/string.h"
-#include "./../../inc/kernel_calls.h"
 #include "./../inc/general_oper.h"
 #include "./../inc/memmap.h"
 #include "./../kernel.h"

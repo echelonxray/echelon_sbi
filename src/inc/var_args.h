@@ -1,5 +1,5 @@
-#ifndef _insertion_var_args_h
-#define _insertion_var_args_h
+#ifndef _insertion_inc_var_args_h
+#define _insertion_inc_var_args_h
 
 typedef __builtin_va_list va_list;
 

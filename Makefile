@@ -11,7 +11,7 @@ CFLAGS        := $(CFLAGS) -mcmodel=medany # The symbol relocation scheme.
 CFLAGS        := $(CFLAGS) -O3 -mrelax -fno-stack-check -fno-stack-protector -fomit-frame-pointer -ffunction-sections # Optimizations to make and unused features/cruft.
 CFLAGS        := $(CFLAGS) -ftls-model=local-exec # Thread Local Store (TLS) scheme: Final TLS offsets are known at linktime. (local-exec)
 CFLAGS        := $(CFLAGS) -fno-pic -fno-pie # Do not build position independent code.  Older versions of GCC did not default to this.
-CFLAGS        := $(CFLAGS) -nostdinc # Don't include system header files.
+CFLAGS        := $(CFLAGS) -nostdinc -I./src # Don't include system header files.  Use local headers.
 CFLAGS        := $(CFLAGS) -ffreestanding -nostdlib # Build a freestanding program.  Do not automatically include any other libraries or object files.
 CFLAGS        := $(CFLAGS) -fno-zero-initialized-in-bss # Because this will run on the bare metal, there is nothing to zero the memory.  Do not assume that fresh memory is zeroed.
 CFLAGS        := $(CFLAGS) -MMD # Generate header dependency tracking information
@@ -21,40 +21,38 @@ TGT_SFXs      := .elf .elf.bin .elf.hex .elf.strip .elf.strip.bin .elf.strip.hex
 DEFINES       :=
 TAG           :=
 
-GFILES        :=
-KFILES        :=
+FILES         :=
 
-# Global Library
-GFILES        := $(GFILES) src/inc/gcc_supp.?
-GFILES        := $(GFILES) src/inc/string.?
-
-# Kernel
-#  - Core (Entry/System Setup/Globals)
-KFILES        := $(KFILES) src/kernel/kernel.?
-KFILES        := $(KFILES) src/kernel/cpio_parse.?
-KFILES        := $(KFILES) src/kernel/dtb_parse.?
-KFILES        := $(KFILES) src/kernel/kstart_entry.?
-KFILES        := $(KFILES) src/kernel/globals.?
-KFILES        := $(KFILES) src/kernel/memalloc.?
-KFILES        := $(KFILES) src/kernel/thread_locking.?
-KFILES        := $(KFILES) src/kernel/sbi_commands.?
-KFILES        := $(KFILES) src/kernel/debug.?
-#  - Drivers
-KFILES        := $(KFILES) src/kernel/drivers/uart.?
-#  - Interrupt Handler
-KFILES        := $(KFILES) src/kernel/interrupts/context_switch.?
-KFILES        := $(KFILES) src/kernel/interrupts/context_switch_asm.?
-#  - SBI Commands
-KFILES        := $(KFILES) src/kernel/sbi_commands/base.?
-KFILES        := $(KFILES) src/kernel/sbi_commands/time.?
-KFILES        := $(KFILES) src/kernel/sbi_commands/ipi.?
-KFILES        := $(KFILES) src/kernel/sbi_commands/rfnc.?
-KFILES        := $(KFILES) src/kernel/sbi_commands/hsm.?
+# Core (Entry/System Setup/Globals)
+FILES         := $(FILES) src/main.?
+FILES         := $(FILES) src/entry.?
+FILES         := $(FILES) src/globals.?
+FILES         := $(FILES) src/memalloc.?
+FILES         := $(FILES) src/thread_locking.?
+FILES         := $(FILES) src/sbi_commands.?
+FILES         := $(FILES) src/debug.?
+# Data Parsing
+FILES         := $(FILES) src/dataparse/cpio_parse.?
+FILES         := $(FILES) src/dataparse/dtb_parse.?
+# Drivers
+FILES         := $(FILES) src/drivers/uart.?
+# Interrupt Handler
+FILES         := $(FILES) src/interrupts/context_switch.?
+FILES         := $(FILES) src/interrupts/context_switch_asm.?
+# SBI Commands
+FILES         := $(FILES) src/sbi_commands/base.?
+FILES         := $(FILES) src/sbi_commands/time.?
+FILES         := $(FILES) src/sbi_commands/ipi.?
+FILES         := $(FILES) src/sbi_commands/rfnc.?
+FILES         := $(FILES) src/sbi_commands/hsm.?
+# Misc
+FILES         := $(FILES) src/gcc_supp.?
+FILES         := $(FILES) src/string.?
 
 # What list of base filenames are we to build?
-FILES_BASE    := $(basename $(GFILES) $(KFILES))
+FILES_BASE    := $(basename $(FILES))
 
-.PHONY: all clean echelon_emu qemu_virt emu emu-debug emu-linux emu-linux-debug emu-opensbi-linux emu-opensbi-linux-debug debug
+.PHONY: all rebuild clean echelon_emu qemu_virt emu emu-debug emu-linux emu-linux-debug emu-opensbi-linux emu-opensbi-linux-debug debug
 
 .PRECIOUS: %.o %.$(TAG).o
 

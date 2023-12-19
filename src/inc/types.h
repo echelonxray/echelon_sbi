@@ -1,5 +1,5 @@
-#ifndef _insertion_types_h
-#define _insertion_types_h
+#ifndef _insertion_inc_types_h
+#define _insertion_inc_types_h
 
 typedef unsigned long long int uint64_t;
 typedef signed long long int sint64_t;

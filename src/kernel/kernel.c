@@ -2,7 +2,6 @@
 #include "./../inc/string.h"
 #include "./inc/general_oper.h"
 #include "./inc/memmap.h"
-#include "./inc/gpio_oper.h"
 #include "./drivers/uart.h"
 #include "./interrupts/context_switch.h"
 #include "./memalloc.h"

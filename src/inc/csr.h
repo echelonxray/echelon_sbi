@@ -158,22 +158,22 @@
 #define CSR_DSCRATCH1      0x7B3
 
 #define CSRI_WRITE(csr, value) \
-	{ \
+	({ \
 		unsigned long out; \
-		__asm__ __volatile__ ("csrrw %0, %1, %2 \n" : "=r" (out), "i" (csr) : "r" (value) ); \
+		__asm__ __volatile__ ("csrrw %0, %1, %2 \n" : "=r" (out) : "i" (csr), "r" (value) ); \
 		out; \
-	}
+	})
 #define CSRI_BITSET(csr, value) \
-	{ \
+	({ \
 		unsigned long out; \
-		__asm__ __volatile__ ("csrrs %0, %1, %2 \n" : "=r" (out), "i" (csr) : "r" (value) ); \
+		__asm__ __volatile__ ("csrrs %0, %1, %2 \n" : "=r" (out) : "i" (csr), "r" (value) ); \
 		out; \
-	}
+	})
 #define CSRI_BITCLR(csr, value) \
-	{ \
+	({ \
 		unsigned long out; \
-		__asm__ __volatile__ ("csrrc %0, %1, %2 \n" : "=r" (out), "i" (csr) : "r" (value) ); \
+		__asm__ __volatile__ ("csrrc %0, %1, %2 \n" : "=r" (out) : "i" (csr), "r" (value) ); \
 		out; \
-	}
+	})
 
 #endif

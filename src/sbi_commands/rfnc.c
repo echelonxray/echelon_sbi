@@ -2,6 +2,7 @@
 #include <main.h>
 #include <thread_locking.h>
 #include <inc/memmap.h>
+#include <inc/cpu.h>
 #include <interrupts/context_switch.h>
 
 extern ksemaphore_t* hart_command_que_locks;
@@ -24,7 +25,7 @@ struct sbiret sbi_remote_fence_i(unsigned long hart_mask, unsigned long hart_mas
 		if (tmp_hart_mask & 0x1) {
 			uintRL_t hartid = hart_mask_base + i;
 			if (is_valid_hartid(hartid) == 0) {
-				DEBUG_print("SBI FAILURE: Remote Fence.I\n");
+				printm("SBI FAILURE: Remote Fence.I\n");
 				struct sbiret retval;
 				retval.value = 0;
 				retval.error = SBI_ERR_INVALID_PARAM;
@@ -40,7 +41,7 @@ struct sbiret sbi_remote_fence_i(unsigned long hart_mask, unsigned long hart_mas
 		if (tmp_hart_mask & 0x1) {
 			uintRL_t hartid = hart_mask_base + i;
 			if (hartid == mhartid) {
-				__asm__ __volatile__ ("fence.i");
+				CPU_FENCEI();
 			} else {
 				Hart_Command command;
 				command.command = HARTCMD_REMOTE_FENCE_I;
@@ -75,7 +76,7 @@ struct sbiret sbi_remote_sfence_vma(unsigned long hart_mask, unsigned long hart_
 		if (tmp_hart_mask & 0x1) {
 			uintRL_t hartid = hart_mask_base + i;
 			if (is_valid_hartid(hartid) == 0) {
-				DEBUG_print("SBI FAILURE: Remote SFence.VMA\n");
+				printm("SBI FAILURE: Remote SFence.VMA\n");
 				struct sbiret retval;
 				retval.value = 0;
 				retval.error = SBI_ERR_INVALID_PARAM;
@@ -92,7 +93,7 @@ struct sbiret sbi_remote_sfence_vma(unsigned long hart_mask, unsigned long hart_
 			uintRL_t hartid = hart_mask_base + i;
 			if (hartid == mhartid) {
 				// TODO: Specific parameters
-				__asm__ __volatile__ ("sfence.vma zero, zero");
+				CPU_SFENCEVMA();
 			} else {
 				Hart_Command command;
 				command.command = HARTCMD_REMOTE_SFENCE_VMA;
@@ -129,7 +130,7 @@ struct sbiret sbi_remote_sfence_vma_asid(unsigned long hart_mask, unsigned long 
 		if (tmp_hart_mask & 0x1) {
 			uintRL_t hartid = hart_mask_base + i;
 			if (is_valid_hartid(hartid) == 0) {
-				DEBUG_print("SBI FAILURE: Remote SFence.VMA_ASID\n");
+				printm("SBI FAILURE: Remote SFence.VMA_ASID\n");
 				struct sbiret retval;
 				retval.value = 0;
 				retval.error = SBI_ERR_INVALID_PARAM;
@@ -146,7 +147,7 @@ struct sbiret sbi_remote_sfence_vma_asid(unsigned long hart_mask, unsigned long 
 			uintRL_t hartid = hart_mask_base + i;
 			if (hartid == mhartid) {
 			// TODO: Specific parameters
-			__asm__ __volatile__ ("sfence.vma zero, zero");
+			CPU_SFENCEVMA();
 			} else {
 				Hart_Command command;
 				command.command = HARTCMD_REMOTE_SFENCE_VMA_ASID;
@@ -171,7 +172,7 @@ struct sbiret sbi_remote_sfence_vma_asid(unsigned long hart_mask, unsigned long 
 #pragma GCC diagnostic ignored "-Wunused-parameter"
 
 struct sbiret sbi_remote_hfence_gvma_vmid(unsigned long hart_mask, unsigned long hart_mask_base, unsigned long start_addr, long size, unsigned long vmid) {
-	DEBUG_print("SBI FAILURE: HFence.GVMA_VMID\n");
+	printm("SBI FAILURE: HFence.GVMA_VMID\n");
 	struct sbiret retval;
 	retval.value = 0;
 	retval.error = SBI_ERR_NOT_SUPPORTED;
@@ -179,7 +180,7 @@ struct sbiret sbi_remote_hfence_gvma_vmid(unsigned long hart_mask, unsigned long
 }
 
 struct sbiret sbi_remote_hfence_gvma(unsigned long hart_mask, unsigned long hart_mask_base, unsigned long start_addr, long size) {
-	DEBUG_print("SBI FAILURE: HFence.GVMA\n");
+	printm("SBI FAILURE: HFence.GVMA\n");
 	struct sbiret retval;
 	retval.value = 0;
 	retval.error = SBI_ERR_NOT_SUPPORTED;
@@ -187,7 +188,7 @@ struct sbiret sbi_remote_hfence_gvma(unsigned long hart_mask, unsigned long hart
 }
 
 struct sbiret sbi_remote_hfence_vvma_asid(unsigned long hart_mask, unsigned long hart_mask_base, unsigned long start_addr, long size, unsigned long asid) {
-	DEBUG_print("SBI FAILURE: HFence.VVMA_ASID\n");
+	printm("SBI FAILURE: HFence.VVMA_ASID\n");
 	struct sbiret retval;
 	retval.value = 0;
 	retval.error = SBI_ERR_NOT_SUPPORTED;
@@ -195,7 +196,7 @@ struct sbiret sbi_remote_hfence_vvma_asid(unsigned long hart_mask, unsigned long
 }
 
 struct sbiret sbi_remote_hfence_vvma(unsigned long hart_mask, unsigned long hart_mask_base, unsigned long start_addr, long size) {
-	DEBUG_print("SBI FAILURE: HFence.VVMA\n");
+	printm("SBI FAILURE: HFence.VVMA\n");
 	struct sbiret retval;
 	retval.value = 0;
 	retval.error = SBI_ERR_NOT_SUPPORTED;

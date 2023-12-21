@@ -7,7 +7,9 @@
 #include <printm.h>
 #include <globals.h>
 #include <inc/types.h>
+#include <inc/cpu.h>
 #include <inc/reg.h>
+#include <inc/csr.h>
 #include <inc/memmap.h>
 #include <drivers/uart.h>
 #include <interrupts/context_switch.h>
@@ -133,9 +135,9 @@ void kinit(uintRL_t hartid) {
 		clear_hart_context(hart_contexts + i);
 	}
 	
-	__asm__ __volatile__ ("csrw mscratch, %0" : : "r" (hart_contexts_exception + hartid) : "memory");
-	__asm__ __volatile__ ("sfence.vma" : : : "memory");
-	__asm__ __volatile__ ("fence.i" : : : "memory");
+	CSRI_BITCLR(CSR_MSCRATCH, hart_contexts_exception + hartid);
+	CPU_SFENCEVMA();
+	CPU_FENCEI();
 	
 	// Start and wait for harts to initialize
 	volatile uint32_t* clint_hart_msip_ctls = (void*)CLINT_BASE;
@@ -171,7 +173,7 @@ void kmain() {
 	printm("\n");
 	
 	uintRL_t mtvec;
-	__asm__ __volatile__ ("csrr %0, mtvec" : "=r" (mtvec));
+	mtvec = CSRI_BITCLR(CSR_MTVEC, 0);
 	printm("mtvec: %08X\n", mtvec);
 	
 	/*

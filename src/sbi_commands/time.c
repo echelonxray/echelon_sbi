@@ -1,13 +1,12 @@
 #include "time.h"
 #include <inc/memmap.h>
+#include <inc/csr.h>
 
 extern __thread uintRL_t mhartid;
 
 struct sbiret sbi_set_timer(uint64_t stime_value) {
-	//DEBUG_print("sbi_set_timer();\n");
-	
-	__asm__ __volatile__ ("csrc mie, %0" : : "r" (0x80));
-	__asm__ __volatile__ ("csrc mip, %0" : : "r" (0x20));
+	CSRI_BITCLR(CSR_MIE, 0x80);
+	CSRI_BITCLR(CSR_MIP, 0x20);
 	
 #ifdef MM_CUSTOM_EMU
 	uint32_t mtime;
@@ -42,7 +41,7 @@ struct sbiret sbi_set_timer(uint64_t stime_value) {
 
 #endif
 	
-	__asm__ __volatile__ ("csrs mie, %0" : : "r" (0x80));
+	CSRI_BITSET(CSR_MIE, 0x80);
 	
 	struct sbiret retval;
 	retval.value = 0;

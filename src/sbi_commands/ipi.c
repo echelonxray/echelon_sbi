@@ -2,6 +2,7 @@
 #include <main.h>
 #include <thread_locking.h>
 #include <inc/memmap.h>
+#include <inc/csr.h>
 #include <interrupts/context_switch.h>
 
 extern ksemaphore_t* hart_command_que_locks;
@@ -40,7 +41,7 @@ struct sbiret sbi_send_ipi(unsigned long hart_mask, unsigned long hart_mask_base
 		if (tmp_hart_mask & 0x1) {
 			uintRL_t hartid = hart_mask_base + i;
 			if (hartid == mhartid) {
-				__asm__ __volatile__ ("csrs mip, %0" : : "r" (0x2));
+				CSRI_BITSET(CSR_MIP, 0x2);
 			} else {
 				Hart_Command command;
 				command.command = HARTCMD_SMODE_SOFTINT;

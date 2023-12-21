@@ -135,7 +135,7 @@ void kinit(uintRL_t hartid) {
 		clear_hart_context(hart_contexts + i);
 	}
 	
-	CSRI_BITCLR(CSR_MSCRATCH, hart_contexts_exception + hartid);
+	CSRI_WRITE(CSR_MSCRATCH, hart_contexts_exception + hartid);
 	CPU_SFENCEVMA();
 	CPU_FENCEI();
 	

@@ -70,17 +70,17 @@ SECTIONS
 	INIT_DATA_RUNTIME_START = .;
 	.sdata : {
 		*.o (.sdata);
-	} > ram
+	}
 	.data : {
 		*.o (.data);
-	} > ram
+	}
 	INIT_DATA_RUNTIME_END = .;
 	.sbss : {
 		*.o (.sbss);
-	} > ram
+	}
 	.bss : {
 		*.o (.bss);
-	} > ram
+	}
 	
 	/*
 	At the very end of the space reserved for global variables
@@ -111,7 +111,7 @@ SECTIONS
 		FILL(0xDEADBEEF);
 		. = KISTACK_TOP + 0x10;
 		KHEAP_START = .;
-	} > ram
+	}
 	
 	/*
 	Save the section names

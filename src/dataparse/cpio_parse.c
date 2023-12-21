@@ -45,43 +45,19 @@ void read_entry(struct header_pwb_cpio* cpio_head) {
 void* get_cpio_entry_header(char* filename, void* cpio_archive, struct header_pwb_cpio* buffer) {
 	char* ptr = cpio_archive;
 	uint32_t entry_datasize = 0;
-	//DEBUG_print("Begin CPIO Parse\n");
 	do {
 		ptr += entry_datasize;
-		/*
-		char buf[20];
-		itoa((uintRL_t)ptr, buf, 20, -16, -8);
-		DEBUG_print(buf);
-		DEBUG_print("--");
-		*/
 		struct header_pwb_cpio cpio_head;
 		memcpy(&cpio_head, ptr, sizeof(struct header_pwb_cpio));
 		if (cpio_head.h_magic != 0x71C7 && cpio_head.h_magic != 0xC771) {
-			/*
-			char buf[20];
-			itoa(cpio_head.h_magic, buf, 20, -16, -4);
-			DEBUG_print("Return CPIO Parse.  Magic: 0x");
-			DEBUG_print(buf);
-			uintRL_t value = (uintRL_t)cpio_archive;
-			DEBUG_print(", cpio_archive: 0x");
-			itoa(value, buf, 20, -16, -8);
-			DEBUG_print(buf);
-			DEBUG_print("\n");
-			*/
 			return 0;
 		}
 		ptr += sizeof(struct header_pwb_cpio);
 		read_entry(&cpio_head);
 		uint32_t namesize = cpio_head.h_namesize;
 		namesize += namesize & 0x1;
-		/*
-		DEBUG_print("CPIO Entry Filename: ");
-		DEBUG_print(ptr);
-		DEBUG_print("\n");
-		*/
 		if (strcmp(ptr, filename) == 0) {
 			memcpy(buffer, &cpio_head, sizeof(struct header_pwb_cpio));
-			//DEBUG_print("End CPIO Parse 0\n");
 			return ptr + namesize;
 		}
 		uint32_t filesize = cpio_head.h_filesize.vl32;
@@ -89,6 +65,5 @@ void* get_cpio_entry_header(char* filename, void* cpio_archive, struct header_pw
 		entry_datasize = namesize + filesize;
 	} while (strcmp(ptr, "TRAILER!!!"));
 	
-	//DEBUG_print("End CPIO Parse 2\n");
 	return 0;
 }

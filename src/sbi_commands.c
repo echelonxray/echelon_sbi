@@ -6,8 +6,6 @@ extern uintRL_t load_point;
 extern __thread uintRL_t mhartid;
 
 struct sbiret call_to_sbi(sintRL_t EID, sintRL_t FID, sintRL_t* params) {
-	//DEBUG_print("SBI CALL\n");
-	
 	if        (EID == SBI_EXT_BASE) {
 		// Base Extension
 
@@ -78,20 +76,7 @@ struct sbiret call_to_sbi(sintRL_t EID, sintRL_t FID, sintRL_t* params) {
 
 		if        (FID == SBI_HSM_HART_START) {
 			// Start Hart
-
-			char str[20];
-			DEBUG_print("Start Hart: ");
-			itoa(params[0], str, 20, -10, 0);
-			DEBUG_print(str);
-			DEBUG_print(" 0x");
-			itoa(params[1], str, 20, -16, 0);
-			DEBUG_print(str);
-			DEBUG_print(" ");
-			itoa(params[2], str, 20, -10, 0);
-			DEBUG_print(str);
-			DEBUG_print("\n");
-			struct sbiret sbir = sbi_hart_start(params[0], params[1], params[2]);
-			return sbir;
+			return sbi_hart_start(params[0], params[1], params[2]);
 		} else if (FID == SBI_HSM_HART_STOP) {
 			// Stop Hart
 			return sbi_hart_stop();
@@ -112,15 +97,8 @@ struct sbiret call_to_sbi(sintRL_t EID, sintRL_t FID, sintRL_t* params) {
 		*/
 	}
 
-	// Not Supported
-	char str[30];
-	DEBUG_print("ESBI Error.  Not Supported: ");
-	itoa(EID, str, 30, -16, 0);
-	DEBUG_print(str);
-	DEBUG_print(" x ");
-	itoa(FID, str, 30, -16, 0);
-	DEBUG_print(str);
-	DEBUG_print("\n");
+	// Unsupported SBI Request.
+	printm("ESBI Error.  Unsupported SBI Request.  EID: 0x%08lX, FID: 0x%08lX\n", (uintRL_t)EID, (uintRL_t)FID);
 	struct sbiret retval;
 	retval.value = 0;
 	retval.error = SBI_ERR_NOT_SUPPORTED;

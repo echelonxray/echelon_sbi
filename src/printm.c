@@ -5,11 +5,6 @@
 #include <inc/memmap.h>
 #include <inc/var_args.h>
 
-void DEBUG_print(char* str) {
-	uart_write((unsigned char*)str, UART0_BASE, strlen(str));
-	return;
-}
-
 static void _printm(const char* restrict buffer, size_t length) {
 	uart_write((unsigned char*)buffer, UART0_BASE, length);
 	return;

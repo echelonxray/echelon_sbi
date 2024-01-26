@@ -1,7 +1,7 @@
-TRIPLET       := riscv32-rv32ia-linux-musl-
-CC            := $(TRIPLET)gcc
-OBJCPY        := $(TRIPLET)objcopy
-STRIP         := $(TRIPLET)strip
+CROSS_COMPILE := riscv32-rv32ia-linux-musl-
+CC            := $(CROSS_COMPILE)gcc
+OBJCPY        := $(CROSS_COMPILE)objcopy
+STRIP         := $(CROSS_COMPILE)strip
 LDFLAGS       := -e my_entry_pt -Wl,-gc-sections -static
 CFLAGS        :=
 CFLAGS        := $(CFLAGS) -Wall -Wextra -g # Set build warnings and debugging
@@ -132,4 +132,4 @@ emu-opensbi-linux-debug:
 	qemu-system-riscv32 -M virt -cpu rv32 -smp 1 -m 128M -serial stdio -display none -kernel ./ignore/emudata/riscv32iam_linux_kernel.bin -initrd ./ignore/emudata/fs.cpio.gz -append "rdinit=/init.out loglevel=15" -dtb ./ignore/emudata/jsem.dtb -gdb tcp::1234 -S
 
 debug:
-	$(TRIPLET)gdb -ex "target remote localhost:1234" -ex "layout asm" -ex "tui reg general" -ex "break *0x80000000"
+	$(CROSS_COMPILE)gdb -ex "target remote localhost:1234" -ex "layout asm" -ex "tui reg general" -ex "break *0x80000000"

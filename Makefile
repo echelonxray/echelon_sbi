@@ -1,20 +1,33 @@
-CROSS_COMPILE := riscv32-rv32ia-linux-musl-
-CC            := $(CROSS_COMPILE)gcc
-OBJCPY        := $(CROSS_COMPILE)objcopy
-STRIP         := $(CROSS_COMPILE)strip
-LDFLAGS       := -e my_entry_pt -Wl,-gc-sections -static
-CFLAGS        :=
-CFLAGS        := $(CFLAGS) -Wall -Wextra -g # Set build warnings and debugging
-CFLAGS        := $(CFLAGS) -std=c99 # The standards to build to.
-CFLAGS        := $(CFLAGS) -march=rv32ia_zicsr_zifencei -mabi=ilp32 -mlittle-endian -mstrict-align # The build target architectural information.
-CFLAGS        := $(CFLAGS) -mcmodel=medany # The symbol relocation scheme.
-CFLAGS        := $(CFLAGS) -O3 -mrelax -fno-stack-check -fno-stack-protector -fomit-frame-pointer -ffunction-sections # Optimizations to make and unused features/cruft.
-CFLAGS        := $(CFLAGS) -ftls-model=local-exec # Thread Local Store (TLS) scheme: Final TLS offsets are known at linktime. (local-exec)
-CFLAGS        := $(CFLAGS) -fno-pic -fno-pie # Do not build position independent code.  Older versions of GCC did not default to this.
-CFLAGS        := $(CFLAGS) -nostdinc -I./src # Don't include system header files.  Use local headers.
-CFLAGS        := $(CFLAGS) -ffreestanding -nostdlib # Build a freestanding program.  Do not automatically include any other libraries or object files.
-CFLAGS        := $(CFLAGS) -fno-zero-initialized-in-bss # Because this will run on the bare metal, there is nothing to zero the memory.  Do not assume that fresh memory is zeroed.
-CFLAGS        := $(CFLAGS) -MMD # Generate header dependency tracking information
+ifeq ($(origin CC),default)
+  undefine CC
+endif
+ifeq ($(origin LD),default)
+  undefine LD
+endif
+
+LOCAL_CFLAGS  :=
+LOCAL_CFLAGS  := $(LOCAL_CFLAGS) -Wall -Wextra -g # Set build warnings and debugging
+LOCAL_CFLAGS  := $(LOCAL_CFLAGS) -std=c99 # The standards to build to.
+LOCAL_CFLAGS  := $(LOCAL_CFLAGS) -march=rv32ia_zicsr_zifencei -mabi=ilp32 -mlittle-endian -mstrict-align # The build target architectural information.
+LOCAL_CFLAGS  := $(LOCAL_CFLAGS) -mcmodel=medany # The symbol relocation scheme.
+LOCAL_CFLAGS  := $(LOCAL_CFLAGS) -O3 -mrelax -fno-stack-check -fno-stack-protector -fomit-frame-pointer -ffunction-sections # Optimizations to make and unused features/cruft.
+LOCAL_CFLAGS  := $(LOCAL_CFLAGS) -ftls-model=local-exec # Thread Local Store (TLS) scheme: Final TLS offsets are known at linktime. (local-exec)
+LOCAL_CFLAGS  := $(LOCAL_CFLAGS) -fno-pic -fno-pie # Do not build position independent code.  Older versions of GCC did not default to this.
+LOCAL_CFLAGS  := $(LOCAL_CFLAGS) -nostdinc -I./src # Don't include system header files.  Use local headers.
+LOCAL_CFLAGS  := $(LOCAL_CFLAGS) -ffreestanding -nostdlib # Build a freestanding program.  Do not automatically include any other libraries or object files.
+LOCAL_CFLAGS  := $(LOCAL_CFLAGS) -fno-zero-initialized-in-bss # Because this will run on the bare metal, there is nothing to zero the memory.  Do not assume that fresh memory is zeroed.
+LOCAL_CFLAGS  := $(LOCAL_CFLAGS) -MMD # Generate header dependency tracking information
+
+LOCAL_LDFLAGS :=
+LOCAL_LDFLAGS := $(LOCAL_LDFLAGS) -b elf32-littleriscv -e my_entry_pt --gc-sections -static
+
+CROSS_COMPILE ?= riscv32-rv32ia-linux-musl-
+CFLAGS        ?= $(LOCAL_CFLAGS)
+LDFLAGS       ?= $(LOCAL_LDFLAGS)
+CC            ?= gcc
+LD            ?= ld
+OBJCPY        ?= objcopy
+STRIP         ?= strip
 
 TGT_SFXs      := .elf .elf.bin .elf.hex .elf.strip .elf.strip.bin .elf.strip.hex
 
@@ -83,29 +96,29 @@ qemu_virt:
 # Root make targets
 
 esbi-echelon_emu.elf: $(addsuffix .$(TAG).o,$(FILES_BASE))
-	$(CC) $(CFLAGS) $^ -T ./linking.ld $(LDFLAGS) -o $@
+	$(CROSS_COMPILE)$(LD) $^ -T ./linking.ld $(LDFLAGS) -o $@
 
 esbi-qemu_virt.elf: $(addsuffix .$(TAG).o,$(FILES_BASE))
-	$(CC) $(CFLAGS) $^ -T ./linking.ld $(LDFLAGS) -o $@
+	$(CROSS_COMPILE)$(LD) $^ -T ./linking.ld $(LDFLAGS) -o $@
 
-# File building
+# File compiling
 
 %.$(TAG).o: %.c
-	$(CC) $(CFLAGS) $(DEFINES) $< -c -o $@
+	$(CROSS_COMPILE)$(CC) $(CFLAGS) $(DEFINES) $< -c -o $@
 
 %.$(TAG).o: %.S
-	$(CC) $(CFLAGS) $(DEFINES) $< -c -o $@
+	$(CROSS_COMPILE)$(CC) $(CFLAGS) $(DEFINES) $< -c -o $@
 
 # Build output variants
 
 %.strip: %
-	$(STRIP) -s -x -R .comment -R .text.startup -R .riscv.attributes $^ -o $@
+	$(CROSS_COMPILE)$(STRIP) -s -x -R .comment -R .text.startup -R .riscv.attributes $^ -o $@
 
 %.bin: %
-	$(OBJCPY) -O binary $^ $@
+	$(CROSS_COMPILE)$(OBJCPY) -O binary $^ $@
 
 %.hex: %
-	$(OBJCPY) -O ihex $^ $@
+	$(CROSS_COMPILE)$(OBJCPY) -O ihex $^ $@
 
 # Header dependency tracking
 

@@ -88,13 +88,12 @@ struct sbiret call_to_sbi(sintRL_t EID, sintRL_t FID, sintRL_t* params) {
 			return sbi_hart_suspend(params[0], params[1], params[2]);
 		}
 	} else if (EID == SBI_EXT_SRST) {
-		/*
-		TODO
-		
+		// System Reset
+
 		if        (FID == SBI_SRST_RESET) {
-			return sbi_system_reset(uint32_t reset_type, uint32_t reset_reason);
+			// System Reset
+			return sbi_system_reset(params[0], params[1]);
 		}
-		*/
 	}
 
 	// Unsupported SBI Request.

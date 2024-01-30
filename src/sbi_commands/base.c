@@ -74,13 +74,13 @@ struct sbiret sbi_probe_extension(long extension_id) {
 		
 		printm("\t\tSBI_EXT_SRST\n");
 		
-		// Not implementation in QEMU OpenSBI
-		retval.value = 0;
+		// We implement this
+		retval.value = 1;
 	} else if (extension_id == SBI_EXT_PMU) {
 		
 		printm("\t\tSBI_EXT_PMU\n");
 		
-		// Not implementation in QEMU OpenSBI
+		// Not implementated
 		retval.value = 0;
 	} else {
 		

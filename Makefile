@@ -58,6 +58,7 @@ FILES         := $(FILES) src/sbi_commands/time.?
 FILES         := $(FILES) src/sbi_commands/ipi.?
 FILES         := $(FILES) src/sbi_commands/rfnc.?
 FILES         := $(FILES) src/sbi_commands/hsm.?
+FILES         := $(FILES) src/sbi_commands/srst.?
 # Misc
 FILES         := $(FILES) src/gcc_supp.?
 FILES         := $(FILES) src/string.?

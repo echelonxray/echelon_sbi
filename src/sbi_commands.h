@@ -10,6 +10,7 @@
 #include "sbi_commands/ipi.h"
 #include "sbi_commands/rfnc.h"
 #include "sbi_commands/hsm.h"
+#include "sbi_commands/srst.h"
 
 #define SBI_SUCCESS                0
 #define SBI_ERR_FAILED            -1

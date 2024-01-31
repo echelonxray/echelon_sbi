@@ -181,11 +181,11 @@ void interrupt_c_handler(volatile CPU_Context* cpu_context, uintRL_t cause_value
 void exception_c_handler(volatile CPU_Context* cpu_context, uintRL_t cause_value, uintRL_t mtval) {
 	if        (cause_value == 0) {
 		// Instruction Address Misaligned
-		CSRI_BITCLR(CSR_MSTATUS, 0x8); // Disable Interrupts.
-		printm("Instruction Address Misaligned\n");
-		print_reg_state(cpu_context);
-		idle_loop();
-		//s_delegation_trampoline(cpu_context, cause_value, mtval);
+		//CSRI_BITCLR(CSR_MSTATUS, 0x8); // Disable Interrupts.
+		//printm("Instruction Address Misaligned\n");
+		//print_reg_state(cpu_context);
+		//idle_loop();
+		s_delegation_trampoline(cpu_context, cause_value, mtval);
 	} else if (cause_value == 1) {
 		// Instruction Access Fault
 		CSRI_BITCLR(CSR_MSTATUS, 0x8); // Disable Interrupts.
@@ -267,11 +267,11 @@ void exception_c_handler(volatile CPU_Context* cpu_context, uintRL_t cause_value
 		//return;
 	} else if (cause_value == 4) {
 		// Load Address Misaligned
-		CSRI_BITCLR(CSR_MSTATUS, 0x8); // Disable Interrupts.
-		printm("Load Address Misaligned\n");
-		print_reg_state(cpu_context);
-		idle_loop();
-		//s_delegation_trampoline(cpu_context, cause_value, mtval);
+		//CSRI_BITCLR(CSR_MSTATUS, 0x8); // Disable Interrupts.
+		//printm("Load Address Misaligned\n");
+		//print_reg_state(cpu_context);
+		//idle_loop();
+		s_delegation_trampoline(cpu_context, cause_value, mtval);
 	} else if (cause_value == 5) {
 		// Load Access Fault
 		CSRI_BITCLR(CSR_MSTATUS, 0x8); // Disable Interrupts.
@@ -281,11 +281,11 @@ void exception_c_handler(volatile CPU_Context* cpu_context, uintRL_t cause_value
 		//s_delegation_trampoline(cpu_context, cause_value, mtval);
 	} else if (cause_value == 6) {
 		// Store/AMO Address Misaligned
-		CSRI_BITCLR(CSR_MSTATUS, 0x8); // Disable Interrupts.
-		printm("Store/AMO Address Misaligned\n");
-		print_reg_state(cpu_context);
-		idle_loop();
-		//s_delegation_trampoline(cpu_context, cause_value, mtval);
+		//CSRI_BITCLR(CSR_MSTATUS, 0x8); // Disable Interrupts.
+		//printm("Store/AMO Address Misaligned\n");
+		//print_reg_state(cpu_context);
+		//idle_loop();
+		s_delegation_trampoline(cpu_context, cause_value, mtval);
 	} else if (cause_value == 7) {
 		// Store/AMO Access Fault
 		CSRI_BITCLR(CSR_MSTATUS, 0x8); // Disable Interrupts.

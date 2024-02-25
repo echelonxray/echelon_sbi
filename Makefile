@@ -24,10 +24,11 @@ LOCAL_LDFLAGS := $(LOCAL_LDFLAGS) -b elf32-littleriscv -e my_entry_pt --gc-secti
 CROSS_COMPILE ?= riscv32-rv32ia-linux-musl-
 CFLAGS        ?= $(LOCAL_CFLAGS)
 LDFLAGS       ?= $(LOCAL_LDFLAGS)
-CC            ?= gcc
-LD            ?= ld
-OBJCPY        ?= objcopy
-STRIP         ?= strip
+CC            ?= $(CROSS_COMPILE)gcc
+LD            ?= $(CROSS_COMPILE)ld
+OBJCPY        ?= $(CROSS_COMPILE)objcopy
+STRIP         ?= $(CROSS_COMPILE)strip
+GDB           ?= $(CROSS_COMPILE)gdb
 
 TGT_SFXs      := .elf .elf.bin .elf.hex .elf.strip .elf.strip.bin .elf.strip.hex
 
@@ -60,7 +61,7 @@ FILES         := $(FILES) src/sbi_commands/rfnc.?
 FILES         := $(FILES) src/sbi_commands/hsm.?
 FILES         := $(FILES) src/sbi_commands/srst.?
 # Misc
-FILES         := $(FILES) src/gcc_supp.?
+FILES         := $(FILES) src/ext_m_supplement.?
 FILES         := $(FILES) src/string.?
 
 # What list of base filenames are we to build?
@@ -97,29 +98,29 @@ qemu_virt:
 # Root make targets
 
 esbi-echelon_emu.elf: $(addsuffix .$(TAG).o,$(FILES_BASE))
-	$(CROSS_COMPILE)$(LD) $^ -T ./linking.ld $(LDFLAGS) -o $@
+	$(LD) $^ -T ./linking.ld $(LDFLAGS) -o $@
 
 esbi-qemu_virt.elf: $(addsuffix .$(TAG).o,$(FILES_BASE))
-	$(CROSS_COMPILE)$(LD) $^ -T ./linking.ld $(LDFLAGS) -o $@
+	$(LD) $^ -T ./linking.ld $(LDFLAGS) -o $@
 
 # File compiling
 
 %.$(TAG).o: %.c
-	$(CROSS_COMPILE)$(CC) $(CFLAGS) $(DEFINES) $< -c -o $@
+	$(CC) $(CFLAGS) $(DEFINES) $< -c -o $@
 
 %.$(TAG).o: %.S
-	$(CROSS_COMPILE)$(CC) $(CFLAGS) $(DEFINES) $< -c -o $@
+	$(CC) $(CFLAGS) $(DEFINES) $< -c -o $@
 
 # Build output variants
 
 %.strip: %
-	$(CROSS_COMPILE)$(STRIP) -s -x -R .comment -R .text.startup -R .riscv.attributes $^ -o $@
+	$(STRIP) -s -x -R .comment -R .text.startup -R .riscv.attributes $^ -o $@
 
 %.bin: %
-	$(CROSS_COMPILE)$(OBJCPY) -O binary $^ $@
+	$(OBJCPY) -O binary $^ $@
 
 %.hex: %
-	$(CROSS_COMPILE)$(OBJCPY) -O ihex $^ $@
+	$(OBJCPY) -O ihex $^ $@
 
 # Header dependency tracking
 
@@ -146,4 +147,4 @@ emu-opensbi-linux-debug:
 	qemu-system-riscv32 -M virt -cpu rv32 -smp 1 -m 128M -serial stdio -display none -kernel ./ignore/emudata/riscv32iam_linux_kernel.bin -initrd ./ignore/emudata/fs.cpio.gz -append "rdinit=/init.out loglevel=15" -dtb ./ignore/emudata/jsem.dtb -gdb tcp::1234 -S
 
 debug:
-	$(CROSS_COMPILE)gdb -ex "target remote localhost:1234" -ex "layout asm" -ex "tui reg general" -ex "break *0x80000000"
+	$(GDB) -ex "target remote localhost:1234" -ex "layout asm" -ex "tui reg general" -ex "break *0x80000000"

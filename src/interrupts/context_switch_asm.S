@@ -1,5 +1,6 @@
 #include "context_switch_asm.h"
 #include <inc/memmap.h>
+#include <inc/csr.h>
 
 .section .text
 
@@ -74,8 +75,15 @@ hart_init_handler:
 	1: auipc a0, %pcrel_hi(interrupt_entry_handler)
 	addi a0, a0, %pcrel_lo(1b)
 	csrw mtvec, a0
-	
-	# Save registers only if mscratch was already setup
+
+	// Probe for CSRs
+	li a0, CSR_MENVCFG
+	call probe_csr
+	lui a1, %tprel_hi(hart_has_menvcfg)
+	add a1, a1, tp, %tprel_add(hart_has_menvcfg)
+	SX a0, %tprel_lo(hart_has_menvcfg)(a1)
+
+	# Restore registers only if mscratch was already setup
 	beq s0, zero, 2f
 	LOAD_REGS REG_S0
 	2:

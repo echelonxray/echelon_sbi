@@ -4,6 +4,7 @@
 
 .globl my_entry_pt
 .globl idle_loop
+.globl probe_csr
 
 my_entry_pt:
 	# Setup the Global Pointer
@@ -80,3 +81,83 @@ my_entry_pt:
 idle_loop:
 	wfi
 	j idle_loop
+
+// C prototype:
+//              unsigned long probe_csr(unsigned long csr_address);
+//
+// Description:
+//              Probe for the existence of a CSR.
+//
+// Parameters:
+//              csr_address refers to the address of the CSR to probe.  Only the lower
+//              12 bits of the csr_address parameter are used.  The rest are ignored.
+//
+// Return values:
+//              Returns 1 if it exists.  Returns 0 if it doesn't exist.
+//
+// Limitations:
+//              This function internally uses and therefore can not probe and should never
+//              be called to probe CSRs:
+//               - mstatus
+//               - mtvec
+//               - mtval
+//               - mepc
+//               - mcause
+//              This function uses and depends on stack execution.  If stack execution throws
+//              an exception, perhaps because of stack execution restrictions, this function
+//              will always and erroniously return 0.
+//
+probe_csr:
+	1: auipc t1, %pcrel_hi(3f) // Get address of temporary trap handler
+	addi t1, t1, %pcrel_lo(1b)
+	1: auipc a4, %pcrel_hi(2f) // Get address of return pathway
+	addi a4, a4, %pcrel_lo(1b)
+	1: auipc a1, %pcrel_hi(4f) // Get address of template instructions
+	addi a1, a1, %pcrel_lo(1b)
+
+	// Save and configure used CSRs
+	csrrci t0, mstatus, 0x8 // Disable interrupts and save previous state
+	csrrw  t1, mtvec, t1 // Save and override trap vector
+	csrr   t2, mtval
+	csrr   t3, mepc
+	csrr   t4, mcause
+
+	// Copy the constant parts of the executable instructions
+	lh a2, 0x0(a1)
+	lw a3, 0x4(a1)
+	sh a2, -0x8(sp)
+	sw a3, -0x4(sp)
+
+	// Load-modify-write the modified portion of the instructions
+	lb a2, 0x2(a1)
+	slli a3, a0, 4
+	andi a2, a2, 0x0F
+	srli a0, a0, 4
+	or   a2, a2, a3
+	sb a0, -0x5(sp)
+	sb a2, -0x6(sp)
+
+	// Attempt to access the CSR
+	li a0, 1 // Set the return value for success
+	jalr zero, -0x8(sp)
+
+	3: // Temporary trap handler
+	li a0, 0 // Set the return value for failure.  (Overwrites previously stored success)
+
+	2: // Restore values and return
+	csrw mcause,  t4
+	csrw mepc,    t3
+	csrw mtval,   t2
+	csrw mtvec,   t1
+	csrw mstatus, t0
+	ret
+
+	// Template of instructions used to attempt CSR access.
+	// This is:
+	//  1) Copied onto the stack,
+	//  2) Modified with the 12-bit CSR address we are attempting to probe.
+	//  3) Executed on the stack.
+	.balign 4
+	4:
+	csrrc zero, 0x000, zero // Attempt CSR access
+	jalr zero, 0x000(a4)   // Return

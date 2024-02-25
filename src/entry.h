@@ -4,5 +4,6 @@
 #include <inc/types.h>
 
 void idle_loop() __attribute__((noreturn));
+unsigned long probe_csr(unsigned long csr_address);
 
 #endif

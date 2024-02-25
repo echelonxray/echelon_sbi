@@ -81,6 +81,7 @@ volatile CPU_Context* hart_contexts_user;
 volatile Hart_Command* hart_commands;
 
 __thread uintRL_t mhartid;
+__thread uintRL_t hart_has_menvcfg;
 
 void kinit(uintRL_t hartid) {
 	kallocinit(&KHEAP_START, &KHEAP_START + 0x10000);
@@ -147,7 +148,7 @@ void kinit(uintRL_t hartid) {
 	for (uintRL_t i = 0; i < TOTAL_HART_COUNT; i++) {
 		while (clint_hart_msip_ctls[i]) {}
 	}
-	
+
 	return;
 }
 

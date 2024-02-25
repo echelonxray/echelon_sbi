@@ -21,6 +21,7 @@ extern volatile Hart_Command* hart_commands;
 extern uintRL_t kernel_load_to_point;
 
 extern __thread uintRL_t mhartid;
+extern __thread uintRL_t hart_has_menvcfg;
 
 void print_reg_state(volatile CPU_Context* cpu_context) {
 	printm("----Reg State----\n");
@@ -67,21 +68,61 @@ void interrupt_c_handler(volatile CPU_Context* cpu_context, uintRL_t cause_value
 			
 // QEMU will refuse to execute below M-Mode if the PMP registers aren't configured.
 #ifdef MM_QEMU_VIRT
-	#if   __riscv_xlen == 128
+#if   __riscv_xlen == 128
 			#error "Not Implemented"
-	#elif __riscv_xlen == 64
+#elif __riscv_xlen == 64
 			CSRI_WRITE(CSR_PMPADDR0, (0x0000000080000000ul >> 2) & 0x003FFFFFFFFFFFFFul);
 			CSRI_WRITE(CSR_PMPADDR1, (kernel_load_to_point >> 2) & 0x003FFFFFFFFFFFFFul);
 			CSRI_WRITE(CSR_PMPADDR2, (0xFFFFFFFFFFFFFFFFul >> 2) & 0x003FFFFFFFFFFFFFul);
 			CSRI_WRITE(CSR_PMPCFG0, (0x0F << 16) | (0x08 <<  8) | (0x0B <<  0));
-	#elif __riscv_xlen == 32
+#elif __riscv_xlen == 32
 			CSRI_WRITE(CSR_PMPADDR0, (0x80000000ul         >> 2) & 0xFFFFFFFFul);
 			CSRI_WRITE(CSR_PMPADDR1, (kernel_load_to_point >> 2) & 0xFFFFFFFFul);
 			CSRI_WRITE(CSR_PMPADDR2, (0xFFFFFFFFul         >> 2) & 0xFFFFFFFFul);
 			CSRI_WRITE(CSR_PMPCFG0, (0x0F << 16) | (0x08 <<  8) | (0x0B <<  0));
-	#endif
 #endif
-			
+			// QEMU Fixes - sstc (stimecmp)
+			//   Background:
+			//   In commit 43888c2f1823212b1064a6a94d65d8acaf954478 QEMU added RISC-V sstc extension support.
+			//   This extension introduces the stimecmp CSR to allow the Supervisor (Kernel) to directly
+			//   program the timer interrupt rather than relying on SBI calls.  This introduction also added
+			//   sstc to the ISA extension list.  It seems that the Linux Kernel is probing for sstc support.
+			//   If detected, it will attempt to use and set the stimecmp (and stimecmph if rv32) registers.
+			//   However, the sstc extension gates access to the stimecmp (and stimecmph if rv32) registers
+			//   behind bitflags in MENVCFG and MCOUNTEREN.  If these are not set by firmware, supervisor
+			//   attempts to access stimecmp (or stimecmph if rv32) will throw an Illegal Instruction
+			//   Exception.
+			CSRI_BITSET(CSR_MCOUNTEREN, 0x2);
+			if (hart_has_menvcfg) {
+#if   __riscv_xlen == 128
+				#error "Not Implemented"
+#elif __riscv_xlen == 64
+				CSRI_BITSET(CSR_MENVCFG, 1 << 63);
+#elif __riscv_xlen == 32
+				CSRI_BITSET(CSR_MENVCFGH, 1 << 31);
+#endif
+			}
+
+			// QEMU Fixes - Zicboz, Zicbom, Zicbop
+			//   Background:
+			//   In commit a939c500793ae7672defe5e3dc83220576a7b202 QEMU added RISC-V Zicboz extension support.
+			//   In commit e05da09b7cfd8dd08c55e77ab2106634f7b06ad9 QEMU added RISC-V Zicbom extension support.
+			//   In commit 59cb29d6a5149871d1acb18fb465879b1af5f3b2 QEMU added RISC-V Zicbop extension support.
+			//   Then in commit 007698632814b4b4aeae1a9c176d932951e9c8cf QEMU added property descriptions for the
+			//   Zicbom operations to the Flattened Device Tree binary image.  It seems that the Linux Kernel uses
+			//   the presence of these properties in the FDT as an indication that these functions are available
+			//   on the host platform.  However, while QEMU did introduce support, the specification for these
+			//   extensions gates their availability to lower privilege modes behind CSR bitflags in xENVCFG.
+			//   If firmware doesn't turn these bitflags on, when the Kernel attempts to use them, an Illegal
+			//   Instruction Exception from S-mode will be generated.  An alternaive fix is to build the Kernel
+			//   without Zicbom support.
+			if (hart_has_menvcfg) {
+				CSRI_BITSET(CSR_MENVCFG, 3 << 4);
+				CSRI_BITSET(CSR_MENVCFG, 1 << 6);
+				CSRI_BITSET(CSR_MENVCFG, 1 << 7);
+			}
+#endif
+
 			// Do not attempt to delegate Exceptions (Not supported in custom emulator)
 			CSRI_WRITE(CSR_MEDELEG, 0x0000);
 			// Delegate S-Mode Software Interrupt to S-Mode
@@ -179,6 +220,10 @@ void interrupt_c_handler(volatile CPU_Context* cpu_context, uintRL_t cause_value
 }
 
 void exception_c_handler(volatile CPU_Context* cpu_context, uintRL_t cause_value, uintRL_t mtval) {
+	//printm("ESBI: EXCEPTION!!!!\n");
+	//print_reg_state(cpu_context);
+	//idle_loop();
+
 	if        (cause_value == 0) {
 		// Instruction Address Misaligned
 		//CSRI_BITCLR(CSR_MSTATUS, 0x8); // Disable Interrupts.
@@ -196,6 +241,8 @@ void exception_c_handler(volatile CPU_Context* cpu_context, uintRL_t cause_value
 	} else if (cause_value == 2) {
 		// Illegal Instruction
 		//printm("Illegal Instruction\n");
+		//print_reg_state(cpu_context);
+		//idle_loop();
 		
 		uintRL_t csr_satp;
 		csr_satp = CSRI_BITCLR(CSR_SATP, 0);
@@ -210,7 +257,7 @@ void exception_c_handler(volatile CPU_Context* cpu_context, uintRL_t cause_value
 			if (dinst.opcode == 0x73) {
 				if (dinst.funct3 == 0x2 || dinst.funct3 == 0x3 || dinst.funct3 == 0x6 || dinst.funct3 == 0x7) {
 					if (dinst.rs1 == 0) {
-#ifdef MM_QEMU_VIRT
+#if defined(MM_QEMU_VIRT) && 0
 #if   __riscv_xlen == 128
 						#error "Not Implemented"
 #elif __riscv_xlen == 64

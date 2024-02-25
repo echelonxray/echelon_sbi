@@ -31,6 +31,9 @@
 #define CSR_MTVAL          0x343
 #define CSR_MIP            0x344
 
+#define CSR_MENVCFG        0x30A
+#define CSR_MENVCFGH       0x31A
+
 #define CSR_PMPCFG0        0x3A0
 #define CSR_PMPCFG1        0x3A1 // 32-Bit Only
 #define CSR_PMPCFG2        0x3A2

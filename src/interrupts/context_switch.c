@@ -22,6 +22,7 @@ extern uintRL_t kernel_load_to_point;
 
 extern __thread uintRL_t mhartid;
 extern __thread uintRL_t hart_has_menvcfg;
+__thread uint8_t hart_using_ext_sstc = 0;
 
 void print_reg_state(volatile CPU_Context* cpu_context) {
 	printm("----Reg State----\n");
@@ -92,15 +93,26 @@ void interrupt_c_handler(volatile CPU_Context* cpu_context, uintRL_t cause_value
 			//   behind bitflags in MENVCFG and MCOUNTEREN.  If these are not set by firmware, supervisor
 			//   attempts to access stimecmp (or stimecmph if rv32) will throw an Illegal Instruction
 			//   Exception.
-			CSRI_BITSET(CSR_MCOUNTEREN, 0x2);
 			if (hart_has_menvcfg) {
 #if   __riscv_xlen == 128
 				#error "Not Implemented"
 #elif __riscv_xlen == 64
-				CSRI_BITSET(CSR_MENVCFG, 1 << 63);
+				CSRI_BITSET(CSR_MENVCFG, 1ul << 63);
+				uintRL_t csr_menucfg = CSRI_BITCLR(CSR_MENVCFG, 0);
+				if (csr_menucfg & (1ul << 63)) {
+					hart_using_ext_sstc = 1;
+				}
 #elif __riscv_xlen == 32
-				CSRI_BITSET(CSR_MENVCFGH, 1 << 31);
+				CSRI_BITSET(CSR_MENVCFGH, 1ul << 31);
+				uintRL_t csr_menucfgh = CSRI_BITCLR(CSR_MENVCFGH, 0);
+				if (csr_menucfgh & (1ul << 31)) {
+					hart_using_ext_sstc = 1;
+				}
 #endif
+			}
+			if (hart_using_ext_sstc) {
+				printm("\tUsing ISA Extenstion: SSTC\n");
+				CSRI_BITSET(CSR_MCOUNTEREN, 0x2);
 			}
 
 			// QEMU Fixes - Zicboz, Zicbom, Zicbop
@@ -117,9 +129,9 @@ void interrupt_c_handler(volatile CPU_Context* cpu_context, uintRL_t cause_value
 			//   Instruction Exception from S-mode will be generated.  An alternaive fix is to build the Kernel
 			//   without Zicbom support.
 			if (hart_has_menvcfg) {
-				CSRI_BITSET(CSR_MENVCFG, 3 << 4);
-				CSRI_BITSET(CSR_MENVCFG, 1 << 6);
-				CSRI_BITSET(CSR_MENVCFG, 1 << 7);
+				CSRI_BITSET(CSR_MENVCFG, 3ul << 4);
+				CSRI_BITSET(CSR_MENVCFG, 1ul << 6);
+				CSRI_BITSET(CSR_MENVCFG, 1ul << 7);
 			}
 #endif
 
@@ -129,11 +141,12 @@ void interrupt_c_handler(volatile CPU_Context* cpu_context, uintRL_t cause_value
 			// Delegate S-Mode Timer Interrupt to S-Mode
 			// Delegate S-Mode External Interrupt to S-Mode
 			CSRI_WRITE(CSR_MIDELEG, 0x0222);
+			//CSRI_WRITE(CSR_MIDELEG, 0x0000);
 			
-			// Enable S-Mode Timer Interrupt
 			// Enable S-Mode Software Interrupt
 			// Enable M-Mode Software Interrupt
-			CSRI_WRITE( CSR_MIE, 0x02A);
+			// Enable S-Mode Timer Interrupt
+			CSRI_WRITE(CSR_MIE, 0x02A);
 			// Clear all pending Interrupts
 			CSRI_BITCLR(CSR_MIP, 0xFFF);
 			
@@ -200,10 +213,13 @@ void interrupt_c_handler(volatile CPU_Context* cpu_context, uintRL_t cause_value
 		idle_loop();
 	} else if (cause_value == 7) {
 		// M-Mode Timer Interrupt
-		
+		//printm("ESBI: M-Mode Timer Interrupt.\n");
+
 		// Bounce this into S-Mode
-		CSRI_BITCLR(CSR_MIE, 0x80);
-		CSRI_BITSET(CSR_MIP, 0x20);
+		if (!hart_using_ext_sstc) {
+			CSRI_BITCLR(CSR_MIE, 0x80);
+			CSRI_BITSET(CSR_MIP, 0x20);
+		}
 	} else if (cause_value == 11) {
 		// M-Mode External Interrupt
 		

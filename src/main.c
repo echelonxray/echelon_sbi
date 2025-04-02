@@ -136,7 +136,7 @@ void kinit(uintRL_t hartid) {
 		clear_hart_context(hart_contexts + i);
 	}
 	
-	CSRI_WRITE(CSR_MSCRATCH, hart_contexts_exception + hartid);
+	CSR_WRITE(CSR_MSCRATCH, hart_contexts_exception + hartid);
 	CPU_SFENCEVMA();
 	CPU_FENCEI();
 	
@@ -174,7 +174,7 @@ void kmain() {
 	printm("\n");
 	
 	uintRL_t mtvec;
-	mtvec = CSRI_BITCLR(CSR_MTVEC, 0);
+	mtvec = CSR_READ(CSR_MTVEC);
 	printm("mtvec: %08X\n", mtvec);
 	
 	printm("             Register a0: 0x%08lX\n", init_reg_a0);

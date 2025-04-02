@@ -99,7 +99,7 @@ struct sbiret sbi_get_mvendorid() {
 	printm("\tGet machine vendor ID\n");
 	
 	struct sbiret retval;
-	retval.value = CSRI_BITCLR(CSR_MVENDORID, 0);
+	retval.value = CSR_READ(CSR_MVENDORID);
 	retval.error = SBI_SUCCESS;
 	return retval;
 }
@@ -110,7 +110,7 @@ struct sbiret sbi_get_marchid() {
 	printm("\tGet machine architecture ID\n");
 	
 	struct sbiret retval;
-	retval.value = CSRI_BITCLR(CSR_MARCHID, 0);
+	retval.value = CSR_READ(CSR_MARCHID);
 	retval.error = SBI_SUCCESS;
 	return retval;
 }
@@ -121,7 +121,7 @@ struct sbiret sbi_get_mimpid() {
 	printm("\tGet machine implementation ID\n");
 	
 	struct sbiret retval;
-	retval.value = CSRI_BITCLR(CSR_MIMPID, 0);
+	retval.value = CSR_READ(CSR_MIMPID);
 	retval.error = SBI_SUCCESS;
 	return retval;
 }

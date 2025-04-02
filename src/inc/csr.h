@@ -164,22 +164,54 @@
 #define CSR_DSCRATCH0      0x7B2
 #define CSR_DSCRATCH1      0x7B3
 
-#define CSRI_WRITE(csr, value) \
+#define CSR_WRITE(csr, value) \
+	({ \
+		unsigned long out; \
+		__asm__ __volatile__ ("csrrw zero, %0, %1 \n" : : "i" (csr), "r" (value) ); \
+		out; \
+	})
+#define CSR_READ(csr) \
+	({ \
+		unsigned long out; \
+		__asm__ __volatile__ ("csrrc %0, %1, zero \n" : "=r" (out) : "i" (csr) ); \
+		out; \
+	})
+
+#define CSR_SWAP(csr, value) \
 	({ \
 		unsigned long out; \
 		__asm__ __volatile__ ("csrrw %0, %1, %2 \n" : "=r" (out) : "i" (csr), "r" (value) ); \
 		out; \
 	})
-#define CSRI_BITSET(csr, value) \
+#define CSR_BITSET(csr, value) \
 	({ \
 		unsigned long out; \
 		__asm__ __volatile__ ("csrrs %0, %1, %2 \n" : "=r" (out) : "i" (csr), "r" (value) ); \
 		out; \
 	})
-#define CSRI_BITCLR(csr, value) \
+#define CSR_BITCLR(csr, value) \
 	({ \
 		unsigned long out; \
 		__asm__ __volatile__ ("csrrc %0, %1, %2 \n" : "=r" (out) : "i" (csr), "r" (value) ); \
+		out; \
+	})
+
+#define CSRI_SWAP(csr, value) \
+	({ \
+		unsigned long out; \
+		__asm__ __volatile__ ("csrrwi %0, %1, %2 \n" : "=r" (out) : "i" (csr), "i" (value) ); \
+		out; \
+	})
+#define CSRI_BITSET(csr, value) \
+	({ \
+		unsigned long out; \
+		__asm__ __volatile__ ("csrrsi %0, %1, %2 \n" : "=r" (out) : "i" (csr), "i" (value) ); \
+		out; \
+	})
+#define CSRI_BITCLR(csr, value) \
+	({ \
+		unsigned long out; \
+		__asm__ __volatile__ ("csrrci %0, %1, %2 \n" : "=r" (out) : "i" (csr), "i" (value) ); \
 		out; \
 	})
 

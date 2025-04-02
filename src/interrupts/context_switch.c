@@ -28,10 +28,10 @@ void print_reg_state(volatile CPU_Context* cpu_context) {
 	printm("----Reg State----\n");
 	printm("\tHart ID: %u\n", mhartid);
 	printm("\tExecution Mode: %u\n", cpu_context->execution_mode);
-	printm("\tSATP: %08lX\n", (unsigned long)CSRI_BITCLR(CSR_SATP, 0));
-	printm("\tSTVEC: %08lX\n", (unsigned long)CSRI_BITCLR(CSR_STVEC, 0));
+	printm("\tSATP: %08lX\n", (unsigned long)CSR_READ(CSR_SATP));
+	printm("\tSTVEC: %08lX\n", (unsigned long)CSR_READ(CSR_STVEC));
 	printm("\t PC: %08lX\n", cpu_context->regs[REG_PC]); // REG_PC == 0
-	
+
 	size_t i = 1;
 	while (i <= 8) {  //  x1 through x8
 		printm("\t x%u: %08lX\t x%u: %08lX\n", i, cpu_context->regs[i], i + 1, cpu_context->regs[i + 1]);
@@ -72,15 +72,15 @@ void interrupt_c_handler(volatile CPU_Context* cpu_context, uintRL_t cause_value
 #if   __riscv_xlen == 128
 			#error "Not Implemented"
 #elif __riscv_xlen == 64
-			CSRI_WRITE(CSR_PMPADDR0, (0x0000000080000000ul >> 2) & 0x003FFFFFFFFFFFFFul);
-			CSRI_WRITE(CSR_PMPADDR1, (kernel_load_to_point >> 2) & 0x003FFFFFFFFFFFFFul);
-			CSRI_WRITE(CSR_PMPADDR2, (0xFFFFFFFFFFFFFFFFul >> 2) & 0x003FFFFFFFFFFFFFul);
-			CSRI_WRITE(CSR_PMPCFG0, (0x0F << 16) | (0x08 <<  8) | (0x0B <<  0));
+			CSR_WRITE(CSR_PMPADDR0, (0x0000000080000000ul >> 2) & 0x003FFFFFFFFFFFFFul);
+			CSR_WRITE(CSR_PMPADDR1, (kernel_load_to_point >> 2) & 0x003FFFFFFFFFFFFFul);
+			CSR_WRITE(CSR_PMPADDR2, (0xFFFFFFFFFFFFFFFFul >> 2) & 0x003FFFFFFFFFFFFFul);
+			CSR_WRITE(CSR_PMPCFG0, (0x0F << 16) | (0x08 <<  8) | (0x0B <<  0));
 #elif __riscv_xlen == 32
-			CSRI_WRITE(CSR_PMPADDR0, (0x80000000ul         >> 2) & 0xFFFFFFFFul);
-			CSRI_WRITE(CSR_PMPADDR1, (kernel_load_to_point >> 2) & 0xFFFFFFFFul);
-			CSRI_WRITE(CSR_PMPADDR2, (0xFFFFFFFFul         >> 2) & 0xFFFFFFFFul);
-			CSRI_WRITE(CSR_PMPCFG0, (0x0F << 16) | (0x08 <<  8) | (0x0B <<  0));
+			CSR_WRITE(CSR_PMPADDR0, (0x80000000ul         >> 2) & 0xFFFFFFFFul);
+			CSR_WRITE(CSR_PMPADDR1, (kernel_load_to_point >> 2) & 0xFFFFFFFFul);
+			CSR_WRITE(CSR_PMPADDR2, (0xFFFFFFFFul         >> 2) & 0xFFFFFFFFul);
+			CSR_WRITE(CSR_PMPCFG0, (0x0F << 16) | (0x08 <<  8) | (0x0B <<  0));
 #endif
 			// QEMU Fixes - sstc (stimecmp)
 			//   Background:
@@ -97,13 +97,13 @@ void interrupt_c_handler(volatile CPU_Context* cpu_context, uintRL_t cause_value
 #if   __riscv_xlen == 128
 				#error "Not Implemented"
 #elif __riscv_xlen == 64
-				CSRI_BITSET(CSR_MENVCFG, 1ul << 63);
+				CSR_BITSET(CSR_MENVCFG, 1ul << 63);
 				uintRL_t csr_menucfg = CSRI_BITCLR(CSR_MENVCFG, 0);
 				if (csr_menucfg & (1ul << 63)) {
 					hart_using_ext_sstc = 1;
 				}
 #elif __riscv_xlen == 32
-				CSRI_BITSET(CSR_MENVCFGH, 1ul << 31);
+				CSR_BITSET(CSR_MENVCFGH, 1ul << 31);
 				uintRL_t csr_menucfgh = CSRI_BITCLR(CSR_MENVCFGH, 0);
 				if (csr_menucfgh & (1ul << 31)) {
 					hart_using_ext_sstc = 1;
@@ -112,7 +112,7 @@ void interrupt_c_handler(volatile CPU_Context* cpu_context, uintRL_t cause_value
 			}
 			if (hart_using_ext_sstc) {
 				printm("\tUsing ISA Extenstion: SSTC\n");
-				CSRI_BITSET(CSR_MCOUNTEREN, 0x2);
+				CSR_BITSET(CSR_MCOUNTEREN, 0x2);
 			}
 
 			// QEMU Fixes - Zicboz, Zicbom, Zicbop
@@ -129,35 +129,35 @@ void interrupt_c_handler(volatile CPU_Context* cpu_context, uintRL_t cause_value
 			//   Instruction Exception from S-mode will be generated.  An alternaive fix is to build the Kernel
 			//   without Zicbom support.
 			if (hart_has_menvcfg) {
-				CSRI_BITSET(CSR_MENVCFG, 3ul << 4);
-				CSRI_BITSET(CSR_MENVCFG, 1ul << 6);
-				CSRI_BITSET(CSR_MENVCFG, 1ul << 7);
+				CSR_BITSET(CSR_MENVCFG, 3ul << 4);
+				CSR_BITSET(CSR_MENVCFG, 1ul << 6);
+				CSR_BITSET(CSR_MENVCFG, 1ul << 7);
 			}
 #endif
 
 			// Do not attempt to delegate Exceptions (Not supported in custom emulator)
-			CSRI_WRITE(CSR_MEDELEG, 0x0000);
+			CSR_WRITE(CSR_MEDELEG, 0x0000);
 			// Delegate S-Mode Software Interrupt to S-Mode
 			// Delegate S-Mode Timer Interrupt to S-Mode
 			// Delegate S-Mode External Interrupt to S-Mode
-			CSRI_WRITE(CSR_MIDELEG, 0x0222);
+			CSR_WRITE(CSR_MIDELEG, 0x0222);
 			//CSRI_WRITE(CSR_MIDELEG, 0x0000);
 			
 			// Enable S-Mode Software Interrupt
 			// Enable M-Mode Software Interrupt
 			// Enable S-Mode Timer Interrupt
-			CSRI_WRITE(CSR_MIE, 0x02A);
+			CSR_WRITE(CSR_MIE, 0x02A);
 			// Clear all pending Interrupts
-			CSRI_BITCLR(CSR_MIP, 0xFFF);
+			CSR_BITCLR(CSR_MIP, 0xFFF);
 			
 			// Clear Virtual Address CSR
-			CSRI_WRITE(CSR_SATP, 0);
+			CSR_WRITE(CSR_SATP, 0);
 			// Disable M-Mode Interrupts
 			// Disable S-Mode Interrupts
 			// Disable S-Mode Previous Interrupt Enable
-			CSRI_BITCLR(CSR_MSTATUS, 0x2A);
+			CSR_BITCLR(CSR_MSTATUS, 0x2A);
 			// Enable M-Mode Previous Interrupt Enable
-			CSRI_BITSET(CSR_MSTATUS, 0x80);
+			CSR_BITSET(CSR_MSTATUS, 0x80);
 			
 			clear_hart_context(hart_contexts_user + mhartid);
 			hart_contexts_user[mhartid].context_id = mhartid;
@@ -192,7 +192,7 @@ void interrupt_c_handler(volatile CPU_Context* cpu_context, uintRL_t cause_value
 			clint_hart_msip_ctls[mhartid] = 0;
 			
 			// Trigger an S-Mode software interrupt
-			CSRI_BITSET(CSR_MIP, 0x2);
+			CSR_BITSET(CSR_MIP, 0x2);
 		} else {
 			goto not_handled_interrupt;
 		}
@@ -217,14 +217,14 @@ void interrupt_c_handler(volatile CPU_Context* cpu_context, uintRL_t cause_value
 
 		// Bounce this into S-Mode
 		if (!hart_using_ext_sstc) {
-			CSRI_BITCLR(CSR_MIE, 0x80);
-			CSRI_BITSET(CSR_MIP, 0x20);
+			CSR_BITCLR(CSR_MIE, 0x80);
+			CSR_BITSET(CSR_MIP, 0x20);
 		}
 	} else if (cause_value == 11) {
 		// M-Mode External Interrupt
 		
 		printm("ESBI Error: M-Mode External Int received in M-Mode.  Halting.\n");
-		CSRI_BITCLR(CSR_MIE, 0x800);
+		CSR_BITCLR(CSR_MIE, 0x800);
 		idle_loop();
 	} else {
 		not_handled_interrupt:
@@ -249,7 +249,7 @@ void exception_c_handler(volatile CPU_Context* cpu_context, uintRL_t cause_value
 		s_delegation_trampoline(cpu_context, cause_value, mtval);
 	} else if (cause_value == 1) {
 		// Instruction Access Fault
-		CSRI_BITCLR(CSR_MSTATUS, 0x8); // Disable Interrupts.
+		CSR_BITCLR(CSR_MSTATUS, 0x8); // Disable Interrupts.
 		printm("Instruction Access Fault\n");
 		print_reg_state(cpu_context);
 		idle_loop();
@@ -261,9 +261,12 @@ void exception_c_handler(volatile CPU_Context* cpu_context, uintRL_t cause_value
 		//idle_loop();
 		
 		uintRL_t csr_satp;
-		csr_satp = CSRI_BITCLR(CSR_SATP, 0);
-		uint32_t* instruction = (void*)walk_pts(cpu_context->regs[REG_PC], csr_satp, 0);
-		
+		csr_satp = CSR_READ(CSR_SATP);
+		uint32_t* instruction = (void*)cpu_context->regs[REG_PC];
+		if (cpu_context->execution_mode != EM_M) {
+			instruction = (void*)walk_pts(cpu_context->regs[REG_PC], csr_satp, 0);
+		}
+
 		dec_inst dinst;
 		uintRL_t form = decode_instruction(*instruction, &dinst);
 		//uintRL_t form = decode_instruction(mtval, &dinst);

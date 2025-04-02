@@ -16,6 +16,8 @@ struct sbiret sbi_set_timer(uint64_t stime_value) {
 
 		volatile uint64_t* mtimecmp = (void*)(((uintRL_t)CLINT_BASE) + CLINT_MTIMECMPS);
 		mtimecmp[mhartid] = stime_value;
+
+		CSR_BITSET(CSR_MIE, 0x80);
 	}
 #elif __riscv_xlen == 32
 	uint32_t xtime;
@@ -28,6 +30,9 @@ struct sbiret sbi_set_timer(uint64_t stime_value) {
 		CSR_WRITE(CSR_STIMECMP, xtime);
 		CSR_WRITE(CSR_STIMECMPH, xtimeh);
 	} else {
+		CSR_BITCLR(CSR_MIE, 0x80);
+		CSR_BITCLR(CSR_MIP, 0x20);
+
 		volatile uint32_t* mtimecmp   = (void*)(((uintRL_t)CLINT_BASE) + CLINT_MTIMECMPS);
 		volatile uint32_t* mtimecmphi = (void*)(((uintRL_t)CLINT_BASE) + CLINT_MTIMECMPS + 0x4);
 		mtimecmphi[mhartid * 2] = (sint32_t)-1;
